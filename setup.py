@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2017 OSGeo
+# Copyright (C) 2018 OSGeo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,20 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-       'geonode>=2.5',
+	   'Django==1.8.18',
+       'six==1.10.0',
+       'celery==4.1.0',
+       'Shapely>=1.5.13,<1.6.dev0',
+       'django-simple-history',
+       'djangorestframework',
+       'djangorestframework-gis',
+       'django-filter',
+       'django-apptemplates',
+       'django-cuser==2017.3.16',
+       'django-model-utils==3.0.0',
+       'pyshp==1.2.12',
+       'pygdal==2.2.1.3',
+       'inflection==0.3.1'
+       # 'geonode>=2.9'
     ],
 )
