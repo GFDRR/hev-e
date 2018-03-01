@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#########################################################################
 #
-# Copyright (C) 2017 OSGeo
+#
+# Copyright (C) 2018 OSGeo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-#########################################################################
+#
 
 import fileinput
 import glob
@@ -38,17 +38,14 @@ from paver.easy import (BuildFailure, call_task, cmdopts, info, needs, options,
 from setuptools.command import easy_install
 
 try:
-    from gfdrr_det.settings import GEONODE_APPS, OGC_SERVER, INSTALLED_APPS
+    from gfdrr_det.local_settings import *
 except:
-    # probably trying to run install_win_deps.
-    pass
+    from gfdrr_det.settings import *
 
 try:
     from paver.path import pushd
 except ImportError:
     from paver.easy import pushd
-
-from geonode.settings import OGC_SERVER, INSTALLED_APPS
 
 assert sys.version_info >= (2, 6), \
     SystemError("GeoNode Build requires python 2.6 or better")
@@ -177,7 +174,7 @@ def _robust_rmtree(path, logger=None, max_retries=5):
         try:
             shutil.rmtree(path)
             return
-        except OSError, e:
+        except OSError as e:
             if logger:
                 info('Unable to remove path: %s' % path)
                 info('Retrying after %d seconds' % i)
@@ -366,7 +363,8 @@ def sync(options):
     sh("%s python manage.py makemigrations --noinput" % settings)
     sh("%s python manage.py migrate --noinput" % settings)
     sh("%s python manage.py loaddata fixtures/sample_admin.json" % settings)
-    sh("%s python manage.py loaddata fixtures/default_oauth_apps.json" % settings)
+    sh("%s python manage.py loaddata fixtures/default_oauth_apps.json" %
+       settings)
     sh("%s python manage.py loaddata fixtures/initial_data.json" % settings)
 
 
@@ -473,8 +471,10 @@ def stop_geoserver():
 
     # Kill process.
     try:
-        # proc = subprocess.Popen("ps -ef | grep -i -e '[j]ava\|geoserver' | awk '{print $2}'",
-        proc = subprocess.Popen("ps -ef | grep -i -e 'geoserver' | awk '{print $2}'",
+        # proc = subprocess.Popen("ps -ef | grep -i -e '[j]ava\|geoserver' |
+        # awk '{print $2}'",
+        proc = subprocess.Popen(
+            "ps -ef | grep -i -e 'geoserver' | awk '{print $2}'",
                                 shell=True,
                                 stdout=subprocess.PIPE)
         for pid in proc.stdout:
@@ -484,10 +484,11 @@ def stop_geoserver():
             sh('sleep 30')
             # Check if the process that we killed is alive.
             try:
-               os.kill(int(pid), 0)
-               # raise Exception("""wasn't able to kill the process\nHINT:use signal.SIGKILL or signal.SIGABORT""")
+                os.kill(int(pid), 0)
+                # raise Exception("""wasn't able to kill the process\nHINT:use
+                # signal.SIGKILL or signal.SIGABORT""")
             except OSError as ex:
-               continue
+                continue
     except Exception as e:
         info(e)
 
@@ -597,7 +598,9 @@ def start_geoserver(options):
         if e.errno == 98:
             info('Port %s is already in use' % jetty_port)
         else:
-            info('Something else raised the socket.error exception while checking port %s' % jetty_port)
+            info(
+                'Something else raised the socket.error exception while checking port %s' %
+                jetty_port)
             print(e)
     finally:
         s.close()
@@ -766,13 +769,16 @@ def test_integration(options):
             sh("%s python manage.py makemigrations --noinput" % settings)
             sh("%s python manage.py migrate --noinput" % settings)
             sh("%s python manage.py loaddata sample_admin.json" % settings)
-            sh("%s python manage.py loaddata geonode/base/fixtures/default_oauth_apps.json" % settings)
-            sh("%s python manage.py loaddata geonode/base/fixtures/initial_data.json" % settings)
+            sh("%s python manage.py loaddata geonode/base/fixtures/default_oauth_apps.json" %
+               settings)
+            sh("%s python manage.py loaddata geonode/base/fixtures/initial_data.json" %
+               settings)
             call_task('start_geoserver')
             bind = options.get('bind', '0.0.0.0:8000')
             foreground = '' if options.get('foreground', False) else '&'
             sh('%s python manage.py runmessaging %s' % (settings, foreground))
-            sh('%s python manage.py runserver %s %s' % (settings, bind, foreground))
+            sh('%s python manage.py runserver %s %s' %
+               (settings, bind, foreground))
             sh('sleep 30')
             settings = 'REUSE_DB=1 %s' % settings
 
@@ -832,13 +838,14 @@ def reset():
 
 
 def _reset():
-    from geonode import settings
     sh("rm -rf {path}".format(
-        path=os.path.join(settings.PROJECT_ROOT, 'development.db')
-        )
+        path=os.path.join(PROJECT_ROOT, 'development.db')
     )
-    sh("rm -rf gfdrr_det/development.db")
-    sh("rm -rf gfdrr_det/uploaded/*")
+    )
+    sh("rm -rf {project_name}/development.db".format(
+        project_name=PROJECT_NAME))
+    sh("rm -rf {project_name}/uploaded/*".format(
+        project_name=PROJECT_NAME))
     _install_data_dir()
 
 
@@ -923,7 +930,7 @@ def deb(options):
         deb_changelog = path('debian') / 'changelog'
         for idx, line in enumerate(fileinput.input([deb_changelog], inplace=True)):
             if idx == 0:
-                print "geonode (%s) %s; urgency=high"  % (simple_version, distribution),
+                print "geonode (%s) %s; urgency=high" % (simple_version, distribution),
             else:
                 print line.replace("urgency=medium", "urgency=high"),
 
@@ -1087,3 +1094,36 @@ def str2bool(v):
         return v.lower() in ("yes", "true", "t", "1")
     else:
         return False
+
+
+# Project specific commands
+@task
+def build_static(options):
+    sh('git submodule init')
+    sh('git submodule update')
+    sh('git pull')
+    with pushd('frontend'):
+        sh('npm install')
+        sh('npm run compile')
+    sh('mkdir -p {project_name}/static/{frontend_app_name}/'.format(
+        project_name=PROJECT_NAME,
+        frontend_app_name=FRONTEND_APP_NAME))
+    sh('cp -vr frontend/dist/* {project_name}/static/{frontend_app_name}/'.format(
+        project_name=PROJECT_NAME,
+        frontend_app_name=FRONTEND_APP_NAME))
+    sh('cp -vr frontend/static/{frontend_app_name}/* {project_name}/static/{frontend_app_name}/'.format(
+        project_name=PROJECT_NAME,
+        frontend_app_name=FRONTEND_APP_NAME))
+    sh('mkdir -p {project_name}/static/{frontend_app_name}/MapStore2/web/client/translations/'.format(
+        project_name=PROJECT_NAME,
+        frontend_app_name=FRONTEND_APP_NAME))
+    sh('cp -vr frontend/MapStore2/web/client/translations/* {project_name}/static/{frontend_app_name}/MapStore2/web/client/translations/'.format(
+        project_name=PROJECT_NAME,
+        frontend_app_name=FRONTEND_APP_NAME))
+    sh('python manage.py collectstatic --noinput')
+
+
+@task
+def update(options):
+    build_static()
+    sh('python manage.py migrate')

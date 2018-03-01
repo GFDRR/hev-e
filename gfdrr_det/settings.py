@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#########################################################################
+#
 #
 # Copyright (C) 2017 OSGeo
 #
@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-#########################################################################
+#
 
 # Django settings for the GeoNode project.
 import os
 # Load more settings from a file called local_settings.py if it exists
 try:
-    from gfdrr_det.local_settings import *
+    from geonode.local_settings import *
 except ImportError:
     from geonode.settings import *
 
@@ -32,6 +32,8 @@ except ImportError:
 PROJECT_NAME = 'gfdrr_det'
 
 SITENAME = 'gfdrr_det'
+
+FRONTEND_APP_NAME = 'explorationtool'
 
 # Defines the directory that contains the settings file as the LOCAL_ROOT
 # It is used for relative settings elsewhere.
@@ -64,9 +66,9 @@ INSTALLED_APPS += (PROJECT_NAME,)
 # Location of url mappings
 ROOT_URLCONF = os.getenv('ROOT_URLCONF', '{}.urls'.format(PROJECT_NAME))
 
-#MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(LOCAL_ROOT, "uploaded"))
+# MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(LOCAL_ROOT, "uploaded"))
 
-#STATIC_ROOT = os.getenv('STATIC_ROOT',
+# STATIC_ROOT = os.getenv('STATIC_ROOT',
 #                        os.path.join(LOCAL_ROOT, "static_root")
 #                        )
 
@@ -78,10 +80,12 @@ STATICFILES_DIRS.append(
 # Location of locale files
 LOCALE_PATHS = (
     os.path.join(LOCAL_ROOT, 'locale'),
-    ) + LOCALE_PATHS
+) + LOCALE_PATHS
 
 TEMPLATES[0]['DIRS'].insert(0, os.path.join(LOCAL_ROOT, "templates"))
-loaders = TEMPLATES[0]['OPTIONS'].get('loaders') or ['django.template.loaders.filesystem.Loader','django.template.loaders.app_directories.Loader']
+loaders = TEMPLATES[0]['OPTIONS'].get(
+    'loaders') or ['django.template.loaders.filesystem.Loader',
+                   'django.template.loaders.app_directories.Loader']
 # loaders.insert(0, 'apptemplates.Loader')
 TEMPLATES[0]['OPTIONS']['loaders'] = loaders
 TEMPLATES[0].pop('APP_DIRS', None)
@@ -252,7 +256,9 @@ MAP_BASELAYERS = [{
     "source": {"ptype": "gxp_olsource"},
     "type": "OpenLayers.Layer.XYZ",
     "title": "UNESCO GEODATA",
-    "args": ["UNESCO GEODATA", "http://en.unesco.org/tiles/geodata/${z}/${x}/${y}.png"],
+    "args":
+        ["UNESCO GEODATA",
+            "http://en.unesco.org/tiles/geodata/${z}/${x}/${y}.png"],
     "name": "background",
     "attribution": "&copy; UNESCO",
     "visibility": False,
@@ -263,41 +269,45 @@ MAP_BASELAYERS = [{
     "source": {"ptype": "gxp_olsource"},
     "type": "OpenLayers.Layer.XYZ",
     "title": "Humanitarian OpenStreetMap",
-    "args": ["Humanitarian OpenStreetMap", "http://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png"],
+    "args":
+        ["Humanitarian OpenStreetMap",
+            "http://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png"],
     "name": "background",
-    "attribution": "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>, Tiles courtesy of <a href='http://hot.openstreetmap.org/' target='_blank'>Humanitarian OpenStreetMap Team</a>",
+    "attribution":
+        "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>, Tiles courtesy of <a href='http://hot.openstreetmap.org/' target='_blank'>Humanitarian OpenStreetMap Team</a>",
     "visibility": False,
     "wrapDateLine": True,
     "fixed": True,
     "group":"background"
-# }, {
-#     "source": {"ptype": "gxp_olsource"},
-#     "type": "OpenLayers.Layer.XYZ",
-#     "title": "MapBox Satellite Streets",
-#     "args": ["MapBox Satellite Streets", "http://api.mapbox.com/styles/v1/mapbox/satellite-streets-v9/tiles/${z}/${x}/${y}?access_token="+MAPBOX_ACCESS_TOKEN],
-#     "name": "background",
-#     "attribution": "&copy; <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> &copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <a href='https://www.mapbox.com/feedback/' target='_blank'>Improve this map</a>",
-#     "visibility": False,
-#     "wrapDateLine": True,
-#     "fixed": True,
-#     "group":"background"
-# }, {
-#     "source": {"ptype": "gxp_olsource"},
-#     "type": "OpenLayers.Layer.XYZ",
-#     "title": "MapBox Streets",
-#     "args": ["MapBox Streets", "http://api.mapbox.com/styles/v1/mapbox/streets-v9/tiles/${z}/${x}/${y}?access_token="+MAPBOX_ACCESS_TOKEN],
-#     "name": "background",
-#     "attribution": "&copy; <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> &copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <a href='https://www.mapbox.com/feedback/' target='_blank'>Improve this map</a>",
-#     "visibility": False,
-#     "wrapDateLine": True,
-#     "fixed": True,
-#     "group":"background"
+    # }, {
+    #     "source": {"ptype": "gxp_olsource"},
+    #     "type": "OpenLayers.Layer.XYZ",
+    #     "title": "MapBox Satellite Streets",
+    #     "args": ["MapBox Satellite Streets", "http://api.mapbox.com/styles/v1/mapbox/satellite-streets-v9/tiles/${z}/${x}/${y}?access_token="+MAPBOX_ACCESS_TOKEN],
+    #     "name": "background",
+    #     "attribution": "&copy; <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> &copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <a href='https://www.mapbox.com/feedback/' target='_blank'>Improve this map</a>",
+    #     "visibility": False,
+    #     "wrapDateLine": True,
+    #     "fixed": True,
+    #     "group":"background"
+    # }, {
+    #     "source": {"ptype": "gxp_olsource"},
+    #     "type": "OpenLayers.Layer.XYZ",
+    #     "title": "MapBox Streets",
+    #     "args": ["MapBox Streets", "http://api.mapbox.com/styles/v1/mapbox/streets-v9/tiles/${z}/${x}/${y}?access_token="+MAPBOX_ACCESS_TOKEN],
+    #     "name": "background",
+    #     "attribution": "&copy; <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> &copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <a href='https://www.mapbox.com/feedback/' target='_blank'>Improve this map</a>",
+    #     "visibility": False,
+    #     "wrapDateLine": True,
+    #     "fixed": True,
+    #     "group":"background"
 }, {
     "source": {"ptype": "gxp_osmsource"},
     "type": "OpenLayers.Layer.OSM",
     "title": "OpenStreetMap",
     "name": "mapnik",
-    "attribution": "&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors",
+    "attribution":
+        "&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors",
     "visibility": True,
     "wrapDateLine": True,
     "fixed": True,
@@ -339,7 +349,8 @@ MONITORING_ENABLED = False
 # add following lines to your local settings to enable monitoring
 if MONITORING_ENABLED:
     INSTALLED_APPS += ('geonode.contrib.monitoring',)
-    MIDDLEWARE_CLASSES += ('geonode.contrib.monitoring.middleware.MonitoringMiddleware',)
+    MIDDLEWARE_CLASSES += (
+        'geonode.contrib.monitoring.middleware.MonitoringMiddleware',)
     MONITORING_CONFIG = None
     MONITORING_HOST_NAME = 'localhost'
     MONITORING_SERVICE_NAME = 'local-geonode'
@@ -367,10 +378,6 @@ LOGGING = {
         }
     },
     'handlers': {
-        'null': {
-            'level': 'INFO',
-            'class': 'django.utils.log.NullHandler',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -394,5 +401,5 @@ LOGGING = {
             "handlers": ["console"], "level": "INFO", },
         "gfdrr_det": {
             "handlers": ["console"], "level": "DEBUG", },
-        },
-    }
+    },
+}
