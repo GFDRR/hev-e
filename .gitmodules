@@ -1,0 +1,3 @@
+[submodule "frontend/MapStore2"]
+	path = frontend/MapStore2
+	url = https://github.com/geosolutions-it/MapStore2/
