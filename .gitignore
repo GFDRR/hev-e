@@ -64,3 +64,9 @@ static_root/
 development.db
 development.db-journal
 local_settings.py
+
+# custom geonode
+src/
+
+# pycharm IDE stuff
+.idea/
