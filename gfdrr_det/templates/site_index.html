@@ -1,15 +1,38 @@
-{% extends 'index.html' %}
+{% load static %}
 {% load i18n %}
-{% comment %}
-This is where you can override the hero area block. You can simply modify the content below or replace it wholesale to meet your own needs. 
-{% endcomment %}
-  {% block hero %}
-  <div class="jumbotron">
-    <div class="container">
-      <h1>{% trans "Welcome" %}</h1>
-      <p>{% blocktrans %}GeoNode is an open source platform for sharing geospatial data and maps.{% endblocktrans %}</p>
-      <p>{% blocktrans %}If you have any questions about the software or service, join our <a href="https://groups.google.com/d/forum/geonode-users">mailing list</a>.{% endblocktrans %}</p>
-      <span>{% trans 'Need help?' %} <a href="http://docs.geonode.org/en/latest/tutorials/users/quickstart/index.html">{% trans 'Getting Started' %}</a></span>
-    </div>
-  </div>
-  {% endblock %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Data Exploration Tool</title>
+
+        <link rel="stylesheet" href="{{ STATIC_URL }}dataexplorationtool/themes/default.css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+        <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}dataexplorationtool/img/favicon.png"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.6.4/ol.css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+        <script src="https://maps.google.com/maps/api/js?v=3"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.6.4/ol.js"></script>
+
+        <!--link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.4/leaflet.draw.css" /-->
+        <!--script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.10/proj4.js"></script-->
+        <!--script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.4/leaflet.draw.js"></script-->
+        <!--script src="https://cesiumjs.org/releases/1.17/Build/Cesium/Cesium.js"></script>
+        <link rel="stylesheet" href="https://cesiumjs.org/releases/1.17/Build/Cesium/Widgets/widgets.css" />
+        <script src="MapStore2/web/client/libs/cesium-navigation/cesium-navigation.js"></script>
+        <link rel="stylesheet" href="MapStore2/web/client/libs/cesium-navigation/cesium-navigation.css" /-->
+
+    </head>
+    <body class="dataexplorationtool">
+        <div id="container"></div>
+        <script src="{{ STATIC_URL }}dataexplorationtool/dataexplorationtool.js"></script>
+    </body>
+
+</html>

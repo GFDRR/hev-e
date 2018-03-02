@@ -70,3 +70,18 @@ src/
 
 # pycharm IDE stuff
 .idea/
+
+/node_modules/.bin/acorn
+/node_modules/.bin/closure-util
+/node_modules/.bin/decompress-zip
+/node_modules/.bin/handlebars
+/node_modules/.bin/mime
+/node_modules/.bin/mkdirp
+/node_modules/.bin/nopt
+/node_modules/.bin/rimraf
+/node_modules/.bin/sshpk-conv
+/node_modules/.bin/sshpk-sign
+/node_modules/.bin/sshpk-verify
+/node_modules/.bin/strip-ansi
+/node_modules/.bin/uglifyjs
+/node_modules/.bin/uuid

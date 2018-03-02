@@ -33,7 +33,7 @@ PROJECT_NAME = 'gfdrr_det'
 
 SITENAME = 'gfdrr_det'
 
-FRONTEND_APP_NAME = 'explorationtool'
+FRONTEND_APP_NAME = 'dataexplorationtool'
 
 # Defines the directory that contains the settings file as the LOCAL_ROOT
 # It is used for relative settings elsewhere.
