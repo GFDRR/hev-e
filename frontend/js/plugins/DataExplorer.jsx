@@ -14,9 +14,32 @@ const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
-const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
-
 const DataCatalog = require('../components/DataCatalog');
+// const DataDetails = require('../components/DataDetails');
+
+/*
+title={
+    <Toolbar
+        btnDefaultProps={
+            {
+                className: 'square-button-md',
+                bsStyle: 'primary'
+            }
+        }
+        buttons={
+            [
+                {
+                    glyph: '1-pdf',
+                    tooltip: 'Download pdf'
+                },
+                {
+                    glyph: 'share',
+                    tooltip: 'Share page'
+                }
+            ]
+        }/>
+}
+*/
 
 class DataExplorerComponent extends React.Component {
     static propTypes = {
@@ -33,6 +56,7 @@ class DataExplorerComponent extends React.Component {
 
         return this.props.open ? (
             <div
+                id="et-data-explorer"
                 className="et-data-explorer"
                 style={{position: 'relative', order: -1, flex: 1}}>
                 <DockPanel
@@ -42,27 +66,8 @@ class DataExplorerComponent extends React.Component {
                     fixed={false}
                     position="left"
                     zIndex={400}
-                    title={
-                        <Toolbar
-                            btnDefaultProps={
-                                {
-                                    className: 'square-button-md',
-                                    bsStyle: 'primary'
-                                }
-                            }
-                            buttons={
-                                [
-                                    {
-                                        glyph: '1-pdf',
-                                        tooltip: 'Download pdf'
-                                    },
-                                    {
-                                        glyph: 'share',
-                                        tooltip: 'Share page'
-                                    }
-                                ]
-                            }/>
-                    }
+                    fluid
+                    size={1.0}
                     header={
                         <Row>
                             <Col xs={12}>
@@ -73,11 +78,10 @@ class DataExplorerComponent extends React.Component {
                                 </Nav>
                             </Col>
                         </Row>
-                    }
-                    fluid
-                    size={1.0}>
+                    }>
                     <DataCatalog />
                 </DockPanel>
+                {/*<DataDetails />*/}
             </div>
         ) : null;
     }
@@ -99,5 +103,8 @@ const DataExplorer = connect(
 
 module.exports = {
     DataExplorerPlugin: DataExplorer,
-    reducers: {}
+    reducers: {
+        dataexploration: require('../reducers/dataexploration')
+    },
+    epics: require('../epics/dataexploration')
 };

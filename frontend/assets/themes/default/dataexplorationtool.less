@@ -1,6 +1,15 @@
 
 @ms2-et-color-bg: #edf1f2;
 
+.btn-primary {
+    .button-variant(@ms2-color-primary; @ms2-et-color-bg; darken(@ms2-et-color-bg, 7%));
+    &[disabled] {
+        opacity: 0.9;
+        background-color: @ms2-color-disabled;
+        color: @ms2-color-text-disabled;
+    }
+}
+
 .leaflet-control-scale {
     top: auto;
     right: auto;
@@ -245,14 +254,6 @@ div.ol-scale-line.ol-unselectable {
                 
                 #mapstore-toolbar-container {
                     .shadow-far;
-                    .btn-primary {
-                        .button-variant(@ms2-color-primary; #edf1f2; #edf1f2);
-                        &[disabled] {
-                            opacity: 0.9;
-                            background-color: @ms2-color-disabled;
-                            color: @ms2-color-text-disabled;
-                        }
-                    }
                     .btn-success {
                         .button-variant(@ms2-color-primary; #c7c7c7; #c7c7c7);
                         &[disabled] {
@@ -279,13 +280,29 @@ div.ol-scale-line.ol-unselectable {
 
     // DATA EXPLORER PANEL
     .et-data-explorer {
+        display: flex;
+        flex-direction: column;
+        .modal-fixed {
+            position: relative;
+            flex: 1;
+            .modal-dialog-container {
+                width: ~"calc(100% - 20px)";
+                height: ~"calc(100% - 20px)";
+                left: 10px;
+                top: 10px;
+            }
+            .modal-header {
+                background-color: @ms2-color-background;
+                color: @ms2-color-primary;
+            }
+        }
         .ms-header {
             box-shadow: none;
-            background-color: #edf1f2;
+            background-color: @ms2-et-color-bg;
             .row {
-                background-color: #edf1f2;
+                background-color: @ms2-et-color-bg;
                 .btn-default {
-                    .button-variant(@ms2-color-primary; #edf1f2; #edf1f2);
+                    .button-variant(@ms2-color-primary; @ms2-et-color-bg; @ms2-et-color-bg);
                 }
                 &:last-child {
                     margin-bottom: 0; 
@@ -295,6 +312,8 @@ div.ol-scale-line.ol-unselectable {
         .compat-catalog {
             .catalog-form {
                 width: 100%;
+                padding-bottom: 10px;
+                border-bottom: 1px solid @ms2-et-color-bg;
             }
             .items-list {
                 > .col-xs-12:hover {
@@ -342,8 +361,135 @@ div.ol-scale-line.ol-unselectable {
                     display: block;
                 }
             }
+
+            .mapstore-side-card {
+                display: flex;
+                > div {
+                    float: none;
+                    clear: both;
+                }
+                .mapstore-side-preview {
+                    display: flex;
+                    margin: 0;
+                    width: @square-btn-size * 2;
+                    height: @square-btn-size * 2;
+                    > * {
+                        margin: auto !important;
+                        padding: 0 !important;
+                        width: 100%;
+                    }
+                }
+                .mapstore-side-card-info {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                    padding: 0;
+                    & > div {
+                        flex: 1;
+                        display: flex;
+                        margin-bottom: 0;
+                        overflow: hidden;
+                        min-width: 0;
+                        align-items: center;
+                        span {
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                            overflow: hidden;
+                        }
+                    }
+                }
+                .mapstore-side-card-tool {
+                    width: auto;
+                    display: flex;
+                    width: auto;
+                    > * {
+                        margin: auto 10px;
+                    }
+                }
+            }
+        }
+
+        .et-related-head {
+            position: relative;
+            z-index: 501;
+            background-color: @ms2-color-background;
+            padding: 15px;
+            margin: 0;
+            h4 {
+                margin: 0;
+            }
+            .shadow-soft;
+        }
+
+        .et-related-list {
+            position: relative;
+            z-index: 500;
+            width: 100%;
+            background-color: @ms2-et-color-bg;
+            overflow-x: auto;
+            overflow-y: hidden; 
+            
+            .et-related-list-container {
+                white-space: nowrap;
+            }
         }
     }
+}
+
+.ms-square-card {
+    display: inline-block;
+    width: 156px;
+    height: 156px;
+    margin: 15px 0 15px 15px;
+    background-color: @ms2-color-background;
+    min-width: 0;
+    flex-direction: column;
+    transition: 0.3s all;
+    .shadow-soft;
+    .ms-square-card-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        .ms-top-card {
+            display: flex;
+            width: 100%;
+            > *:first-child {
+                flex: 1;
+                margin: 10px;
+                border-bottom: 1px solid @ms2-et-color-bg;
+            }
+            .glyphicon {
+                display: block;
+                padding: 10px;
+                &:hover {
+                    color: @ms2-color-primary;
+                    cursor: pointer;
+                }
+            }
+        }
+        .ms-preview-card {
+            flex: 1;
+            display: flex;
+            height: 100%;
+            > i {
+                margin: auto;
+                display: block;
+            }
+        }
+    }
+    &:hover {
+        .shadow-far;
+        transform: scale(1.01);
+    }
+    &:first-child {
+        margin-left: 15px;
+    }
+    &:last-child {
+        margin-right: 15px;
+    }
+    
 }
 
 .toolbarexpand-enter {
