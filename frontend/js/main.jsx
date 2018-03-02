@@ -11,6 +11,23 @@ module.exports = (config, pluginsDef) => {
     const ReactDOM = require('react-dom');
     const { connect } = require('react-redux');
     const LocaleUtils = require('../MapStore2/web/client/utils/LocaleUtils');
+    const axios = require('../MapStore2/web/client/libs/ajax');
+    const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
+
+    // Add X-CSRFToken to genode requests
+    axios.interceptors.request.use(function(cfg) {
+        const urls = ConfigUtils.getConfigProp("X-CSRFTokenUrls") || [];
+        const addCSRFToken = urls.reduce((r, url) => {
+            return r || cfg.url.indexOf(url) !== -1;
+        }, false);
+        if (addCSRFToken) {
+            cfg.xsrfCookieName = "csrftoken";
+            cfg.xsrfHeaderName = "X-CSRFToken";
+        }
+        return cfg;
+    }, function(error) {
+        return Promise.reject(error);
+    });
 
     const startApp = () => {
         // const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
