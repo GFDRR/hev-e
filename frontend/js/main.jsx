@@ -16,14 +16,8 @@ module.exports = (config, pluginsDef) => {
 
     // Add X-CSRFToken to genode requests
     axios.interceptors.request.use(function(cfg) {
-        const urls = ConfigUtils.getConfigProp("X-CSRFTokenUrls") || [];
-        const addCSRFToken = urls.reduce((r, url) => {
-            return r || cfg.url.indexOf(url) !== -1;
-        }, false);
-        if (addCSRFToken) {
-            cfg.xsrfCookieName = "csrftoken";
-            cfg.xsrfHeaderName = "X-CSRFToken";
-        }
+        cfg.xsrfCookieName = "csrftoken";
+        cfg.xsrfHeaderName = "X-CSRFToken";
         return cfg;
     }, function(error) {
         return Promise.reject(error);

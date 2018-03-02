@@ -71,6 +71,8 @@ src/
 # pycharm IDE stuff
 .idea/
 
+package-lock.json
+*/static/dataexplorationtool/
 /node_modules/.bin/acorn
 /node_modules/.bin/closure-util
 /node_modules/.bin/decompress-zip
