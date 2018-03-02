@@ -21,6 +21,7 @@
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Q
+from django.contrib.gis.db import models as gismodels
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 from geonode.base.models import ResourceBase, TopicCategory
@@ -52,6 +53,14 @@ class Exportable(object):
 
 class LocationAware(object):
 
+    def get_url(self, url_name, *args, **kwargs):
+        # TODO: reverse url
+        #       e.g.:
+        #        1. geometry url -> /gfdrr_det/explorationtool/geom/DZA.17.525/
+        #        2. location url -> /gfdrr_det/explorationtool/loc/DZA.17.525/
+        #        3. ...
+        return reverse('{}:{}:{}'.format(app_namespace, app_name, url_name), args=args, kwargs=kwargs)
+
     # hack to set location context, so we can return
     # location-specific related objects
     def set_location(self, loc):
@@ -67,8 +76,8 @@ class LocationAware(object):
 class AdministrativeDivisionManager(models.Manager):
     """
     """
-    def get_by_natural_key(self, iso):
-        return self.get(iso=iso)
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
 
 
 class AdministrativeDivision(Exportable, MPTTModel):
@@ -87,32 +96,33 @@ class AdministrativeDivision(Exportable, MPTTModel):
     level = models.IntegerField(null=False, blank=False, db_index=True)
     iso = models.CharField(max_length=10, null=False, blank=False, db_index=True)
     iso_id = models.IntegerField(null=False, blank=False, db_index=True)
-    name_iso = models.CharField(max_length=50, null=False, blank=False,
-                                db_index=True)
+    name = models.CharField(max_length=50, null=False, blank=False,
+                            db_index=True)
 
     name_eng = models.CharField(max_length=50, null=True, blank=True)
     name_fao = models.CharField(max_length=50, null=True, blank=True)
     name_local = models.CharField(max_length=50, null=True, blank=True)
 
     type = models.CharField(max_length=80, null=True, blank=True)
+    engtype = models.CharField(max_length=80, null=True, blank=True)
     contains = models.CharField(max_length=255, null=True, blank=True)
     sovereign = models.CharField(max_length=50, null=True, blank=True)
 
     fips = models.CharField(max_length=50, null=True, blank=True)
     unregion = models.CharField(max_length=50, null=True, blank=True)
-    ison = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
+    ison = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
     valid_from = models.CharField(max_length=50, null=True, blank=True)
     valid_to = models.CharField(max_length=50, null=True, blank=True)
 
-    population = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
-    sqkm = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
-    pop_sqkm = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
-    shape_leng = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
-    shape_area = models.DecimalField(max_digits=19, decimal_places=10, blank=True, null=True)
+    population = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
+    sqkm = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
+    pop_sqkm = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
+    shape_leng = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
+    shape_area = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
 
     # GeoDjango-specific: a geometry field (MultiPolygonField)
-    # geom = gismodels.MultiPolygonField() - does not work w/ default db
-    geom = models.TextField()  # As WKT
+    geom = gismodels.MultiPolygonField()
+    # geom = models.TextField()  # As WKT
     srid = models.IntegerField(default=4326)
 
     # Relationships
@@ -122,11 +132,21 @@ class AdministrativeDivision(Exportable, MPTTModel):
 
     @property
     def href(self):
-        return self.get_url('location', self.code)
+        # TODO build full hyerarchy ISO code <lev_0_iso>.<lev_1_iso_id>.<lev_2_iso_id>...
+        #      e.g.: DZA.17.525 --> ALGERIA/El Bayadh/El Mehara
+        # self.get_parents_chain()
+        iso = self.parent.iso if self.parent else self.iso
+        iso_code = "{}{}".format(iso, self.iso_id)
+        return self.get_url('location', iso_code)
 
     @property
     def geom_href(self):
-        return self.get_url('geometry', self.code)
+        # TODO build full hyerarchy ISO code <lev_0_iso>.<lev_1_iso_id>.<lev_2_iso_id>...
+        #      e.g.: DZA.17.525 --> ALGERIA/El Bayadh/El Mehara
+        # self.get_parents_chain()
+        iso = self.parent.iso if self.parent else self.iso
+        iso_code = "{}{}".format(iso, self.iso_id)
+        return self.get_url('geometry', iso_code)
 
     @property
     def parent_geom_href(self):
@@ -139,7 +159,7 @@ class AdministrativeDivision(Exportable, MPTTModel):
     class Meta:
         """
         """
-        ordering = ['iso', 'name_iso', 'iso_id']
+        ordering = ['iso', 'name', 'iso_id']
         db_table = 'explorationtool_administrativedivision'
         verbose_name_plural = 'DET Administrative Divisions'
 
@@ -163,10 +183,10 @@ class Region(models.Model):
     Groups a set of AdministrativeDivisions
     """
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30, null=False, blank=False,
+    name = models.CharField(max_length=255, null=False, blank=False,
                             db_index=True)
     # Adm level
-    level = models.IntegerField(null=False, unique=True,
+    level = models.IntegerField(null=False, unique=False,
                                 db_index=True)
 
     # Relationships

@@ -18,13 +18,17 @@
 #
 #########################################################################
 
+from decimal import *
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis import geos
+from django.db.models import Q
 
 from gfdrr_det.models import Region, AdministrativeDivision
+
+getcontext().prec = 8
 
 
 class Command(BaseCommand):
@@ -35,6 +39,15 @@ class Command(BaseCommand):
     Example Usage:
     $> python manage.py populateau -a 0 \
          -s /data/gadm28/levels/gadm28_adm0.shp
+
+    $> python manage.py populateau -a 1 \
+         -s /data/gadm28/levels/gadm28_adm1.shp
+
+    $> python manage.py populateau -a 2 \
+         -s /data/gadm28/levels/gadm28_adm2.shp
+
+    ... (must be run sequentially to build the tree correctly;
+         adm levels depends from the previous one)
     """
 
     help = 'Populate Administrative Units Dataset'
@@ -87,98 +100,101 @@ is mandatory")
                 if tolerance > 0:
                     geom = geom.simplify(tolerance, preserve_topology=True)
 
-                # Generalize to 'Multiploygon'
                 if geom:
-                    # geom = geos.MultiPolygon(geom)
-                    region_level = adm_level if adm_level == 0 else (adm_level - 1)
-                    region_name = feat.get("NAME_ISO") if adm_level == 0 else feat.get("NAME_{adm_level}".format(adm_level=adm_level - 1))
+                    # Generalize to 'Multiploygon'
+                    if isinstance(geom, geos.Polygon):
+                        geom = geos.MultiPolygon(geom)
 
-                    iso = feat.get("ISO")
-                    # print(dir(feat))
-                    # print(feat.fields)
-                    # print(feat.get('OBJECTID'))
-                    iso_parent_id = feat.get("ID_{adm_level}".format(adm_level=adm_level)) if adm_level == 0 else feat.get("ID_{adm_level}".format(adm_level=adm_level - 1))
+                    region_name = feat.get("NAME_{adm_level}".format(adm_level=adm_level - 1)) if adm_level > 0 else \
+                        (feat.get("UNREGION2") if feat.get("UNREGION2") else feat.get("UNREGION1"))
+
+                    (region_obj, is_new_region) = Region.objects.get_or_create(
+                        name=region_name,
+                        defaults=dict(
+                            level=(adm_level - 1 if adm_level > 0 else adm_level)
+                        )
+                    )
+
+                    level = adm_level
+                    objectid = feat.get("OBJECTID")
                     iso_id = feat.get("ID_{adm_level}".format(adm_level=adm_level))
                     name_iso = feat.get("NAME_ISO") if adm_level == 0 else feat.get("NAME_{adm_level}".format(adm_level=adm_level))
-                    print(" %s ************* %s(%s) / %s(%s) " % (counter, region_name, iso_parent_id, name_iso, iso_id))
-                    # print(geom)
+                    iso_parent = feat.get("ISO")
+                    iso_parent_id = iso_id if adm_level == 0 else feat.get("ID_{adm_level}".format(adm_level=adm_level - 1))
+
+                    shape_leng = Decimal(feat.get("Shape_Leng"))
+                    shape_area = Decimal(feat.get("Shape_Area"))
+
+                    parent = None
+                    if name_iso:
+                        if level > 0:
+                            type = feat.get("TYPE_{adm_level}".format(adm_level=adm_level))
+                            engtype = feat.get("ENGTYPE_{adm_level}".format(adm_level=adm_level))
+                            try:
+                                parent = AdministrativeDivision.objects.get(Q(iso=iso_parent) &
+                                                                            Q(iso_id=iso_parent_id) &
+                                                                            Q(level=(adm_level - 1)))
+                                (adm_division, is_new_amdiv) = \
+                                    AdministrativeDivision.objects.get_or_create(
+                                        name=name_iso,
+                                        defaults=dict(
+                                            objectid=objectid,
+                                            level=level,
+                                            iso=iso_parent,
+                                            iso_id=iso_id,
+                                            type=type,
+                                            engtype=engtype,
+                                            shape_leng=shape_leng,
+                                            shape_area=shape_area,
+                                            geom=geom,
+                                            region=region_obj,
+                                            parent=parent
+                                        )
+                                    )
+
+                                if adm_division and is_new_amdiv:
+                                    region_obj.administrative_divisions.add(adm_division)
+                            except:
+                                pass
+                        else:
+                            parent = region_obj
+                            (adm_division, is_new_amdiv) = \
+                                AdministrativeDivision.objects.get_or_create(
+                                    name=name_iso,
+                                    defaults=dict(
+                                        objectid=objectid,
+                                        level=level,
+                                        iso=iso_parent,
+                                        iso_id=iso_id,
+                                        name_eng=feat.get("NAME_ENGLI"),
+                                        name_fao=feat.get("NAME_FAO"),
+                                        name_local=feat.get("NAME_LOCAL"),
+                                        contains=feat.get("CONTAINS"),
+                                        sovereign=feat.get("SOVEREIGN"),
+                                        fips=feat.get("FIPS"),
+                                        unregion=feat.get("UNREGION1"),
+                                        ison=feat.get("ISON"),
+                                        valid_from=feat.get("VALIDFR"),
+                                        valid_to=feat.get("VALIDTO"),
+                                        population=Decimal(feat.get("POP2000")),
+                                        sqkm=Decimal(feat.get("SQKM")),
+                                        pop_sqkm=Decimal(feat.get("POPSQKM")),
+                                        shape_leng=shape_leng,
+                                        shape_area=shape_area,
+                                        geom=geom,
+                                        region=region_obj
+                                    )
+                                )
+
+                            if adm_division and is_new_amdiv:
+                                region_obj.administrative_divisions.add(adm_division)
+
+                        if parent:
+                            print(" %s ************* Region : %s - Parent: %s(%s) - Adm Unit : %s(%s) " % (counter,
+                                                                                                           region_name,
+                                                                                                           parent,
+                                                                                                           iso_parent,
+                                                                                                           name_iso,
+                                                                                                           iso_id))
+
                 counter = counter + 1
-            # (region_obj, is_new_region) = Region.objects.get_or_create(
-            #     name=region,
-            #     defaults=dict(
-            #         level=region_level
-            #     )
-            # )
-            #
-            # for feat in layer:
-            #     # Simplify the Geometry
-            #     geom = geos.fromstr(feat.geom.wkt, srid=4326)
-            #     if tolerance > 0:
-            #         geom = geom.simplify(tolerance, preserve_topology=True)
-            #
-            #     # Generalize to 'Multiploygon'
-            #     geom = geos.MultiPolygon(geom)
-            #
-            #     if adm_level == 0:
-            #         (adm_division, is_new_amdiv) = \
-            #             AdministrativeDivision.objects.get_or_create(
-            #                 code=feat.get('HRPcode'),
-            #                 defaults=dict(
-            #                     name=feat.get('HRname'),
-            #                     geom=geom.wkt,
-            #                     region=region_obj
-            #                 )
-            #             )
-            #
-            #         if not is_new_amdiv:
-            #             adm_division.name = feat.get('HRname')
-            #             adm_division.geom = geom.wkt
-            #             adm_division.region = region_obj
-            #             adm_division.save()
-            #         else:
-            #             region_obj.administrative_divisions.add(adm_division)
-            #
-            #     if adm_level == 1:
-            #         adm_division_0 = \
-            #             AdministrativeDivision.objects.get(
-            #                 code=feat.get('HRparent')[:-2])
-            #         (adm_division, is_new_amdiv) = \
-            #             AdministrativeDivision.objects.get_or_create(
-            #                 code=feat.get('HRpcode'),
-            #                 defaults=dict(
-            #                     name=feat.get('HRname'),
-            #                     geom=geom.wkt,
-            #                     region=region_obj,
-            #                     parent=adm_division_0
-            #                 )
-            #             )
-            #
-            #         if not is_new_amdiv:
-            #             adm_division.name = feat.get('HRname')
-            #             adm_division.geom = geom.wkt
-            #             adm_division.region = region_obj
-            #             adm_division.parent = adm_division_0
-            #             adm_division.save()
-            #         else:
-            #             region_obj.administrative_divisions.add(adm_division)
-            #
-            #     if adm_level == 2:
-            #         adm_division_1 = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
-            #         (adm_division, is_new_amdiv) = AdministrativeDivision.objects.get_or_create(
-            #             code=feat.get('HRpcode'),
-            #             defaults=dict(
-            #                 name=feat.get('HRname'),
-            #                 geom=geom.wkt,
-            #                 region=region_obj,
-            #                 parent=adm_division_1
-            #             )
-            #         )
-            #
-            #         if not is_new_amdiv:
-            #             adm_division.name = feat.get('HRname')
-            #             adm_division.geom = geom.wkt
-            #             adm_division.region = region_obj
-            #             adm_division.parent = adm_division_1
-            #             adm_division.save()
-            #         else:
-            #             region_obj.administrative_divisions.add(adm_division)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#
+#########################################################################
 #
 # Copyright (C) 2017 OSGeo
 #
@@ -16,21 +16,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-#
-
-from django.conf.urls import url, include
-from django.views.generic import TemplateView
-
-from geonode.urls import urlpatterns
-
-urlpatterns += [
-    # include your urls here
-
-]
-
-urlpatterns = [#'',
-               url(r'^$',
-                   TemplateView.as_view(
-                       template_name='site_index.html'),
-                   name='home'),
-               ] + urlpatterns
+#########################################################################
