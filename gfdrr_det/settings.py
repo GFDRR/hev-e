@@ -29,7 +29,7 @@ except ImportError:
 #
 # General Django development settings
 #
-DEBUG = True
+DEBUG = False
 
 PROJECT_NAME = 'gfdrr_det'
 
