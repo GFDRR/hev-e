@@ -1,0 +1,72 @@
+{
+    "proxyUrl": "/proxy/?url=",
+    "geoStoreUrl": "/rest/geostore",
+    "printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
+    "themePrefix": "dataexplorationtool",
+    "translationsPath": [
+        "/static/dataexplorationtool/translations",
+        "/static/dataexplorationtool/MapStore2/web/client/translations"
+    ],
+    "initialState": {
+        "defaultState": {
+            "maptype": {
+                "mapType": "openlayers"
+            }
+        }
+    },
+    "plugins": {
+        "dataexplorationtool": [
+            {
+                "name": "Map",
+                "cfg": {
+                    "mapType": "openlayers"
+                }
+            },
+            "BrandNavbar",
+            {
+                "name": "Search",
+                "cfg": {
+                    "containerPosition": "header",
+                    "withToggle": [
+                        "max-width: 768px",
+                        "min-width: 768px"
+                    ]
+                }
+            },
+            {
+                "name": "OmniBar",
+                "cfg": {
+                    "containerPosition": "header",
+                    "className": "navbar shadow navbar-home"
+                }
+            },
+            {
+                "name": "DataExplorer",
+                "cfg": {
+                    "containerPosition": "columns"
+                }
+            },
+            "Toolbar",
+            "Expander",
+            "Undo",
+            "Redo",
+            "ZoomAll",
+            {
+                "name": "ZoomIn",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": true
+                    }
+                }
+            },
+            {
+                "name": "ZoomOut",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": true
+                    }
+                }
+            }
+        ]
+    }
+}
