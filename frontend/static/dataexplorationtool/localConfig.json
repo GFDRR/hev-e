@@ -52,6 +52,14 @@
             "Redo",
             "ZoomAll",
             {
+                "name": "FullScreen",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": false
+                    }
+                }
+            },
+            {
                 "name": "ZoomIn",
                 "override": {
                     "Toolbar": {

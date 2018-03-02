@@ -8,22 +8,9 @@
 */
 
 const React = require('react');
-// const assign = require('object-assign');
-// const PropTypes = require('prop-types');
-// const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
-
 const CompactCatalog = require('../../MapStore2/web/client/components/catalog/CompactCatalog');
-/*const {selectedCatalogSelector} = require('../../MapStore2/web/client/selectors/catalog');
-const {connect} = require('react-redux');
-const {createSelector} = require('reselect');
-const {compose, branch} = require('recompose');
-const Catalog = compose(
-    branch(
-       ({catalog} = {}) => !catalog,
-       connect(createSelector(selectedCatalogSelector, catalog => ({catalog})))
-    ),
-)(CompactCatalog);*/
-
+const DataFilter = require('./DataFilter');
+const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 
 class DataCatalog extends React.Component {
     static propTypes = {
@@ -37,16 +24,43 @@ class DataCatalog extends React.Component {
     render() {
         return (
             <CompactCatalog
-            catalog= {{
-                "url": "/geoserver/csw",
-                "type": "csw",
-                "title": "Demo CSW Service",
-                "autoload": true
-              }}/>
+                filterForm={DataFilter}
+                onRecordSelected={() => {}}
+                getCustomItem={
+                    item => ({
+                        title: <span>{item.title}</span>,
+                        description: <span>{item.description}</span>,
+                        caption: <span>{item.caption}</span>,
+                        preview: <i className="fa fa-building fa-4x text-center"></i>,
+                        tools: <Toolbar
+                            btnDefaultProps={
+                                {
+                                    className: 'square-button-md',
+                                    bsStyle: 'primary'
+                                }
+                            }
+                            buttons={[
+                                {
+                                    glyph: 'info-sign',
+                                    onClick: () => {}
+                                },
+                                {
+                                    glyph: 'bulb-off'
+                                },
+                                {
+                                    glyph: 'plus'
+                                }
+                            ]}/>
+                    })
+                }
+                catalog= {{
+                    "url": "https://demo.geo-solutions.it/geoserver/csw",
+                    "type": "csw",
+                    "title": "Demo CSW Service",
+                    "autoload": true
+                }}/>
         );
     }
 }
-
-// <Catalog services={catalogServices} selected={selected} catalog={catalog} onRecordSelected={r => setSelected(r)} />
 
 module.exports = DataCatalog;

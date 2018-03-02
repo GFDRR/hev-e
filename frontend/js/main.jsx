@@ -15,12 +15,20 @@ module.exports = (config, pluginsDef) => {
     const startApp = () => {
         // const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
         // const {loadMaps} = require('../MapStore2/web/client/actions/maps');
+
+        // rxjs recompose config
         const {setObservableConfig} = require('recompose');
         const rxjsConfig = require('recompose/rxjsObservableConfig').default;
         setObservableConfig(rxjsConfig);
 
-        const { loadVersion } = require('../MapStore2/web/client/actions/version');
-        const { versionSelector } = require('../MapStore2/web/client/selectors/version');
+        // initialize font-awesome style
+        require('font-awesome/css/font-awesome.min.css');
+
+        // initialize openlayers style
+        require('openlayers/css/ol.css');
+
+        // const { loadVersion } = require('../MapStore2/web/client/actions/version');
+        // const { versionSelector } = require('../MapStore2/web/client/selectors/version');
         const { loadAfterThemeSelector } = require('../MapStore2/web/client/selectors/config');
         const StandardApp = require('../MapStore2/web/client/components/app/StandardApp');
 
@@ -29,7 +37,6 @@ module.exports = (config, pluginsDef) => {
         const StandardRouter = connect((state) => ({
             locale: state.locale || {},
             pages,
-            version: versionSelector(state),
             loadAfterTheme: loadAfterThemeSelector(state)
         }))(require('../MapStore2/web/client/components/app/StandardRouter'));
 
@@ -38,7 +45,10 @@ module.exports = (config, pluginsDef) => {
         const appStore = require('../MapStore2/web/client/stores/StandardStore').bind(null, initialState, {
             maptype: require('../MapStore2/web/client/reducers/maptype'),
             maps: require('../MapStore2/web/client/reducers/maps'),
-            catalog: require('../MapStore2/web/client/reducers/catalog')
+            catalog: require('../MapStore2/web/client/reducers/catalog'),
+            version: {
+                current: 'no-version'
+            }
         }, { ...appEpics, setSupportedLocales });
         /*
             ,
@@ -50,9 +60,9 @@ module.exports = (config, pluginsDef) => {
             // () => loadMaps(ConfigUtils.getDefaults().geoStoreUrl, ConfigUtils.getDefaults().initialMapFilter || "*"),
             // tmp only mock,
             () => setControlProperty('dataExplorer', 'enabled', true),
-            () => loadMapConfig('./base-map.json'),
+            () => loadMapConfig('/static/dataexplorationtool/base-map.json')
             // end tmp
-            loadVersion
+            // loadVersion
         ];
 
         LocaleUtils.setSupportedLocales({

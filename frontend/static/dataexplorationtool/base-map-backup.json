@@ -2,8 +2,8 @@
 	"map": {
 		"projection": "EPSG:900913",
 		"units": "m",
-		"center": {"x": 1250000.000000, "y": 5370000.000000, "crs": "EPSG:900913"},
-    "zoom":5,
+		"center": {"x": 0.000000, "y": 4000000.000000, "crs": "EPSG:900913"},
+    "zoom": 3,
 		"maxExtent": [
 			-20037508.34, -20037508.34,
 			20037508.34, 20037508.34
@@ -15,16 +15,8 @@
 				"name": "mapnik",
         "source": "osm",
 				"group": "background",
-        "visibility": true
-			},
-      {
-        "type": "google",
-        "title": "Google HYBRID",
-        "name": "HYBRID",
-        "source": "google",
-        "group": "background",
         "visibility": false
-      },
+			},
       {
         "type": "mapquest",
         "title": "MapQuest OSM",
@@ -35,12 +27,12 @@
       },
       {
         "type": "tileprovider",
-        "title": "NASAGIBS Night 2012",
-        "provider": "NASAGIBS.ViirsEarthAtNight2012",
-        "name": "Night2012",
-        "source": "nasagibs",
+        "title": "Staeman",
+        "provider": "Stamen.TonerBackground",
+        "name": "Staeman",
+        "source": "Staeman",
         "group": "background",
-        "visibility": false
+        "visibility": true
       },
       {
         "type": "tileprovider",
