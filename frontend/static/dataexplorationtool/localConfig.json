@@ -7,7 +7,6 @@
         "/static/dataexplorationtool/translations",
         "/static/dataexplorationtool/MapStore2/web/client/translations"
     ],
-    "X-CSRFTokenUrls": ["/proxy"],
     "initialState": {
         "defaultState": {
             "maptype": {
