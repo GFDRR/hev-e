@@ -27,7 +27,7 @@ return Rx.Observable.of(addLayer({
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
-            return Rx.Observable.fromPromise(axios.get('/dataexplorationtool/data_extraction/features.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/features.json').then(response => response.data))
             .switchMap(data => {
                 return Rx.Observable.of(addLayer(
                     {
