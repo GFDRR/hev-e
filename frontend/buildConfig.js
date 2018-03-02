@@ -47,7 +47,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         new NormalModuleReplacementPlugin(/leaflet$/, path.join(paths.framework, "libs", "leaflet")),
         // new NormalModuleReplacementPlugin(/openlayers$/, path.join(paths.framework, "libs", "openlayers")),
         new NormalModuleReplacementPlugin(/CompactCatalog.jsx/, path.join(__dirname, "js", "ms2override", "components", "CompactCatalog.jsx")),
-        new NormalModuleReplacementPlugin(/map\/openlayers\/Feature/, path.join(__dirname, "js", "ms2override", "components", "OlFeature.jsx")),
+        new NormalModuleReplacementPlugin(/map\/openlayers\/Map/, path.join(__dirname, "js", "ms2override", "components", "OlMap.jsx")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin

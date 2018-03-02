@@ -12,7 +12,6 @@ module.exports = (config, pluginsDef) => {
     const { connect } = require('react-redux');
     const LocaleUtils = require('../MapStore2/web/client/utils/LocaleUtils');
     const axios = require('../MapStore2/web/client/libs/ajax');
-    const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
 
     // Add X-CSRFToken to genode requests
     axios.interceptors.request.use(function(cfg) {
@@ -70,7 +69,7 @@ module.exports = (config, pluginsDef) => {
         const initialActions = [
             // () => loadMaps(ConfigUtils.getDefaults().geoStoreUrl, ConfigUtils.getDefaults().initialMapFilter || "*"),
             // tmp only mock,
-            () => setControlProperty('dataExplorer', 'enabled', true),
+            () => setControlProperty('dataExplorer', 'enabled', false),
             () => loadMapConfig('/static/dataexplorationtool/base-map.json')
             // end tmp
             // loadVersion
