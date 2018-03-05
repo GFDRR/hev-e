@@ -14,7 +14,7 @@ source ~/Envs/gfdrr-det/bin/activate
 
 pushd $(dirname $0)/../
 
-DJANGO_SETTINGS_MODULE=gfdrr_det.settings.development paver update
+DJANGO_SETTINGS_MODULE=gfdrr_det.gfdrr_det_settings paver update
 
 touch gfdrr_det/wsgi.py
 

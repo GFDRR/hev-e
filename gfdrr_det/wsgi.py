@@ -26,7 +26,7 @@ framework.
 """
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gfdrr_det.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gfdrr_det.gfdrr_det_settings")
 
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION

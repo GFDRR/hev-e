@@ -9,5 +9,4 @@
 #
 #########################################################################
 
-import os
-from settings.development import *
+from gfdrr_det.settings.development import *
