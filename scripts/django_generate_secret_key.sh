@@ -1,3 +1,4 @@
+#!/bin/bash
 # -*- coding: utf-8 -*-
 #########################################################################
 #
@@ -8,3 +9,5 @@
 # LICENSE file in the root directory of this source tree.
 #
 #########################################################################
+
+echo `python -c "import random,string;print(''.join([random.SystemRandom().choice(\"{}{}{}\".format(string.ascii_letters, string.digits, string.punctuation)) for i in range(63)]).replace('\\'','\\'\"\\'\"\\''))"`

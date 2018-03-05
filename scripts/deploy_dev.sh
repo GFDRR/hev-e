@@ -1,3 +1,4 @@
+#!/bin/bash
 # -*- coding: utf-8 -*-
 #########################################################################
 #
@@ -8,3 +9,13 @@
 # LICENSE file in the root directory of this source tree.
 #
 #########################################################################
+
+source ~/Envs/gfdrr-det/bin/activate
+
+pushd $(dirname $0)/../
+
+DJANGO_SETTINGS_MODULE=gfdrr_det.settings.development paver update
+
+touch gfdrr_det/wsgi.py
+
+exit 0

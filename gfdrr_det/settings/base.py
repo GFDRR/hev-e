@@ -1,22 +1,13 @@
 # -*- coding: utf-8 -*-
+#########################################################################
 #
+# Copyright 2018, GeoSolutions Sas.
+# All rights reserved.
 #
-# Copyright (C) 2017 OSGeo
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-#
-#
+#########################################################################
 
 # Django settings for the GeoNode project.
 import os
@@ -37,9 +28,12 @@ SITENAME = 'gfdrr_det'
 
 FRONTEND_APP_NAME = 'dataexplorationtool'
 
-# Defines the directory that contains the settings file as the LOCAL_ROOT
+# Defines the directory that contains the settings file as the PROJECT_ROOT
 # It is used for relative settings elsewhere.
-LOCAL_ROOT = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+
+MEDIA_ROOT = '%s/uploaded/' % PROJECT_ROOT
+STATIC_ROOT = '%s/static_root' % PROJECT_ROOT
 
 WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 
@@ -68,23 +62,23 @@ INSTALLED_APPS += ('geonode', PROJECT_NAME,)
 # Location of url mappings
 ROOT_URLCONF = os.getenv('ROOT_URLCONF', '{}.urls'.format(PROJECT_NAME))
 
-# MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(LOCAL_ROOT, "uploaded"))
+# MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(PROJECT_ROOT, "uploaded"))
 
 # STATIC_ROOT = os.getenv('STATIC_ROOT',
-#                        os.path.join(LOCAL_ROOT, "static_root")
+#                        os.path.join(PROJECT_ROOT, "static_root")
 #                        )
 
 # Additional directories which hold static files
 STATICFILES_DIRS.append(
-    os.path.join(LOCAL_ROOT, "static"),
+    os.path.join(PROJECT_ROOT, "static"),
 )
 
 # Location of locale files
 LOCALE_PATHS = (
-    os.path.join(LOCAL_ROOT, 'locale'),
+    os.path.join(PROJECT_ROOT, 'locale'),
 ) + LOCALE_PATHS
 
-TEMPLATES[0]['DIRS'].insert(0, os.path.join(LOCAL_ROOT, "templates"))
+TEMPLATES[0]['DIRS'].insert(0, os.path.join(PROJECT_ROOT, "templates"))
 loaders = TEMPLATES[0]['OPTIONS'].get(
     'loaders') or ['django.template.loaders.filesystem.Loader',
                    'django.template.loaders.app_directories.Loader']
@@ -92,16 +86,48 @@ loaders = TEMPLATES[0]['OPTIONS'].get(
 TEMPLATES[0]['OPTIONS']['loaders'] = loaders
 TEMPLATES[0].pop('APP_DIRS', None)
 
-CLIENT_RESULTS_LIMIT = 20
-API_LIMIT_PER_PAGE = 1000
-FREETEXT_KEYWORDS_READONLY = False
-RESOURCE_PUBLISHING = False
-ADMIN_MODERATE_UPLOADS = False
-GROUP_PRIVATE_RESOURCES = False
-GROUP_MANDATORY_RESOURCES = True
-MODIFY_TOPICCATEGORY = True
-USER_MESSAGES_ALLOW_MULTIPLE_RECIPIENTS = True
-DISPLAY_WMS_LINKS = True
+# ######################################################################################
+
+# WARNING: Map Editing is affected by this. GeoExt Configuration is cached for 5 minutes
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': '/var/tmp/django_cache',
+#     }
+# }
+
+UPLOADER = {
+    'BACKEND': 'geonode.rest',
+    # 'BACKEND': 'geonode.importer',
+    'OPTIONS': {
+        'TIME_ENABLED': False,
+        'MOSAIC_ENABLED': False,
+        'GEOGIG_ENABLED': False,
+    },
+    'SUPPORTED_CRS': [
+        'EPSG:4326',
+        'EPSG:3785',
+        'EPSG:3857',
+        'EPSG:900913',
+        'EPSG:32647',
+        'EPSG:32736'
+    ],
+    'SUPPORTED_EXT': [
+        '.shp',
+        '.csv',
+        '.kml',
+        '.kmz',
+        '.json',
+        '.geojson',
+        '.tif',
+        '.tiff',
+        '.geotiff',
+        '.gml',
+        '.xml'
+    ]
+}
+
+# ############################################################################# Account settings
 
 # prevent signing up by default
 ACCOUNT_OPEN_SIGNUP = True
@@ -169,56 +195,15 @@ SOCIALACCOUNT_PROFILE_EXTRACTORS = {
     "linkedin_oauth2": "geonode.people.profileextractors.LinkedInExtractor",
 }
 
+# ############################################################################# GID Client settings
+
 # MAPs and Backgrounds
 
-# Default preview library
-LAYER_PREVIEW_LIBRARY = 'geoext'
-
-# LAYER_PREVIEW_LIBRARY = 'leaflet'
-LEAFLET_CONFIG = {
-    'TILES': [
-        # Find tiles at:
-        # http://leaflet-extras.github.io/leaflet-providers/preview/
-
-        # Map Quest
-        ('Map Quest',
-         'http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
-         'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> '
-         '&mdash; Map data &copy; '
-         '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'),
-        # Stamen toner lite.
-        # ('Watercolor',
-        #  'http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png',
-        #  'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
-        #  <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
-        #  <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
-        #  <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
-        # ('Toner Lite',
-        #  'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-        #  'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
-        #  <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
-        #  <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
-        #  <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
-    ],
-    'PLUGINS': {
-        'esri-leaflet': {
-            'js': 'lib/js/esri-leaflet.js',
-            'auto-include': True,
-        },
-        'leaflet-fullscreen': {
-            'css': 'lib/css/leaflet.fullscreen.css',
-            'js': 'lib/js/Leaflet.fullscreen.min.js',
-            'auto-include': True,
-        },
-    },
-    'SRID': 3857,
-    'RESET_VIEW': False
-}
-
+# GeoNode javascript client configuration
 
 # default map projection
 # Note: If set to EPSG:4326, then only EPSG:4326 basemaps will work.
-DEFAULT_MAP_CRS = "EPSG:3857"
+DEFAULT_MAP_CRS = "EPSG:900913"
 
 # Where should newly created maps be focused?
 DEFAULT_MAP_CENTER = (0, 0)
@@ -227,6 +212,65 @@ DEFAULT_MAP_CENTER = (0, 0)
 # 0 = entire world;
 # maximum zoom is between 12 and 15 (for Google Maps, coverage varies by area)
 DEFAULT_MAP_ZOOM = 0
+
+# Default preview library
+# GEONODE_CLIENT_LAYER_PREVIEW_LIBRARY = 'geoext'  # DEPRECATED use
+# HOOKSET instead
+GEONODE_CLIENT_HOOKSET = "geonode.client.hooksets.GeoExtHookSet"
+
+# To enable the REACT based Client enable those
+# INSTALLED_APPS += ('geonode-client', )
+# GEONODE_CLIENT_LAYER_PREVIEW_LIBRARY = 'react'  # DEPRECATED use HOOKSET instead
+# GEONODE_CLIENT_HOOKSET = "geonode.client.hooksets.ReactHookSet"
+
+# To enable the Leaflet based Client enable those
+# GEONODE_CLIENT_LAYER_PREVIEW_LIBRARY = 'leaflet'  # DEPRECATED use HOOKSET instead
+# GEONODE_CLIENT_HOOKSET = "geonode.client.hooksets.LeafletHookSet"
+
+# To enable the MapStore2 based Client enable those
+# INSTALLED_APPS += ('geonode_mapstore_client', )
+# GEONODE_CLIENT_LAYER_PREVIEW_LIBRARY = 'mapstore'  # DEPRECATED use HOOKSET instead
+# GEONODE_CLIENT_HOOKSET = "geonode_mapstore_client.hooksets.MapStoreHookSet"
+
+# LEAFLET_CONFIG = {
+#    'TILES': [
+# Find tiles at:
+# http://leaflet-extras.github.io/leaflet-providers/preview/
+#
+# Map Quest
+#        ('Map Quest',
+#         'http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
+#         'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> '
+#         '&mdash; Map data &copy; '
+#         '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'),
+# Stamen toner lite.
+# ('Watercolor',
+# 'http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png',
+# 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
+# <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
+# <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
+# <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
+# ('Toner Lite',
+# 'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+# 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
+# <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
+# <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
+# <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
+#    ],
+#    'PLUGINS': {
+#        'esri-leaflet': {
+#            'js': 'lib/js/esri-leaflet.js',
+#            'auto-include': True,
+#        },
+#        'leaflet-fullscreen': {
+#            'css': 'lib/css/leaflet.fullscreen.css',
+#            'js': 'lib/js/Leaflet.fullscreen.min.js',
+#            'auto-include': True,
+#        },
+#    },
+#    'SRID': 3857,
+#    'RESET_VIEW': False
+#}
 
 ALT_OSM_BASEMAPS = os.environ.get('ALT_OSM_BASEMAPS', False)
 CARTODB_BASEMAPS = os.environ.get('CARTODB_BASEMAPS', False)
@@ -316,17 +360,7 @@ MAP_BASELAYERS = [{
     "group": "background"
 }]
 
-if 'geonode.geoserver' in INSTALLED_APPS:
-    LOCAL_GEOSERVER = {
-        "source": {
-            "ptype": "gxp_wmscsource",
-            "url": OGC_SERVER['default']['PUBLIC_LOCATION'] + "wms",
-            "restUrl": "/gs/rest"
-        }
-    }
-    baselayers = MAP_BASELAYERS
-    MAP_BASELAYERS = [LOCAL_GEOSERVER]
-    MAP_BASELAYERS.extend(baselayers)
+# ############################################################################# Additional settings
 
 # notification settings
 NOTIFICATION_ENABLED = True
@@ -345,22 +379,102 @@ PINAX_NOTIFICATIONS_LOCK_WAIT_TIMEOUT = -1
 # or notification
 NOTIFICATIONS_MODULE = 'pinax.notifications'
 
+# Use kombu broker by default
+# REDIS_URL = 'redis://localhost:6379/1'
+# BROKER_URL = REDIS_URL
+# CELERY_RESULT_BACKEND = REDIS_URL
+CELERYD_HIJACK_ROOT_LOGGER = True
+CELERYD_CONCURENCY = 1
+# Set this to False to run real async tasks
+CELERY_ALWAYS_EAGER = True
+CELERYD_LOG_FILE = None
+CELERY_REDIRECT_STDOUTS = True
+CELERYD_LOG_LEVEL = 1
+
+# Haystack Search Backend Configuration. To enable,
+# first install the following:
+# - pip install django-haystack
+# - pip install elasticsearch==2.4.0
+# - pip install woosh
+# - pip install pyelasticsearch
+# Set HAYSTACK_SEARCH to True
+# Run "python manage.py rebuild_index"
+# HAYSTACK_SEARCH = False
+# Avoid permissions prefiltering
+SKIP_PERMS_FILTER = False
+# Update facet counts from Haystack
+HAYSTACK_FACET_COUNTS = True
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE':
+            'haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine',
+        'URL': 'http://127.0.0.1:9200/',
+        'INDEX_NAME': 'haystack',
+    },
+    #    'db': {
+    #        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
+    #        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
+    #        }
+}
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+# HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
+
 CORS_ORIGIN_ALLOW_ALL = True
 
 MONITORING_ENABLED = False
+
 # add following lines to your local settings to enable monitoring
 if MONITORING_ENABLED:
-    INSTALLED_APPS += ('geonode.contrib.monitoring',)
-    MIDDLEWARE_CLASSES += (
-        'geonode.contrib.monitoring.middleware.MonitoringMiddleware',)
+    if 'geonode.contrib.monitoring' not in INSTALLED_APPS:
+        INSTALLED_APPS += ('geonode.contrib.monitoring',)
+    if 'geonode.contrib.monitoring.middleware.MonitoringMiddleware' not in MIDDLEWARE_CLASSES:
+        MIDDLEWARE_CLASSES += \
+            ('geonode.contrib.monitoring.middleware.MonitoringMiddleware',)
     MONITORING_CONFIG = None
-    MONITORING_HOST_NAME = 'localhost'
     MONITORING_SERVICE_NAME = 'local-geonode'
-    MONITORING_HOST_NAME = SITE_HOST_NAME
+    MONITORING_HOST_NAME = 'localhost'
 
-INSTALLED_APPS += ('geonode.contrib.ows_api',)
+    INSTALLED_APPS += ('geonode.contrib.ows_api',)
 
-GEOIP_PATH = os.path.join(os.path.dirname(__file__), '..', 'GeoLiteCity.dat')
+CORS_ORIGIN_ALLOW_ALL = True
+
+GEOIP_PATH = "/usr/local/share/GeoIP"
+
+# Define email service on GeoNode
+EMAIL_ENABLE = False
+
+if EMAIL_ENABLE:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'localhost'
+    EMAIL_PORT = 25
+    EMAIL_HOST_USER = ''
+    EMAIL_HOST_PASSWORD = ''
+    EMAIL_USE_TLS = False
+    DEFAULT_FROM_EMAIL = 'Example.com <no-reply@localhost>'
+
+# Documents Thumbnails
+UNOCONV_ENABLE = True
+
+if UNOCONV_ENABLE:
+    UNOCONV_EXECUTABLE = os.getenv('UNOCONV_EXECUTABLE', '/usr/bin/unoconv')
+    UNOCONV_TIMEOUT = os.getenv('UNOCONV_TIMEOUT', 30)  # seconds
+
+# Advanced Security Workflow Settings
+CLIENT_RESULTS_LIMIT = 20
+API_LIMIT_PER_PAGE = 1000
+FREETEXT_KEYWORDS_READONLY = False
+RESOURCE_PUBLISHING = False
+ADMIN_MODERATE_UPLOADS = False
+GROUP_PRIVATE_RESOURCES = False
+GROUP_MANDATORY_RESOURCES = False
+MODIFY_TOPICCATEGORY = True
+USER_MESSAGES_ALLOW_MULTIPLE_RECIPIENTS = True
+DISPLAY_WMS_LINKS = True
+
+# For more information on available settings please consult the Django docs at
+# https://docs.djangoproject.com/en/dev/ref/settings
+
+# ############################################################################# Logging settings
 
 LOGGING = {
     'version': 1,
@@ -402,6 +516,6 @@ LOGGING = {
         "pycsw": {
             "handlers": ["console"], "level": "INFO", },
         "gfdrr_det": {
-            "handlers": ["console"], "level": "DEBUG", },
+            "handlers": ["console"], "level": "INFO", },
     },
 }
