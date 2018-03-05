@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-	   'Django==1.9.13',
+       'Django==1.9.13',
        'django-filter==1.1.0',
        'django-cuser==2017.3.16',
        'django-apptemplates==1.4',

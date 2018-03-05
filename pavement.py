@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#
+#########################################################################
 #
 # Copyright (C) 2018 OSGeo
 #
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-#
+#########################################################################
 
 import fileinput
 import glob
@@ -83,7 +83,7 @@ def grab(src, dest, name):
 def setup_geoserver(options):
     """Prepare a testing instance of GeoServer."""
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS:
+    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
 
     download_dir = path('downloaded')
@@ -128,7 +128,7 @@ def setup_geoserver(options):
 def setup_qgis_server(options):
     """Prepare a testing instance of QGIS Server."""
     # only start if using QGIS Server backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS:
+    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
 
     # QGIS Server testing instance run on top of docker
@@ -465,7 +465,7 @@ def stop_geoserver():
     Stop GeoServer
     """
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS:
+    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
     kill('java', 'geoserver')
 
@@ -502,7 +502,7 @@ def stop_qgis_server():
     Stop QGIS Server Backend.
     """
     # only start if using QGIS Server backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS:
+    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
     port = options.get('qgis_server_port', '9000')
 
@@ -565,7 +565,7 @@ def start_geoserver(options):
     Start GeoServer with GeoNode extensions
     """
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS:
+    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
 
     GEOSERVER_BASE_URL = OGC_SERVER['default']['LOCATION']
@@ -678,7 +678,7 @@ def start_geoserver(options):
 def start_qgis_server():
     """Start QGIS Server instance with GeoNode related plugins."""
     # only start if using QGIS Serrver backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS:
+    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
     info('Starting up QGIS Server...')
 

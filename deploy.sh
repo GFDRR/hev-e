@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ~/.virtualenvs/det-dev/bin/activate
+source ~/Envs/gfdrr-det/bin/activate
 
 pushd $(dirname $0)
 
