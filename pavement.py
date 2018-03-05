@@ -28,10 +28,7 @@ from paver.easy import (BuildFailure, call_task, cmdopts, info, needs, options,
                         path, sh, task)
 from setuptools.command import easy_install
 
-try:
-    from gfdrr_det.gfdrr_det_settings import *
-except:
-    from gfdrr_det.settings import *
+from django.conf import settings
 
 try:
     from paver.path import pushd
@@ -74,7 +71,7 @@ def grab(src, dest, name):
 def setup_geoserver(options):
     """Prepare a testing instance of GeoServer."""
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
+    if 'geonode.geoserver' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
 
     download_dir = path('downloaded')
@@ -119,7 +116,7 @@ def setup_geoserver(options):
 def setup_qgis_server(options):
     """Prepare a testing instance of QGIS Server."""
     # only start if using QGIS Server backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
+    if 'geonode.qgis_server' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
 
     # QGIS Server testing instance run on top of docker
@@ -456,7 +453,7 @@ def stop_geoserver():
     Stop GeoServer
     """
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
+    if 'geonode.geoserver' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
     kill('java', 'geoserver')
 
@@ -493,7 +490,7 @@ def stop_qgis_server():
     Stop QGIS Server Backend.
     """
     # only start if using QGIS Server backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
+    if 'geonode.qgis_server' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
     port = options.get('qgis_server_port', '9000')
 
@@ -556,10 +553,10 @@ def start_geoserver(options):
     Start GeoServer with GeoNode extensions
     """
     # only start if using Geoserver backend
-    if 'geonode.geoserver' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
+    if 'geonode.geoserver' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.qgis_server':
         return
 
-    GEOSERVER_BASE_URL = OGC_SERVER['default']['LOCATION']
+    GEOSERVER_BASE_URL = settings.OGC_SERVER['default']['LOCATION']
     url = GEOSERVER_BASE_URL
 
     if urlparse(GEOSERVER_BASE_URL).hostname != 'localhost':
@@ -576,7 +573,10 @@ def start_geoserver(options):
     geofence_dir = path('geoserver/data/geofence').abspath()
     web_app = path('geoserver/geoserver').abspath()
     log_file = path('geoserver/jetty.log').abspath()
-    config = path('scripts/misc/jetty-runner.xml').abspath()
+    config = os.getenv(
+        "GFDRR_DET_GEOSERVER_JETTY_RUNNER_PATH",
+        path('scripts/misc/jetty-runner.xml').abspath()
+    )
     jetty_port = urlparse(GEOSERVER_BASE_URL).port
 
     import socket
@@ -669,7 +669,7 @@ def start_geoserver(options):
 def start_qgis_server():
     """Start QGIS Server instance with GeoNode related plugins."""
     # only start if using QGIS Serrver backend
-    if 'geonode.qgis_server' not in INSTALLED_APPS or OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
+    if 'geonode.qgis_server' not in settings.INSTALLED_APPS or settings.OGC_SERVER['default']['BACKEND'] == 'geonode.geoserver':
         return
     info('Starting up QGIS Server...')
 
@@ -690,7 +690,7 @@ def test(options):
     Run GeoNode's Unit Test Suite
     """
     sh("%s manage.py test %s.tests --noinput" % (options.get('prefix'),
-                                                 '.tests '.join(GEONODE_APPS)))
+                                                 '.tests '.join(settings.GEONODE_APPS)))
 
 
 @task
@@ -810,7 +810,7 @@ def run_tests(options):
     call_task('test_integration', options={'name': 'geonode.tests.csw'})
 
     # only start if using Geoserver backend
-    if 'geonode.geoserver' in INSTALLED_APPS:
+    if 'geonode.geoserver' in settings.INSTALLED_APPS:
         call_task('test_integration',
                   options={'name': 'geonode.upload.tests.integration',
                            'settings': 'geonode.upload.tests.test_settings'})
@@ -830,13 +830,13 @@ def reset():
 
 def _reset():
     sh("rm -rf {path}".format(
-        path=os.path.join(PROJECT_ROOT, 'development.db')
+        path=os.path.join(settings.PROJECT_ROOT, 'development.db')
     )
     )
     sh("rm -rf {project_name}/development.db".format(
-        project_name=PROJECT_NAME))
+        project_name=settings.PROJECT_NAME))
     sh("rm -rf {project_name}/uploaded/*".format(
-        project_name=PROJECT_NAME))
+        project_name=settings.PROJECT_NAME))
     _install_data_dir()
 
 
@@ -1097,20 +1097,20 @@ def build_static(options):
         sh('npm install')
         sh('npm run compile')
     sh('mkdir -p {project_name}/static/{frontend_app_name}/'.format(
-        project_name=PROJECT_NAME,
-        frontend_app_name=FRONTEND_APP_NAME))
+        project_name=settings.PROJECT_NAME,
+        frontend_app_name=settings.FRONTEND_APP_NAME))
     sh('cp -vr frontend/dist/* {project_name}/static/{frontend_app_name}/'.format(
-        project_name=PROJECT_NAME,
-        frontend_app_name=FRONTEND_APP_NAME))
+        project_name=settings.PROJECT_NAME,
+        frontend_app_name=settings.FRONTEND_APP_NAME))
     sh('cp -vr frontend/static/{frontend_app_name}/* {project_name}/static/{frontend_app_name}/'.format(
-        project_name=PROJECT_NAME,
-        frontend_app_name=FRONTEND_APP_NAME))
+        project_name=settings.PROJECT_NAME,
+        frontend_app_name=settings.FRONTEND_APP_NAME))
     sh('mkdir -p {project_name}/static/{frontend_app_name}/MapStore2/web/client/translations/'.format(
-        project_name=PROJECT_NAME,
-        frontend_app_name=FRONTEND_APP_NAME))
+        project_name=settings.PROJECT_NAME,
+        frontend_app_name=settings.FRONTEND_APP_NAME))
     sh('cp -vr frontend/MapStore2/web/client/translations/* {project_name}/static/{frontend_app_name}/MapStore2/web/client/translations/'.format(
-        project_name=PROJECT_NAME,
-        frontend_app_name=FRONTEND_APP_NAME))
+        project_name=settings.PROJECT_NAME,
+        frontend_app_name=settings.FRONTEND_APP_NAME))
     sh('python manage.py collectstatic --noinput')
 
 
