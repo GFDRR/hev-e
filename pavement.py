@@ -29,7 +29,7 @@ from paver.easy import (BuildFailure, call_task, cmdopts, info, needs, options,
 from setuptools.command import easy_install
 
 try:
-    from gfdrr_det.local_settings import *
+    from gfdrr_det.gfdrr_det_settings import *
 except:
     from gfdrr_det.settings import *
 
