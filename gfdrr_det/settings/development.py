@@ -12,6 +12,8 @@
 import os
 from .base import *
 
+DEBUG = True
+
 # SECRET_KEY = '************************'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = os.getenv('SECRET_KEY', "A1s#&-xbI;DX\]8juO@5BX'''3Q]4Js)2wcYHOiHb.'''1-dU'''IO~PU$IrA,Be;H>")
