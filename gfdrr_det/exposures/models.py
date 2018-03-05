@@ -9,6 +9,33 @@
 #
 #########################################################################
 
+"""
+Sample usage
+------------
+
+    from gfdrr_det.exposures.models import search_full_assets, search_exposures, search_assets
+
+    assets = search_full_assets([65])
+
+    for item in assets:
+        print(item.asset_ref)
+
+    args = {'srid': 4326, 'geom_name': 'full_geom', 'bbox': [-180, -90, 180, 90]}
+    args = {'srid': 4326, 'geom_name': 'full_geom', 'bbox': [38, -7, 40, -5]}
+    args = {'srid': 4326, 'geom_name': 'full_geom', 'bbox': [39.1974425, -6.1673895, 39.1974781, -6.1674177]}
+
+    assets = search_full_assets([65], args=args)
+    assets = search_full_assets([65], page_size=2, args=args)
+
+    for item in assets:
+        print(item.asset_ref, item.full_geom)
+
+    exposures = search_exposures()
+    for item in exposures:
+        print(item)
+
+"""
+
 from collections import namedtuple
 
 from django.db import connections
