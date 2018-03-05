@@ -10,7 +10,7 @@
 #
 #########################################################################
 
-source ~/Envs/gfdrr-det/bin/activate
+source ~/.virtualenvs/det-dev/bin/activate
 
 pushd $(dirname $0)/../
 

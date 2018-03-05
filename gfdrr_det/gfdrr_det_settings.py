@@ -9,4 +9,4 @@
 #
 #########################################################################
 
-from gfdrr_det.settings.development import *
+from gfdrr_det.settings.staging import *

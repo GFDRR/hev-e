@@ -10,14 +10,13 @@
 #
 #########################################################################
 
-source ~/Envs/gfdrr-det/bin/activate
+source ~/.virtualenvs/det-dev/bin/activate
 
 pushd $(dirname $0)/../
 
-# sudo wget http://build.geonode.org/geoserver/latest/geoserver-2.12.x.war
-sudo service tomcat8 stop
-sudo rm -Rf /var/lib/tomcat8/webapps/geoserver*
-sudo mv geoserver-2.12.x.war /var/lib/tomcat8/webapps/geoserver.war
-sudo service tomcat8 restart
+sudo wget http://build.geonode.org/geoserver/latest/geoserver-2.12.x.war -O downloaded/geoserver-2.12.x.war
+sudo rm -Rf geoserver/geoserver
+unzip downloaded/geoserver-2.12.x.war -d geoserver/geoserver
+sudo service supervisor restart
 
 exit 0
