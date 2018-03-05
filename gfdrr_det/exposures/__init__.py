@@ -9,12 +9,14 @@
 #
 #########################################################################
 
-from gfdrr_det.settings.development import *
-
-# Enabling Ged4All Exposures
-GFDRR_DET_EXPOSURES_ENABLED = True
-
-if GFDRR_DET_EXPOSURES_ENABLED:
-    from . import exposures
-    INSTALLED_APPS += ('gfdrr_det.exposures',)
-    DATABASES.update(exposures.DATABASES)
+DATABASES = {
+    'exposures': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'ged4all',
+        'USER': 'geonode',
+        'PASSWORD': 'geonode',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'CONN_TOUT': 900,
+    }
+}
