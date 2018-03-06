@@ -14,14 +14,27 @@ from .base import *
 
 # SECRET_KEY = '************************'
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = os.getenv('SECRET_KEY', "595c7a653aadabe5e14b248ab1e0e2b40c2891ea867272c4fb1fd8c769cfae3e")
+SECRET_KEY = get_environment_variable("DJANGO_SECRET_KEY")
 
 # per-deployment settings should go here
-SITE_HOST_NAME = os.getenv('SITE_HOST_NAME', "det-dev.geo-solutions.it")
-SITE_HOST_PORT = os.getenv('SITE_HOST_PORT', "80")
-SITEURL = os.getenv(
-    'SITEURL', "http://%s:%s/" %
-     (SITE_HOST_NAME, SITE_HOST_PORT))
+SITE_HOST_NAME = get_environment_variable('SITE_HOST_NAME', default_value="det-dev.geo-solutions.it")
+SITE_HOST_PORT = get_environment_variable('SITE_HOST_PORT', default_value="80")
+SITEURL = get_environment_variable('SITEURL',
+                                   default_value="http://%s:%s/" % (SITE_HOST_NAME, SITE_HOST_PORT))
+
+EMAIL_ENABLE = True
+
+if EMAIL_ENABLE:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = get_environment_variable("DJANGO_EMAIL_HOST",
+        default_value="smtp.geo-solutions.it")
+    EMAIL_PORT = get_environment_variable("DJANGO_EMAIL_PORT",
+        default_value=587)
+    EMAIL_HOST_USER = get_environment_variable("DJANGO_EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = get_environment_variable(
+        "DJANGO_EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = 'gfdrr-det <no-reply@%s>' % SITE_HOST_NAME
 
 #
 # General Django development settings
@@ -29,22 +42,22 @@ SITEURL = os.getenv(
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'det_geonode_dev',
-         'USER': 'det',
-         'PASSWORD': 'GAIyiovQOe97rHk0',
-         'HOST': 'localhost',
-         'PORT': '5432',
-         'CONN_TOUT': 900,
+        'NAME': get_environment_variable("GFDRR_DET_DB_NAME", defaulr="gfdrr_det"),
+        'USER': get_environment_variable("GFDRR_DET_DB_USER", defaulr='geonode'),
+        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", defaulr='geonode'),
+        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", defaulr='localhost'),
+        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", defaulr='5432'),
+        'CONN_TOUT': 900,
     },
     # vector datastore for uploads
     'datastore': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'ENGINE': '',  # Empty ENGINE name disables
-        'NAME': 'det_geonode_data_dev',
-        'USER' : 'det',
-        'PASSWORD' : 'GAIyiovQOe97rHk0',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        # 'ENGINE': '',  # Empty ENGINE name disables
+        'NAME': get_environment_variable("GFDRR_DET_DB_DATA_NAME", defaulr="gfdrr_det_data"),
+        'USER': get_environment_variable("GFDRR_DET_DB_USER", defaulr='geonode'),
+        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", defaulr='geonode'),
+        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", defaulr='localhost'),
+        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", defaulr='5432'),
         'CONN_TOUT': 900,
     }
 }
@@ -58,7 +71,7 @@ GEOSERVER_PUBLIC_HOST = os.getenv(
 )
 
 GEOSERVER_PUBLIC_PORT = os.getenv(
-    'GEOSERVER_PUBLIC_PORT', 8080
+    'GEOSERVER_PUBLIC_PORT', SITE_HOST_PORT
 )
 
 GEOSERVER_PUBLIC_LOCATION = os.getenv(

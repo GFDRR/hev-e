@@ -63,7 +63,7 @@ WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 ALLOWED_HOSTS = get_list_env_value(
     get_environment_variable(
         "ALLOWED_HOSTS",
-        default_value="localhost:django:det-dev.geo-solutions.it"
+        default_value="localhost:django"
     ),
 )
 
