@@ -67,7 +67,7 @@ ALLOWED_HOSTS = get_list_env_value(
     ),
 )
 
-PROXY_ALLOWED_HOSTS += get_list_env_value(
+PROXY_ALLOWED_HOSTS = get_list_env_value(
     get_environment_variable(
         "PROXY_ALLOWED_HOSTS",
         default_value="localhost:django:nominatim.openstreetmap.org"
