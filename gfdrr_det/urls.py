@@ -24,11 +24,11 @@ router.register(r"region", views.RegionViewSet)
 API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
 
 
-urlpatterns += [
+urlpatterns = [
     url(
         r'^$',
         TemplateView.as_view(template_name='site_index.html'),
         name='home'
     ),
     url(API_PREFIX, include(router.urls)),
-]
+] + urlpatterns
