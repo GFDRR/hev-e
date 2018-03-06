@@ -73,6 +73,10 @@ src/
 
 package-lock.json
 */static/dataexplorationtool/
+
+# GeoIP stuff
+GeoLiteCity.dat
+
 /node_modules/.bin/acorn
 /node_modules/.bin/closure-util
 /node_modules/.bin/decompress-zip

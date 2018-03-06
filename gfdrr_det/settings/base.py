@@ -11,11 +11,34 @@
 
 # Django settings for the GeoNode project.
 import os
+
+from django.core.exceptions import ImproperlyConfigured
+
 # Load more settings from a file called local_settings.py if it exists
 try:
     from geonode.local_settings import *
 except ImportError:
     from geonode.settings import *
+
+
+def get_environment_variable(var_name, default_value=None):
+    value = os.getenv(var_name)
+    if value is None:
+        if default_value is None:
+            error_msg = "Set the {0} environment variable".format(var_name)
+            raise ImproperlyConfigured(error_msg)
+        else:
+            value = default_value
+    return value
+
+
+def get_boolean_env_value(environment_value):
+    return True if environment_value.lower() == "true" else False
+
+
+def get_list_env_value(environment_value, separator=":"):
+    return [item for item in environment_value.split(separator) if
+            item != ""]
 
 #
 # General Django development settings
@@ -37,8 +60,12 @@ STATIC_ROOT = '%s/static_root' % PROJECT_ROOT
 
 WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 
-ALLOWED_HOSTS = ['localhost', 'django', 'det-dev.geo-solutions.it'] if os.getenv('ALLOWED_HOSTS') is None \
-    else re.split(r' *[,|:|;] *', os.getenv('ALLOWED_HOSTS'))
+ALLOWED_HOSTS = get_list_env_value(
+    get_environment_variable(
+        "ALLOWED_HOSTS",
+        default_value="localhost:django:det-dev.geo-solutions.it"
+    ),
+)
 
 PROXY_ALLOWED_HOSTS += ('nominatim.openstreetmap.org',)
 
@@ -57,7 +84,14 @@ MANAGERS = ADMINS = os.getenv('ADMINS', [])
 TIME_ZONE = os.getenv('TIME_ZONE', "America/Chicago")
 USE_TZ = True
 
-INSTALLED_APPS += ('geonode', PROJECT_NAME,)
+INSTALLED_APPS += (
+    "geonode",
+    "crispy_forms",
+    "django_filters",
+    "rest_framework",
+    "rest_framework_gis",
+    PROJECT_NAME,
+)
 
 # Location of url mappings
 ROOT_URLCONF = os.getenv('ROOT_URLCONF', '{}.urls'.format(PROJECT_NAME))
@@ -518,4 +552,21 @@ LOGGING = {
         "gfdrr_det": {
             "handlers": ["console"], "level": "INFO", },
     },
+}
+
+# TODO: Add DEFAULT_AUTHENTICATION_CLASSES
+# TODO: Add DEFAULT_PERMISSION_CLASSES
+# TODO: Add DEFAULT_PAGINATION_CLASS
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "rest_framework.parsers.JSONParser",
+    ),
+    "DEFAULT_PAGINATION_CLASS": (
+        "rest_framework.pagination.PageNumberPagination"),
+    "PAGE_SIZE": 10,
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
 }

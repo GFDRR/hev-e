@@ -11,17 +11,24 @@
 
 from django.conf.urls import url, include
 from django.views.generic import TemplateView
+from rest_framework.routers import DefaultRouter
 
 from geonode.urls import urlpatterns
 
+from . import views
+
+router = DefaultRouter()
+router.register(r"administrativedivision", views.AdministrativeDivisionViewSet)
+router.register(r"region", views.RegionViewSet)
+
+API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
+
+
 urlpatterns += [
-    # include your urls here
-
+    url(
+        r'^$',
+        TemplateView.as_view(template_name='site_index.html'),
+        name='home'
+    ),
+    url(API_PREFIX, include(router.urls)),
 ]
-
-urlpatterns = [#'',
-               url(r'^$',
-                   TemplateView.as_view(
-                       template_name='site_index.html'),
-                   name='home'),
-               ] + urlpatterns
