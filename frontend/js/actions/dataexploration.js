@@ -6,16 +6,57 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-const UPDATE_DATA = 'DATAEXPLORATION:UPDATE_DATA';
+const SET_FILTER = 'DATAEXPLORATION:SET_FILTER';
+const UPDATE_FILTER = 'DATAEXPLORATION:UPDATE_FILTER';
+const SELECT_AREA = 'DATAEXPLORATION:SELECT_AREA';
+const SHOW_DETAILS = 'DATAEXPLORATION:SHOW_DETAILS';
+const SHOW_FILTER = 'DATAEXPLORATION:SHOW_FILTER';
 
-function updateExplorationData(data) {
+function setFilter(name, filter) {
     return {
-        type: UPDATE_DATA,
-        data
+        type: SET_FILTER,
+        name,
+        filter
+    };
+}
+
+function showFilter(show) {
+    return {
+        type: SHOW_FILTER,
+        show
+    };
+}
+
+function updateFilter(options) {
+    return {
+        type: UPDATE_FILTER,
+        options
+    };
+}
+
+function selectArea(area) {
+    return {
+        type: SELECT_AREA,
+        area
+    };
+}
+
+function showDatails(details) {
+    return {
+        type: SHOW_DETAILS,
+        details
     };
 }
 
 module.exports = {
-    UPDATE_DATA,
-    updateExplorationData
+    UPDATE_FILTER,
+    SELECT_AREA,
+    SHOW_DETAILS,
+    SET_FILTER,
+    SHOW_FILTER,
+    updateFilter,
+    selectArea,
+    showDatails,
+    setFilter,
+    showFilter
 };

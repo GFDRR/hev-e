@@ -48,6 +48,11 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         // new NormalModuleReplacementPlugin(/openlayers$/, path.join(paths.framework, "libs", "openlayers")),
         new NormalModuleReplacementPlugin(/CompactCatalog.jsx/, path.join(__dirname, "js", "ms2override", "components", "CompactCatalog.jsx")),
         new NormalModuleReplacementPlugin(/map\/openlayers\/Map/, path.join(__dirname, "js", "ms2override", "components", "OlMap.jsx")),
+        new NormalModuleReplacementPlugin(/PanelHeader.jsx/, path.join(__dirname, "js", "ms2override", "components", "PanelHeader.jsx")),
+        new NormalModuleReplacementPlugin(/DockPanel.jsx/, path.join(__dirname, "js", "ms2override", "components", "DockPanel.jsx")),
+        new NormalModuleReplacementPlugin(/PanelHeader.jsx/, path.join(__dirname, "js", "ms2override", "components", "PanelHeader.jsx")),
+        new NormalModuleReplacementPlugin(/selectors\/layers/, path.join(__dirname, "js", "ms2override", "selectors", "layers.js")),
+        new NormalModuleReplacementPlugin(/VectorStyle.js/, path.join(__dirname, "js", "ms2override", "components", "VectorStyle.js")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin

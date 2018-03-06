@@ -11,7 +11,7 @@ const React = require('react');
 const assign = require('object-assign');
 const PropTypes = require('prop-types');
 const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
-// const {connect} = require('react-redux');
+const ContainerDimensions = require('react-container-dimensions').default;
 
 class BrandNavbar extends React.Component {
     static propTypes = {
@@ -31,24 +31,31 @@ class BrandNavbar extends React.Component {
 
     render() {
         return (
-            <Navbar className="et-brand-navbar">
-                <Navbar.Header>
-                    <Navbar.Brand>
-                        {this.props.brandImages.map(image => {
-                            return <img {...image}/>;
-                        })}
-                        <a>Data Exploration Tool</a>
-                    </Navbar.Brand>
-                </Navbar.Header>
-                <Nav>
-                    <NavItem>
-                        About
-                    </NavItem>
-                    <NavItem>
-                        <Glyphicon glyph="download"/>
-                    </NavItem>
-                </Nav>
-            </Navbar>
+            <ContainerDimensions>
+            {({width}) => (
+                <Navbar className="et-brand-navbar">
+                    <Navbar.Header>
+                        <Navbar.Brand>
+                            {this.props.brandImages.map(image => {
+                                return <img {...image}/>;
+                            })}
+                            <span>{width < 768 ? 'D.E.T' : 'Data Exploration Tool'}</span>
+                        </Navbar.Brand>
+                        <Navbar.Toggle pullRight />
+                    </Navbar.Header>
+                    <Navbar.Collapse>
+                        <Nav>
+                            <NavItem>
+                                About
+                            </NavItem>
+                            <NavItem>
+                                <Glyphicon glyph="download"/>
+                            </NavItem>
+                        </Nav>
+                    </Navbar.Collapse>
+                </Navbar>
+            )}
+            </ContainerDimensions>
         );
     }
 }
