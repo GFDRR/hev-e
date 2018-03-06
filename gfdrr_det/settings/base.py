@@ -67,7 +67,12 @@ ALLOWED_HOSTS = get_list_env_value(
     ),
 )
 
-PROXY_ALLOWED_HOSTS += ('nominatim.openstreetmap.org',)
+PROXY_ALLOWED_HOSTS += get_list_env_value(
+    get_environment_variable(
+        "PROXY_ALLOWED_HOSTS",
+        default_value="localhost:django:nominatim.openstreetmap.org"
+    ),
+)
 
 # AUTH_IP_WHITELIST property limits access to users/groups REST endpoints
 # to only whitelisted IP addresses.
