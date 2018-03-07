@@ -48,6 +48,7 @@ setup(
         'djangorestframework-gis<0.12',
         'drf-nested-routers==0.90.0',
         'drf-openapi==1.0.0',
+        'enum34==1.1.6',
         'inflection==0.3.1',
         'proj==0.1.0',
         'pygdal==2.2.1.3',

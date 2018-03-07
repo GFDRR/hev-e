@@ -29,6 +29,12 @@ class AdministrativeDivisionDetailSerializer(GeoFeatureModelSerializer):
         read_only=True,
         view_name="administrativedivision-detail",
     )
+    datasets = serializers.HyperlinkedRelatedField(
+        read_only=True,
+        source="dataset_representations",
+        many=True,
+        view_name="datasetrepresentation-detail",
+    )
 
     class Meta:
         model = models.AdministrativeDivision
@@ -48,12 +54,32 @@ class AdministrativeDivisionDetailSerializer(GeoFeatureModelSerializer):
             "pop_sqkm",
             "region",
             "parent",
+            "datasets",
         )
 
-class AdministrativeDivisionListSerializer(HyperlinkedModelSerializer):
+class AdministrativeDivisionListSerializer(GeoFeatureModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name="administrativedivision-detail",
+        lookup_field="pk",
+    )
+    region = serializers.HyperlinkedRelatedField(
+        read_only=True,
+        view_name="region-detail",
+    )
+    parent = serializers.HyperlinkedRelatedField(
+        read_only=True,
+        view_name="administrativedivision-detail",
+    )
+    datasets = serializers.HyperlinkedRelatedField(
+        read_only=True,
+        source="dataset_representations",
+        many=True,
+        view_name="datasetrepresentation-detail",
+    )
 
     class Meta:
         model = models.AdministrativeDivision
+        geo_field = "geom"
         fields = (
             "url",
             "level",
@@ -63,6 +89,7 @@ class AdministrativeDivisionListSerializer(HyperlinkedModelSerializer):
             "unregion",
             "region",
             "parent",
+            "datasets",
         )
 
 
@@ -74,4 +101,20 @@ class RegionSerializer(HyperlinkedModelSerializer):
             "url",
             "name",
             "level",
+        )
+
+
+class DatasetRepresentationSerializer(GeoFeatureModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name="datasetrepresentation-detail",
+        lookup_field="pk",
+    )
+
+    class Meta:
+        model = models.DatasetRepresentation
+        geo_field = "geom"
+        fields = (
+            "url",
+            "name",
+            "dataset_type",
         )

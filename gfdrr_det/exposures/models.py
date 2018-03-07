@@ -49,27 +49,6 @@ def db_sanity_checks(app_configs, **kwargs):
 
     # Checks DB consistency
     with connections["exposures"].cursor() as cursor:
-        # Check that the "all_outlines" materialized view actually exists
-        """
-        CREATE MATERIALIZED VIEW level2.all_outlines AS
-          SELECT exposure_model_id, ST_Buffer(ST_ConvexHull(ST_Collect(the_geom)), 0.001) as the_geom
-            FROM level2.asset
-        GROUP BY exposure_model_id;
-        """
-
-        try:
-            cursor.execute("SELECT 1 FROM level2.all_outlines")
-        except BaseException as e:
-            check_failed = True
-            errors.append(
-                Error(
-                    e.message,
-                    hint=_('Make sure the "level2.all_outlines" MATERIALIZED VIEW actually exists'),
-                    # obj=cursor,
-                    id='gfdrr_det.exposures.models',
-                )
-            )
-
         # Check that the "all_exposure" view actually exists
         """
         CREATE OR REPLACE VIEW level2.all_exposure AS
@@ -171,6 +150,7 @@ INTERSECT_SQL_CONDITION = """
                     ST_GeomFromText('POLYGON(({bbox_linestring}))', {srid})))
 """
 
+
 FULL_ASSETS_SQL_QUERY = """
 SELECT asset.id as asset_id,
        asset.exposure_model_id,
@@ -228,31 +208,6 @@ LIMIT {size}
 OFFSET {offset}
 """
 
-EXPOSURES_SQL_QUERY = """
-   SELECT  models.name,
-           models.description,
-           models.taxonomy_source,
-           models.category,
-           models.area_type,
-           models.area_unit,
-           models.tag_names,
-           mct.cost_type_name,
-           mct.aggregation_type,
-           mct.unit,
-           contrib.model_source,
-           contrib.model_date,
-           contrib.notes,
-		   ST_AsEWKT(outlines.the_geom)
-      FROM level2.all_outlines as outlines
-           JOIN level2.exposure_model models ON (outlines.exposure_model_id = models.id)
-      LEFT JOIN level2.model_cost_type mct ON (mct.exposure_model_id = models.id)
-      LEFT JOIN level2.contribution contrib ON (contrib.exposure_model_id = models.id)
-     WHERE outlines.exposure_model_id = ANY(%(exposure_model_ids)s)
-{intersects}
-LIMIT {size}
-OFFSET {offset}
-"""
-
 
 def _get_bbox_linestring(bbox):
     return ','.join(['%s %s' % (bbox[0], bbox[1]),
@@ -261,6 +216,28 @@ def _get_bbox_linestring(bbox):
                      '%s %s' % (bbox[2], bbox[1]),
                      '%s %s' % (bbox[0], bbox[1])
                     ])
+
+
+def _get_intersect_condition(geometry_wkt=None, srid=None, geom_name=None):
+    intersect_query = """
+    AND NOT {the_geom_col_name} IS null
+    AND NOT ST_IsEmpty({the_geom_col_name})
+    AND NOT ST_IsEmpty(
+      ST_Intersection(
+        ST_Buffer({the_geom_col_name}, 0.0),
+        ST_GeomFromText({geometry!r}, {srid})
+      )
+    )
+    """
+    if geometry_wkt and srid and geom_name:
+        query_part = intersect_query.format(
+            geometry=geometry_wkt,
+            srid=srid,
+            the_geom_col_name=geom_name
+        )
+    else:
+        query_part = ""
+    return query_part
 
 
 def _get_intersect_cond(**kwargs):
@@ -289,7 +266,8 @@ def _search(cursor, query, exposure_model_ids):
         return None
 
 
-def search_full_assets(exposure_model_ids, page_size=100, page=0, args={}):
+def search_full_assets(exposure_model_ids, page_size=100, page=0,
+                       geometry_wkt=None, srid=None, geom_name=None):
     """Search all assets of one or more Exposures IDs
 
     Parameters
@@ -314,10 +292,12 @@ def search_full_assets(exposure_model_ids, page_size=100, page=0, args={}):
     size = (
         page_size.upper() if isinstance(page_size, basestring) else page_size)
     offset = page * size if size != "ALL" else 0
-
-    query = FULL_ASSETS_SQL_QUERY.format(intersects=_get_intersect_cond(**args),
-                                         size=size,
-                                         offset=offset)
+    query = FULL_ASSETS_SQL_QUERY.format(
+        intersects=_get_intersect_condition(
+            geometry_wkt=geometry_wkt, srid=srid, geom_name=geom_name),
+        size=size,
+        offset=offset
+    )
 
     with connections["exposures"].cursor() as cursor:
         _search(cursor, query, exposure_model_ids)
@@ -330,7 +310,8 @@ def search_full_assets(exposure_model_ids, page_size=100, page=0, args={}):
             yield None
 
 
-def search_assets(exposure_model_ids, page_size=100, page=0, args={}):
+def search_assets(exposure_model_ids, page_size=100, page=0,
+                  geometry_wkt=None, srid=None, geom_name=None):
     """Search assets of one or more Exposures IDs
 
     Parameters
@@ -356,9 +337,12 @@ def search_assets(exposure_model_ids, page_size=100, page=0, args={}):
         page_size.upper() if isinstance(page_size, basestring) else page_size)
     offset = page * size if size != "ALL" else 0
 
-    query = ASSETS_SQL_QUERY.format(intersects=_get_intersect_cond(**args),
-                                         size=size,
-                                         offset=offset)
+    query = ASSETS_SQL_QUERY.format(
+        intersects=_get_intersect_condition(
+            geometry_wkt=geometry_wkt, srid=srid, geom_name=geom_name),
+        size=size,
+        offset=offset
+    )
     with connections["exposures"].cursor() as cursor:
         _search(cursor, query, exposure_model_ids)
 
@@ -368,8 +352,8 @@ def search_assets(exposure_model_ids, page_size=100, page=0, args={}):
         else:
             yield None
 
-
-def search_exposures(exposure_model_ids=[], page_size=100, page=0, args={}):
+def search_exposures(exposure_model_ids=None, page_size=100, page=0,
+                     geometry_wkt=None):
     """Search Exposures
 
     Parameters
@@ -390,22 +374,49 @@ def search_exposures(exposure_model_ids=[], page_size=100, page=0, args={}):
     -------
         @generator
         list<Exposure>()
+
+    Example
+    -------
+
+    >>> tanzania = gm.AdministrativeDivision.objects.get(pk=9507)
+    >>> simplified = geos.MultiPolygon(tanzania.geom.simplify(3))
+    >>> exposures = list(search_exposures(str(simplified.wkt)))
+
     """
+
     size = (
         page_size.upper() if isinstance(page_size, basestring) else page_size)
-    offset = page * size if size != "ALL" else 0
-
-    query = EXPOSURES_SQL_QUERY.format(intersects=_get_intersect_cond(**args),
-                                       size=size,
-                                       offset=offset)
-
+    query = """
+    SELECT  m.name,
+        m.description,
+        m.taxonomy_source,
+        m.category,
+        m.area_type,
+        m.area_unit,
+        m.tag_names,
+        mct.cost_type_name,
+        mct.aggregation_type,
+        mct.unit,
+        c.model_source,
+        c.model_date,
+        c.notes,
+        ST_AsEWKT(o.the_geom)
+    FROM level2.all_outlines AS o
+        JOIN level2.exposure_model AS m ON (o.exposure_model_id = m.id)
+        LEFT JOIN level2.model_cost_type AS mct ON (mct.exposure_model_id = m.id)
+        LEFT JOIN level2.contribution AS c ON (c.exposure_model_id = m.id)
+    WHERE o.exposure_model_id = ANY(%(exposure_model_ids)s)
+    {intersects}
+    LIMIT {size}
+    OFFSET {offset}
+    """.format(
+        intersects=_get_intersect_condition(
+            geometry_wkt=str(geometry_wkt), srid=4326, geom_name="o.the_geom"),
+        size=size,
+        offset=page * size if size != "ALL" else 0
+    )
     with connections["exposures"].cursor() as cursor:
-        ids = exposure_model_ids if exposure_model_ids else _get_all_exposure_ids(cursor)
-
-        if not cursor.closed:
-            _search(cursor, query, ids)
-
-            for row in cursor.fetchall():
-                yield Exposure(*row)
-        else:
-            yield None
+        ids = list(exposure_model_ids) if exposure_model_ids is not None else _get_all_exposure_ids(cursor)
+        _search(cursor, query, ids)
+        for row in cursor.fetchall():
+            yield Exposure(*row)

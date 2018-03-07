@@ -8,20 +8,17 @@
 #
 #########################################################################
 
-"""views for GFDRR-DET"""
+"""views for HEV-E"""
 
-from django.db.models import Q
 from django_filters import rest_framework as filters
 from rest_framework.filters import SearchFilter
 from rest_framework import viewsets
 from rest_framework_gis.filterset import GeoFilterSet
 from rest_framework_gis.filters import InBBoxFilter
-from rest_framework_gis.pagination import GeoJsonPagination
 
 from . import models
 from . import serializers
 
-# TODO: Add schema generation
 # TODO: Add permission_classes
 
 class AdministrativeDivisionFilter(GeoFilterSet):
@@ -34,6 +31,16 @@ class AdministrativeDivisionFilter(GeoFilterSet):
 
 
 class AdministrativeDivisionViewSet(viewsets.ReadOnlyModelViewSet):
+    """API endpoint to show Administrative Divisions of all levels
+
+    retrieve:
+    Return a single Administrative Division
+
+    list:
+    Return all Administrative Divisions
+
+    """
+
     queryset = models.AdministrativeDivision.objects.all()
     filter_backends = (
         filters.DjangoFilterBackend,
@@ -65,3 +72,75 @@ class RegionViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = (
         "level",
     )
+
+
+class CountryViewSet(viewsets.ReadOnlyModelViewSet):
+    """API endpoint to show countries
+
+    retrieve:
+    Return a single country
+
+    list:
+    Return all countries
+
+    """
+    queryset = models.AdministrativeDivision.objects.filter(level=0)
+    filter_backends = (
+        filters.DjangoFilterBackend,
+        SearchFilter,
+        InBBoxFilter,
+    )
+    bbox_filter_include_overlapping = True
+    search_fields = (
+        "name",
+        "name_eng",
+        "name_local",
+    )
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            result = serializers.AdministrativeDivisionListSerializer
+        else:
+            result = serializers.AdministrativeDivisionDetailSerializer
+        return result
+
+
+class RelevantCountryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = models.AdministrativeDivision.objects.filter(
+        level=0,
+        dataset_representations__isnull=False
+    ).distinct()
+    filter_backends = (
+        filters.DjangoFilterBackend,
+        SearchFilter,
+        InBBoxFilter,
+    )
+    bbox_filter_include_overlapping = True
+    filter_class = AdministrativeDivisionFilter
+    search_fields = (
+        "name",
+        "name_eng",
+        "name_local",
+    )
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            result = serializers.AdministrativeDivisionListSerializer
+        else:
+            result = serializers.AdministrativeDivisionDetailSerializer
+        return result
+
+
+class DatasetRepresentationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = models.DatasetRepresentation.objects.all()
+    filter_backends = (
+        SearchFilter,
+        InBBoxFilter,
+    )
+    bbox_filter_include_overlapping = True
+    filter_class = AdministrativeDivisionFilter
+    search_fields = (
+        "name",
+        "dataset_type",
+    )
+    serializer_class = serializers.DatasetRepresentationSerializer
