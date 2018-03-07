@@ -10,11 +10,41 @@
 const React = require('react');
 const assign = require('object-assign');
 const PropTypes = require('prop-types');
-const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
+const { Navbar, Nav, NavItem /*, Glyphicon*/ } = require('react-bootstrap');
 const ContainerDimensions = require('react-container-dimensions').default;
 const toopltip = require('../../MapStore2/web/client/components/misc/enhancers/tooltip');
-const ImgT = toopltip(({getSrc, width, href, ...props}) => <a href={href}><img {...props} src={getSrc(width)}/></a>);
-const NavItemT = toopltip(NavItem);
+const ImgT = toopltip(({getSrc, width, href, ...props}) => <a href={href} target="_blank"><img {...props} src={getSrc(width)}/></a>);
+// const NavItemT = toopltip(NavItem);
+const {connect} = require('react-redux');
+const {createSelector} = require('reselect');
+const {SearchPlugin, epics, reducers} = require('../../MapStore2/web/client/plugins/Search');
+
+class Search extends React.Component {
+    static propTypes = {
+        selectedData: PropTypes.bool
+    };
+
+    static defaultProps = {
+        selectedData: false
+    };
+
+    render() {
+        const center = this.props.selectedData ? ' et-center' : ' et-top-left';
+        return (
+            <div className={'et-search-bar' + center}>
+                <SearchPlugin {...this.props}/>
+            </div>
+        );
+    }
+}
+
+const searchSelector = createSelector([
+    state => state.controls && state.controls.dataExplorer.enabled
+], (selectedData) => ({
+    selectedData: !selectedData
+}));
+
+const SearchBar = connect(searchSelector)(Search);
 
 class BrandNavbar extends React.Component {
     static propTypes = {
@@ -24,12 +54,7 @@ class BrandNavbar extends React.Component {
     static defaultProps = {
         brandImages: [
             {
-                getSrc: width => width > 1024 ? '/static/dataexplorationtool/img/hev-e-extended-logo.svg' : '/static/dataexplorationtool/img/hev-e-logo.svg',
-                alt: 'HEV-E',
-                href: 'https://www.gfdrr.org/'
-            },
-            {
-                getSrc: () => '/static/dataexplorationtool/img/gfdrr-logo.svg',
+                getSrc: width => width > 1092 ? '/static/dataexplorationtool/img/gfdrr-logo.svg' : '/static/dataexplorationtool/img/favicon.svg',
                 tooltip: 'Global Facility for Disaster Reduction and Recovery',
                 tooltipPosition: 'bottom',
                 alt: 'GFDRR',
@@ -41,6 +66,10 @@ class BrandNavbar extends React.Component {
                 alt: 'DfDID',
                 tooltipPosition: 'bottom',
                 href: 'https://www.gov.uk/government/organisations/department-for-international-development'
+            },
+            {
+                getSrc: width => width > 1092 ? '/static/dataexplorationtool/img/hev-e-extended-logo.svg' : '/static/dataexplorationtool/img/hev-e-logo.svg',
+                alt: 'HEV-E'
             }
         ]
     };
@@ -59,16 +88,28 @@ class BrandNavbar extends React.Component {
                         <Navbar.Toggle pullRight />
                     </Navbar.Header>
                     <Navbar.Collapse>
-                        <Nav>
+                        {width >= 767 && <Navbar.Form pullRight>
+                            <SearchBar />
+                        </Navbar.Form>}
+                        <Nav pullRight>
                             <NavItem href="#/about">
                                 About
                             </NavItem>
-                            <NavItemT
+                            <NavItem href="#/support">
+                                Support
+                            </NavItem>
+                            {/*<NavItem>
+                                <SearchBar />
+                            </NavItem>*/}
+                            {/*<NavItemT
                                 tooltip="Download collected data"
                                 tooltipPosition="bottom">
                                 <Glyphicon glyph="download"/>
-                            </NavItemT>
+                            </NavItemT>*/}
                         </Nav>
+                        {width < 767 && <Navbar.Form pullRight>
+                            <SearchBar />
+                        </Navbar.Form>}
                     </Navbar.Collapse>
                 </Navbar>
             )}
@@ -89,5 +130,6 @@ module.exports = {
             }
         }
     ),
-    reducers: {}
+    reducers,
+    epics
 };

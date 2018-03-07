@@ -11,10 +11,11 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const {connect} = require('react-redux');
 const {MapPlugin, reducers, epics} = require('../../MapStore2/web/client/plugins/Map');
-const {resizeMap} = require('../../MapStore2/web/client/actions/map');
+const {resizeMap, changeMousePointer} = require('../../MapStore2/web/client/actions/map');
 const ContainerDimensions = require('react-container-dimensions').default;
 const {getStyle} = require('../../MapStore2/web/client/components/map/openlayers/VectorStyle');
 const {selectArea} = require('../actions/dataexploration');
+const {createSelector} = require('reselect');
 
 class ResizableMapComponent extends React.Component {
 
@@ -23,14 +24,18 @@ class ResizableMapComponent extends React.Component {
         height: PropTypes.number,
         options: PropTypes.options,
         onResizeMap: PropTypes.func,
-        onSelectArea: PropTypes.func
+        onSelectArea: PropTypes.func,
+        onChangePointer: PropTypes.func,
+        mousePointer: PropTypes.string
     };
 
     static defaultProps = {
         width: 0,
         height: 0,
         onResizeMap: () => {},
-        onSelectArea: () => {}
+        onSelectArea: () => {},
+        onChangePointer: () => {},
+        mousePointer: ''
     };
 
     componentWillReceiveProps(newProps) {
@@ -76,6 +81,9 @@ class ResizableMapComponent extends React.Component {
                                 const properties = feature.getProperties();
                                 return properties.href;
                             }).filter(href => href);
+                            this.props.onChangePointer('pointer');
+                        } else if (this.props.mousePointer !== 'default') {
+                            this.props.onChangePointer('default');
                         }
                         const layers = event.target && event.target.getLayers && event.target.getLayers();
                         const layersArray = layers && layers.getArray && layers.getArray();
@@ -114,10 +122,20 @@ class ResizableMapComponent extends React.Component {
     }
 }
 
-const ResizableMap = connect(() => ({}), {
-    onResizeMap: resizeMap,
-    onSelectArea: selectArea
-})(ResizableMapComponent);
+const mapSelector = createSelector([
+    state => state.map && state.map.present && state.map.present.mousePointer || 'default'
+], (mousePointer) => ({
+    mousePointer
+}));
+
+const ResizableMap = connect(
+    mapSelector,
+    {
+        onResizeMap: resizeMap,
+        onSelectArea: selectArea,
+        onChangePointer: changeMousePointer
+    }
+)(ResizableMapComponent);
 
 class ResizableContainer extends React.Component {
     render() {
