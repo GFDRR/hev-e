@@ -88,8 +88,8 @@ class ResizableMapComponent extends React.Component {
                                             // selected style
                                             feature.setStyle(getStyle({
                                                 style: {
-                                                    color: '#ff489e', // 0071bc blue
-                                                    fillColor: '#edf1f2ee',
+                                                    color: '#db0033',
+                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
                                                     weight: 7
                                                 }
                                             }));
@@ -97,8 +97,8 @@ class ResizableMapComponent extends React.Component {
                                             // default style
                                             feature.setStyle(getStyle({
                                                 style: {
-                                                    color: '#ff489e', // 0071bc blue
-                                                    fillColor: '#edf1f2AA',
+                                                    color: '#db0033',
+                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
                                                     weight: 2
                                                 }
                                             }));

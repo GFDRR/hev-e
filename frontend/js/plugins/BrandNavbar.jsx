@@ -12,6 +12,9 @@ const assign = require('object-assign');
 const PropTypes = require('prop-types');
 const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
 const ContainerDimensions = require('react-container-dimensions').default;
+const toopltip = require('../../MapStore2/web/client/components/misc/enhancers/tooltip');
+const ImgT = toopltip(({getSrc, width, href, ...props}) => <a href={href}><img {...props} src={getSrc(width)}/></a>);
+const NavItemT = toopltip(NavItem);
 
 class BrandNavbar extends React.Component {
     static propTypes = {
@@ -21,10 +24,23 @@ class BrandNavbar extends React.Component {
     static defaultProps = {
         brandImages: [
             {
-                src: '/static/dataexplorationtool/img/gfdrr-logo.svg'
+                getSrc: width => width > 1024 ? '/static/dataexplorationtool/img/hev-e-extended-logo.svg' : '/static/dataexplorationtool/img/hev-e-logo.svg',
+                alt: 'HEV-E',
+                href: 'https://www.gfdrr.org/'
             },
             {
-                src: '/static/dataexplorationtool/img/wb-logo.svg'
+                getSrc: () => '/static/dataexplorationtool/img/gfdrr-logo.svg',
+                tooltip: 'Global Facility for Disaster Reduction and Recovery',
+                tooltipPosition: 'bottom',
+                alt: 'GFDRR',
+                href: 'https://www.gfdrr.org/'
+            },
+            {
+                getSrc: () => '/static/dataexplorationtool/img/DfID-logo.svg',
+                tooltip: 'Department for International Development',
+                alt: 'DfDID',
+                tooltipPosition: 'bottom',
+                href: 'https://www.gov.uk/government/organisations/department-for-international-development'
             }
         ]
     };
@@ -37,20 +53,21 @@ class BrandNavbar extends React.Component {
                     <Navbar.Header>
                         <Navbar.Brand>
                             {this.props.brandImages.map(image => {
-                                return <img {...image}/>;
+                                return <ImgT width={width} {...image}/>;
                             })}
-                            <span>{width < 768 ? 'D.E.T' : 'Data Exploration Tool'}</span>
                         </Navbar.Brand>
                         <Navbar.Toggle pullRight />
                     </Navbar.Header>
                     <Navbar.Collapse>
                         <Nav>
-                            <NavItem>
+                            <NavItem href="#/about">
                                 About
                             </NavItem>
-                            <NavItem>
+                            <NavItemT
+                                tooltip="Download collected data"
+                                tooltipPosition="bottom">
                                 <Glyphicon glyph="download"/>
-                            </NavItem>
+                            </NavItemT>
                         </Nav>
                     </Navbar.Collapse>
                 </Navbar>

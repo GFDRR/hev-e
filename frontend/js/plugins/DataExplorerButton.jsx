@@ -31,7 +31,7 @@ class DataExplorerButtonComponent extends React.Component {
         return this.props.currentArea ? (
             <ButtonT
                 className="et-dataset-button square-button"
-                tooltip="Latest selected dataset"
+                tooltip="Latest selected area"
                 tooltipPosition="right"
                 bsStyle="primary"
                 onClick={() => this.props.onClick(this.props.currentArea)}>
