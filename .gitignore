@@ -72,7 +72,6 @@ src/
 .idea/
 
 package-lock.json
-*/static/dataexplorationtool/
 
 # GeoIP stuff
 GeoLiteCity.dat
