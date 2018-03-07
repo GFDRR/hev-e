@@ -1,0 +1,58 @@
+[
+    {
+        "name": "Buildings",
+        "datasetLayers": [
+            {
+                "name": "Buildings"
+            }
+        ]
+    },
+    {
+        "name": "Infrastructure",
+        "datasetLayers": [
+            {
+                "name": "Roads"
+            },
+            {
+                "name": "Rail"
+            },
+            {
+                "name": "Pipelines"
+            },
+            {
+                "name": "Storage Tanks"
+            },
+            {
+                "name": "Power Grid"
+            },
+            {
+                "name": "Bridges"
+            },
+            {
+                "name": "Energy"
+            }
+        ]
+    },
+    {
+        "name": "Agriculture",
+        "datasetLayers": [
+            {
+                "name": "Crops"
+            },
+            {
+                "name": "Livestock"
+            },
+            {
+                "name": "Forestry"
+            }
+        ]
+    },
+    {
+        "name": "Social",
+        "datasetLayers": [
+            {
+                "name": "People"
+            }
+        ]
+    }
+]
