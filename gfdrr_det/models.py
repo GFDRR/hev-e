@@ -9,17 +9,22 @@
 #
 #########################################################################
 
+from collections import namedtuple
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import Q
 from django.contrib.gis.db import models as gismodels
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
-from geonode.base.models import ResourceBase, TopicCategory
-from geonode.layers.models import Layer, Style
 
-from jsonfield import JSONField
-import xlrd
+from . import validators
+
+
+BBox = namedtuple("BBox", [
+    "x_min",
+    "y_min",
+    "x_max",
+    "y_max",
+])
 
 
 class Exportable(object):
@@ -112,7 +117,7 @@ class AdministrativeDivision(Exportable, MPTTModel):
     shape_area = models.DecimalField(max_digits=21, decimal_places=8, blank=True, null=True)
 
     # GeoDjango-specific: a geometry field (MultiPolygonField)
-    geom = gismodels.MultiPolygonField()
+    geom = gismodels.MultiPolygonField(spatial_index=True)
     # geom = models.TextField()  # As WKT
     srid = models.IntegerField(default=4326)
 
@@ -168,6 +173,18 @@ class AdministrativeDivision(Exportable, MPTTModel):
         out.reverse()
         return out
 
+    def get_bbox(self):
+        x_min = 200
+        x_max = -200
+        y_min = 100
+        y_max = -100
+        for x, y in self.geom.envelope.coords[0][:-1]:
+            x_min = x if x < x_min else x_min
+            x_max = x if x > x_max else x_max
+            y_min = y if y < y_min else y_min
+            y_max = y if y > y_max else y_max
+        return BBox(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max)
+
 
 class Region(models.Model):
     """
@@ -193,3 +210,30 @@ class Region(models.Model):
         ordering = ['name', 'level']
         db_table = 'explorationtool_region'
         verbose_name_plural = 'DET Regions'
+
+
+class DatasetRepresentation(gismodels.Model):
+    dataset_id = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Identifier for the dataset in the dataset type's database"
+    )
+    name = models.CharField(
+        max_length=255,
+        help_text="Name of this dataset",
+    )
+    dataset_type = models.CharField(
+        max_length=255,
+        validators=[validators.validate_dataset_type,]
+    )
+    geom = gismodels.PolygonField(
+        spatial_index=True,
+        help_text="Compound geometry of all the records in the dataset"
+    )
+    administrative_divisions = models.ManyToManyField(
+        AdministrativeDivision,
+        related_name="dataset_representations",
+    )
+
+    class Meta:
+        unique_together = ("dataset_id", "dataset_type")

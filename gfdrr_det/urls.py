@@ -12,14 +12,35 @@
 from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
+from rest_framework.schemas import get_schema_view
 
 from geonode.urls import urlpatterns
 
 from . import views
 
 router = DefaultRouter()
-router.register(r"administrativedivision", views.AdministrativeDivisionViewSet)
+router.register(
+    r"administrativedivision",
+    views.AdministrativeDivisionViewSet,
+    base_name="administrativedivision"
+)
+router.register(
+    r"country",
+    views.CountryViewSet,
+    base_name="country"
+)
+router.register(
+    r"relevantcountry",
+    views.RelevantCountryViewSet,
+    base_name="relevantcountry"
+)
+router.register(
+    r"datasetrepresentation",
+    views.DatasetRepresentationViewSet,
+    base_name="datasetrepresentation"
+)
 router.register(r"region", views.RegionViewSet)
+schema_view = get_schema_view("HEV-E API")
 
 API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
 
@@ -31,4 +52,5 @@ urlpatterns += [
         name='home'
     ),
     url(API_PREFIX, include(router.urls)),
+    url("{}schema/$".format(API_PREFIX), schema_view),
 ]
