@@ -56,12 +56,6 @@
             },
             "BrandNavbar",
             {
-                "name": "Search",
-                "cfg": {
-                    "containerPosition": "header"
-                }
-            },
-            {
                 "name": "OmniBar",
                 "cfg": {
                     "containerPosition": "header",

@@ -14,6 +14,37 @@ const {addLayer, updateNode} = require("../../MapStore2/web/client/actions/layer
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED} = require('../../MapStore2/web/client/actions/search');
+/*
+const initDataLayerEpic = action$ =>
+    action$.ofType(MAP_CONFIG_LOADED)
+        .switchMap(() => {
+            return Rx.Observable.fromPromise(axios.get('/gfdrr_det/api/v1/relevantcountry/?format=json').then(response => response.data))
+            .switchMap(data => {
+                const features = data && data.results && data.results.features && [...data.results.features] || [];
+                return Rx.Observable.of(
+                    addLayer(
+                        {
+                            type: "vector",
+                            id: "datasets_layer",
+                            name: "datasets_layer",
+                            title: "Datasets",
+                            visibility: true,
+                            hideLoading: true,
+                            features,
+                            style: {
+                                color: '#db0033',
+                                fillColor: 'rgba(240, 240, 240, 0.5)',
+                                weight: 2
+                            }
+                        }
+                    )
+                );
+            })
+            .catch(() => {
+                return Rx.Observable.empty();
+            });
+        });
+*/
 
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
@@ -64,8 +95,8 @@ const closeDataExplorerEpic = action$ =>
         .switchMap(() => {
             return Rx.Observable.of(
                 zoomToExtent([
-                    -20037508.34, -20037508.34,
-                    20037508.34, 20037508.34
+                    -10037508.34, -10037508.34,
+                    10037508.34, 15037508.34
                 ], 'EPSG:900913'),
                 updateNode('datasets_layer', 'layers', {visibility: true})
             );
