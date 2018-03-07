@@ -11,6 +11,10 @@ module.exports = {
         name: "dataexplorationtool",
         path: "/",
         component: require('./pages/DataExplorationTool')
+    }, {
+        name: "dataexplorationtool",
+        path: "/about",
+        component: require('./pages/DataExplorationTool')
     }],
     initialState: {
         defaultState: {

@@ -1,5 +1,10 @@
 
-@ms2-et-color-bg: #edf1f2;
+@ms2-et-color-bg: #f0f0f0;
+@ms2-et-color-red: #db0033;
+
+.text-hev-e-red {
+    color: @ms2-et-color-red;
+}
 
 .btn-primary {
     .button-variant(@ms2-color-primary; @ms2-et-color-bg; darken(@ms2-et-color-bg, 7%));
@@ -27,7 +32,7 @@ div.ol-scale-line.ol-unselectable {
     overflow: hidden;
     -moz-box-sizing: content-box;
     box-sizing: content-box;
-    font-family: 'Open Sans', sans-serif;
+    font-family: "Bariol", "Helvetica Neue", Helvetica, Arial, sans-serif;
     top: auto;
     background-color: rgba(255, 255, 255, 0.7) !important;
     color: #333333 !important;
@@ -51,7 +56,6 @@ div.ol-scale-line.ol-unselectable {
 
 #dataexplorationtool-view-container {
     #mapstore-navbar-container {
-
         .shadow-soft;
         margin-bottom: 0;
         z-index: 500;
@@ -220,6 +224,11 @@ div.ol-scale-line.ol-unselectable {
             margin-bottom: 0;
             border-color: transparent;
             flex: 1;
+            .navbar-nav > li > a:hover,
+            .navbar-nav > li > a:focus {
+                background-color: @ms2-et-color-bg;
+                color: @ms2-et-color-red;
+            }
             .container {
                 
                 width: auto;
@@ -227,12 +236,16 @@ div.ol-scale-line.ol-unselectable {
                     margin: 0;
                     .navbar-brand {
                         display: flex;
-                        img {
+                        padding: 10px 15px;
+                        a {
                             height: 100%;
                             padding-right: 10px;
                             margin-right: 10px;
-                            width: auto;
-                            border-right: 1px solid #777;
+                            border-right: 1px solid @ms2-et-color-bg;
+                            img {
+                                height: 100%;
+                                width: auto;
+                            }
                         }
                     }
                 }
@@ -321,10 +334,18 @@ div.ol-scale-line.ol-unselectable {
             }
         }
         .compat-catalog {
+            flex: 1;
             .catalog-form {
                 width: 100%;
                 padding-bottom: 10px;
                 border-bottom: 1px solid @ms2-et-color-bg;
+            }
+            .msSideGrid {
+                width: ~"calc(100% - 60px)";
+                position: absolute;
+            }
+            main {
+                position: relative;
             }
             .items-list {
                 > .col-xs-12:hover {
@@ -557,7 +578,7 @@ div.ol-scale-line.ol-unselectable {
 
 .et-catalog {
     .et-filter {
-        width: 300px;
+        width: 220px;
         height: 100%;
         border-right: 1px solid @ms2-et-color-bg;
         display: flex;
@@ -580,7 +601,7 @@ div.ol-scale-line.ol-unselectable {
         flex-direction: column-reverse;
         .et-filter {
             width: 100%;
-            height: 300px;
+            height: 220px;
             border-top: 1px solid @ms2-et-color-bg;
             border-right: none;
         }
@@ -625,7 +646,6 @@ div.ol-scale-line.ol-unselectable {
                     width: 100%;
                 }
             }
-            
         }
     }
     

@@ -35,6 +35,14 @@ class FilterList extends React.Component {
                     </Row>
                 </Grid>
                 {this.props.filter.categories && <Grid fluid>
+                    <Row>
+                        <br/>
+                        <Col xs={12}>
+                            <FormGroup>
+                                <a href="#" className="text-hev-e-red">Clear</a>
+                            </FormGroup>
+                        </Col>
+                    </Row>
                     {
                         this.props.filter.categories.map((category, categoryId) => (
                             <Row>

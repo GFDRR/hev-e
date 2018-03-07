@@ -27,7 +27,7 @@
             41
         ],
         "stroke": {
-            "color": "#2E91A4",
+            "color": "#1477c9",
             "width": 2,
             "opacity": 1,
             "lineDash": [
@@ -36,7 +36,7 @@
             ]
         },
         "fill": {
-            "color": "#11111111"
+            "color": "rgba(18, 18, 18, 0.1)"
         }
     },
     "initialState": {

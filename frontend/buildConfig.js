@@ -159,6 +159,9 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
             "/dataexplorationtool/data_extraction": {
                 target: "http://localhost:8081",
                 pathRewrite: {'/dataexplorationtool/data_extraction': '/mockdata'}
+            },
+            "/gfdrr_det/api": {
+                target: "http://det-dev.geo-solutions.it"
             }
         }
     },
