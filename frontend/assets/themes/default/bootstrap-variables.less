@@ -46,7 +46,7 @@
 @font-family-serif:       Georgia, "Times New Roman", Times, serif;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
 @font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
-@font-family-base: 'Open Sans', sans-serif;
+@font-family-base: Helvetica, Arial, sans-serif;
 
 @font-size-base: 14px;
 @font-size-large: ceil(@font-size-base * 1.25);
@@ -65,7 +65,7 @@
 @line-height-computed:    floor((@font-size-base * @line-height-base)); // ~20px
 
 //** By default, this inherits from the `<body>`.
-@headings-font-family:    inherit;
+@headings-font-family:    "Bariol", "Helvetica Neue", Helvetica, Arial, sans-serif;
 @headings-font-weight:    500;
 @headings-line-height:    1.1;
 @headings-color:          inherit;
@@ -383,8 +383,8 @@
 @navbar-default-brand-hover-bg:            transparent;
 
 // Navbar toggle
-@navbar-default-toggle-hover-bg:           @ms2-color-shade-light;
-@navbar-default-toggle-icon-bar-bg:        @ms2-color-background;
+@navbar-default-toggle-hover-bg:           @ms2-et-color-bg;
+@navbar-default-toggle-icon-bar-bg:        @ms2-color-primary;
 @navbar-default-toggle-border-color:       @ms2-color-shade-lighter;
 
 
@@ -790,11 +790,11 @@
 @breadcrumb-padding-vertical:   8px;
 @breadcrumb-padding-horizontal: 15px;
 //** Breadcrumb background color
-@breadcrumb-bg:                 @ms2-color-background;
+@breadcrumb-bg:                 @ms2-et-color-bg;
 //** Breadcrumb text color
-@breadcrumb-color:              @ms2-color-shade;
+@breadcrumb-color:              @ms2-color-primary;
 //** Text color of current page in the breadcrumb
-@breadcrumb-active-color:       @gray-light;
+@breadcrumb-active-color:       @ms2-color-text;
 //** Textual separator for between breadcrumb elements
 @breadcrumb-separator:          "/";
 
@@ -864,4 +864,4 @@
 //** Width of horizontal description list titles
 @dl-horizontal-offset:        @component-offset-horizontal;
 //** Horizontal line color.
-@hr-border:                   @gray-lighter;
+@hr-border:                   @ms2-et-color-bg;

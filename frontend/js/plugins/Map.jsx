@@ -14,6 +14,7 @@ const {MapPlugin, reducers, epics} = require('../../MapStore2/web/client/plugins
 const {resizeMap} = require('../../MapStore2/web/client/actions/map');
 const ContainerDimensions = require('react-container-dimensions').default;
 const {getStyle} = require('../../MapStore2/web/client/components/map/openlayers/VectorStyle');
+const {selectArea} = require('../actions/dataexploration');
 
 class ResizableMapComponent extends React.Component {
 
@@ -21,13 +22,15 @@ class ResizableMapComponent extends React.Component {
         width: PropTypes.number,
         height: PropTypes.number,
         options: PropTypes.options,
-        onResizeMap: PropTypes.function
+        onResizeMap: PropTypes.func,
+        onSelectArea: PropTypes.func
     };
 
     static defaultProps = {
         width: 0,
         height: 0,
-        onResizeMap: () => {}
+        onResizeMap: () => {},
+        onSelectArea: () => {}
     };
 
     componentWillReceiveProps(newProps) {
@@ -45,7 +48,24 @@ class ResizableMapComponent extends React.Component {
                     onClickEvent: event => {
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
                         if (featuresAtPixel && featuresAtPixel.length > 0) {
-                            // const propertiesArray = featuresAtPixel.map(feature => feature.getProperties());
+                            const propertiesArray = featuresAtPixel.map(feature => {
+                                const properties = feature.getProperties();
+                                const extent = feature.getGeometry().getExtent();
+
+                                // TODO: get crs
+                                return properties && Object.keys(properties)
+                                    .filter(key => key !== 'geometry')
+                                    .reduce((newProperties, key) => ({
+                                        ...newProperties,
+                                        [key]: properties[key]
+                                    }), {
+                                        bbox: [...extent],
+                                        crs: 'EPSG:3857'
+                                    });
+                            }).filter(val => val);
+                            if (propertiesArray.length > 0) {
+                                this.props.onSelectArea({...propertiesArray[0]});
+                            }
                         }
                     },
                     onMoveEvent: event => {
@@ -68,8 +88,8 @@ class ResizableMapComponent extends React.Component {
                                             // selected style
                                             feature.setStyle(getStyle({
                                                 style: {
-                                                    color: '#ff489e', // 0071bc blue
-                                                    fillColor: '#edf1f2ee',
+                                                    color: '#db0033',
+                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
                                                     weight: 7
                                                 }
                                             }));
@@ -77,8 +97,8 @@ class ResizableMapComponent extends React.Component {
                                             // default style
                                             feature.setStyle(getStyle({
                                                 style: {
-                                                    color: '#ff489e', // 0071bc blue
-                                                    fillColor: '#edf1f2AA',
+                                                    color: '#db0033',
+                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
                                                     weight: 2
                                                 }
                                             }));
@@ -94,7 +114,10 @@ class ResizableMapComponent extends React.Component {
     }
 }
 
-const ResizableMap = connect(() => ({}), {onResizeMap: resizeMap})(ResizableMapComponent);
+const ResizableMap = connect(() => ({}), {
+    onResizeMap: resizeMap,
+    onSelectArea: selectArea
+})(ResizableMapComponent);
 
 class ResizableContainer extends React.Component {
     render() {

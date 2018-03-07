@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 const React = require('react');
-const { Col, FormGroup, FormControl, Grid, Row, ButtonToolbar } = require('react-bootstrap');
+const { Col, FormGroup, FormControl, Grid, Row, ButtonToolbar} = require('react-bootstrap');
 const CatalogServiceSelector = require('../../MapStore2/web/client/components/catalog/CatalogServiceSelector');
 const localizeProps = require('../../MapStore2/web/client/components/misc/enhancers/localizedProps');
 const SearchInput = localizeProps("placeholder")(FormControl);
@@ -19,7 +19,9 @@ module.exports = ({
     catalog,
     services,
     isValidServiceSelected,
-    showCatalogSelector
+    showCatalogSelector,
+    onShowFilter = () => {},
+    showFilter
 }) =>(
     <Grid className="catalog-form" fluid>
         <Row>
@@ -37,7 +39,26 @@ module.exports = ({
                 </FormGroup>
             </Col>
             <Col xs={12} className="text-center">
-                <ButtonToolbar>
+                <ButtonToolbar className="pull-right">
+                    <Toolbar
+                            btnDefaultProps={
+                                {
+                                    className: 'square-button-md',
+                                    bsStyle: 'primary'
+                                }
+                            }
+                            buttons={
+                                [
+                                    {
+                                        text: <i className="fa fa-filter"></i>,
+                                        tooltip: 'Advanced filter',
+                                        active: !!showFilter,
+                                        onClick: () => {
+                                            onShowFilter(!showFilter);
+                                        }
+                                    }
+                                ]
+                            }/>
                     <Toolbar
                         btnDefaultProps={
                             {
@@ -55,53 +76,6 @@ module.exports = ({
                                 {
                                     text: <i className="fa fa-sort-alpha-desc"></i>,
                                     tooltip: ''
-                                }
-                            ]
-                        }/>
-
-                    <Toolbar
-                        btnDefaultProps={
-                            {
-                                className: 'square-button-md',
-                                bsStyle: 'primary'
-                            }
-                        }
-                        buttons={
-                            [
-                                {
-                                    text: <i className="fa fa-building"></i>,
-                                    tooltip: 'Toggle buildings filter',
-                                    active: true
-                                },
-                                {
-                                    text: <i className="fa fa-road"></i>,
-                                    tooltip: 'Toggle infrastructures filter',
-                                    active: true
-                                },
-                                {
-                                    text: <i className="fa fa-leaf"></i>,
-                                    tooltip: 'Toggle agronomic filter',
-                                    active: true
-                                },
-                                {
-                                    text: <i className="fa fa-users"></i>,
-                                    tooltip: 'Toggle social filter',
-                                    active: true
-                                }
-                            ]
-                        }/>
-                    <Toolbar
-                        btnDefaultProps={
-                            {
-                                className: 'square-button-md',
-                                bsStyle: 'primary'
-                            }
-                        }
-                        buttons={
-                            [
-                                {
-                                    text: <i className="fa fa-filter"></i>,
-                                    tooltip: 'Advanced filter'
                                 }
                             ]
                         }/>

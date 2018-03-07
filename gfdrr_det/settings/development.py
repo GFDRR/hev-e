@@ -19,11 +19,10 @@ DEBUG = True
 SECRET_KEY = os.getenv('SECRET_KEY', "A1s#&-xbI;DX\]8juO@5BX'''3Q]4Js)2wcYHOiHb.'''1-dU'''IO~PU$IrA,Be;H>")
 
 # per-deployment settings should go here
-SITE_HOST_NAME = os.getenv('SITE_HOST_NAME', "localhost")
-SITE_HOST_PORT = os.getenv('SITE_HOST_PORT', "8000")
-SITEURL = os.getenv(
-    'SITEURL', "http://%s:%s/" %
-     (SITE_HOST_NAME, SITE_HOST_PORT))
+SITE_HOST_NAME = get_environment_variable('SITE_HOST_NAME', default_value="localhost")
+SITE_HOST_PORT = get_environment_variable('SITE_HOST_PORT', default_value="8000")
+SITEURL = get_environment_variable('SITEURL',
+                                   default_value="http://%s:%s/" % (SITE_HOST_NAME, SITE_HOST_PORT))
 
 #
 # General Django development settings
@@ -31,22 +30,22 @@ SITEURL = os.getenv(
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'gfdrr_det',
-         'USER': 'geonode',
-         'PASSWORD': 'geonode',
-         'HOST': 'localhost',
-         'PORT': '5432',
-         'CONN_TOUT': 900,
+        'NAME': get_environment_variable("GFDRR_DET_DB_NAME", default_value="gfdrr_det"),
+        'USER': get_environment_variable("GFDRR_DET_DB_USER", default_value='geonode'),
+        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", default_value='geonode'),
+        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", default_value='localhost'),
+        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", default_value='5432'),
+        'CONN_TOUT': 900,
     },
     # vector datastore for uploads
     'datastore': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'ENGINE': '',  # Empty ENGINE name disables
-        'NAME': 'gfdrr_det_data',
-        'USER': 'geonode',
-        'PASSWORD': 'geonode',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        # 'ENGINE': '',  # Empty ENGINE name disables
+        'NAME': get_environment_variable("GFDRR_DET_DB_DATA_NAME", default_value="gfdrr_det_data"),
+        'USER': get_environment_variable("GFDRR_DET_DB_USER", default_value='geonode'),
+        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", default_value='geonode'),
+        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", default_value='localhost'),
+        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", default_value='5432'),
         'CONN_TOUT': 900,
     }
 }
@@ -60,7 +59,7 @@ GEOSERVER_PUBLIC_HOST = os.getenv(
 )
 
 GEOSERVER_PUBLIC_PORT = os.getenv(
-    'GEOSERVER_PUBLIC_PORT', 8080
+    'GEOSERVER_PUBLIC_PORT', SITE_HOST_PORT
 )
 
 GEOSERVER_PUBLIC_LOCATION = os.getenv(

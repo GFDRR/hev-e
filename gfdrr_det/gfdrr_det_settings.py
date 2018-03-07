@@ -16,5 +16,12 @@ GFDRR_DET_EXPOSURES_ENABLED = True
 
 if GFDRR_DET_EXPOSURES_ENABLED:
     from . import exposures
-    INSTALLED_APPS += ('gfdrr_det.exposures',)
+    if 'gfdrr_det.exposures' not in INSTALLED_APPS:
+        INSTALLED_APPS += ('gfdrr_det.exposures',)
+
     DATABASES.update(exposures.DATABASES)
+    DATABASES["exposures"].update({
+        'NAME': 'ged4all',
+        "USER": get_environment_variable("GFDRR_DET_DB_USER"),
+        "PASSWORD": get_environment_variable("GFDRR_DET_DB_PASSWORD"),
+    })

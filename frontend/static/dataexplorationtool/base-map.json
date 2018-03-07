@@ -11,11 +11,12 @@
 		"layers": [
       {
         "type": "tileprovider",
-        "title": "Staeman",
-        "provider": "Stamen.TonerBackground",
-        "name": "Staeman",
-        "source": "Staeman",
-        "group": "background",
+        "title": "MapBoxStyle",
+        "provider": "MapBoxStyle",
+        "name": "MapBoxStyle",
+        "source": "light-v9",
+				"group": "background",
+				"accessToken": "pk.eyJ1IjoiZ2Vvc29sdXRpb25zIiwiYSI6ImNqZWZzbGlzZDBlNWcyd21uY2RsaDA0bXMifQ.Kqd7xVo6gglnLZ9BAQ7uEg",
         "visibility": true
       }
 		]
