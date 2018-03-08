@@ -358,14 +358,35 @@ class OpenlayersMap extends React.Component {
         const centerIsUpdated = newProps.center.y === currentCenter.y &&
                                newProps.center.x === currentCenter.x;
 
-        if (!centerIsUpdated) {
-            // let center = ol.proj.transform([newProps.center.x, newProps.center.y], 'EPSG:4326', newProps.projection);
-            let center = CoordinatesUtils.reproject({x: newProps.center.x, y: newProps.center.y}, 'EPSG:4326', newProps.projection, true);
-            view.setCenter([center.x, center.y]);
+        if (!isEqual(this.props.bbox, newProps.bbox)) {
+            const projectionCode = view.getProjection().getCode();
+            const extent = newProps.bbox && newProps.bbox.bounds && [
+                {x: newProps.bbox.bounds.minx, y: newProps.bbox.bounds.miny},
+                {x: newProps.bbox.bounds.maxx, y: newProps.bbox.bounds.maxy}
+            ].map(coords => {
+                return projectionCode !== newProps.bbox.crs ?
+                    CoordinatesUtils.reproject(coords, newProps.bbox.crs, projectionCode, true)
+                    : {...coords};
+            }).reduce((newExtent, coords) => {
+                return [...newExtent, coords.x, coords.y];
+            }, []);
+            view.fit(extent, {
+                duration: 500,
+                constrainResolution: false,
+                padding: [10, 10, 10, 10],
+                nearest: true
+            });
+        } else {
+            if (!centerIsUpdated) {
+                // let center = ol.proj.transform([newProps.center.x, newProps.center.y], 'EPSG:4326', newProps.projection);
+                let center = CoordinatesUtils.reproject({x: newProps.center.x, y: newProps.center.y}, 'EPSG:4326', newProps.projection, true);
+                view.setCenter([center.x, center.y]);
+            }
+            if (Math.round(newProps.zoom) !== this.props.zoom) {
+                view.setZoom(Math.round(newProps.zoom));
+            }
         }
-        if (Math.round(newProps.zoom) !== this.props.zoom) {
-            view.setZoom(Math.round(newProps.zoom));
-        }
+
         if (newProps.bbox && newProps.bbox.rotation !== undefined && newProps.bbox.rotation !== this.props.bbox.rotation) {
             view.setRotation(newProps.bbox.rotation);
         }

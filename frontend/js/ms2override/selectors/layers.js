@@ -10,7 +10,7 @@ const {createSelector} = require('reselect');
 
 const MapInfoUtils = require('../../../MapStore2/web/client/utils/MapInfoUtils');
 const LayersUtils = require('../../../MapStore2/web/client/utils/LayersUtils');
-const ConfigUtils = require('../../../MapStore2/web/client/utils/ConfigUtils');
+// const ConfigUtils = require('../../../MapStore2/web/client/utils/ConfigUtils');
 const {head, isEmpty, find} = require('lodash');
 
 const layersSelector = state => state.layers && state.layers.flat || state.layers || state.config && state.config.layers || [];
@@ -30,6 +30,7 @@ const layerSelectorWithMarkers = createSelector(
         if ( markerPosition ) {
             newLayers.push(MapInfoUtils.getMarkerLayer("GetFeatureInfo", markerPosition.latlng));
         }
+        /*
         if (geocoder && geocoder.markerPosition) {
             const style = ConfigUtils.getConfigProp("geocoderStyle") || {
                 iconUrl: "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
@@ -55,8 +56,9 @@ const layerSelectorWithMarkers = createSelector(
                 }, geocoder.markerLabel
             ));
         }
+        */
 
-        return newLayers;
+        return geocoder ? [...layers] : newLayers;
     }
 );
 

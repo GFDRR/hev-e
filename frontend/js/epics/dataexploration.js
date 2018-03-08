@@ -13,7 +13,8 @@ const {SELECT_AREA, selectArea, setFilter} = require('../actions/dataexploration
 const {addLayer, updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
-const {TEXT_SEARCH_ITEM_SELECTED} = require('../../MapStore2/web/client/actions/search');
+const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
+const {getMainViewStyle, getSearchLayerStyle} = require('../utils/StyleUtils');
 /*
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
@@ -46,6 +47,15 @@ const initDataLayerEpic = action$ =>
         });
 */
 
+const createBaseVectorLayer = name => ({
+    type: 'vector',
+    id: name,
+    name: name,
+    title: name,
+    visibility: true,
+    hideLoading: true
+});
+
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
@@ -54,18 +64,16 @@ const initDataLayerEpic = action$ =>
                 return Rx.Observable.of(
                     addLayer(
                         {
-                            type: "vector",
-                            id: "datasets_layer",
-                            name: "datasets_layer",
-                            title: "Datasets",
-                            visibility: true,
-                            hideLoading: true,
+                            ...createBaseVectorLayer('datasets_layer'),
                             features: [data.features[0]],
-                            style: {
-                                color: '#db0033',
-                                fillColor: 'rgba(240, 240, 240, 0.5)',
-                                weight: 2
-                            }
+                            style: getMainViewStyle()
+                        }
+                    ),
+                    addLayer(
+                        {
+                            ...createBaseVectorLayer('search_layer'),
+                            features: [],
+                            style: getSearchLayerStyle()
                         }
                     )
                 );
@@ -81,8 +89,13 @@ const selectAreaEpic = action$ =>
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/filterCategories.json').then(response => response.data))
                 .switchMap(data => {
                     return Rx.Observable.of(
+                        searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
                         setFilter('exposures', {categories: [...data]}),
                         updateNode('datasets_layer', 'layers', {visibility: false}),
+                        updateNode('search_layer', 'layers', {
+                            visibility: true,
+                            features: action.area.geometry && [{...action.area}] || []
+                        }),
                         setControlProperty('dataExplorer', 'enabled', true),
                         zoomToExtent(action.area.bbox, action.area.crs)
                     );
@@ -95,9 +108,9 @@ const closeDataExplorerEpic = action$ =>
         .switchMap(() => {
             return Rx.Observable.of(
                 zoomToExtent([
-                    -10037508.34, -10037508.34,
-                    10037508.34, 15037508.34
-                ], 'EPSG:900913'),
+                    -7037508.34, -7037508.34,
+                    7037508.34, 14037508.34
+                ], 'EPSG:3857'),
                 updateNode('datasets_layer', 'layers', {visibility: true})
             );
         });
@@ -105,12 +118,23 @@ const closeDataExplorerEpic = action$ =>
 const itemSelectedEpic = action$ =>
     action$.ofType(TEXT_SEARCH_ITEM_SELECTED)
     .switchMap(action => {
-        return Rx.Observable.of(selectArea({bbox: [...action.item.bbox], crs: 'EPSG:4326'}));
+        // nominatim item
+        return Rx.Observable.of(selectArea({...action.item, crs: 'EPSG:4326'}));
+    });
+
+const resetSearchLayerEpic = action$ =>
+    action$.ofType(TEXT_SEARCH_RESET)
+    .switchMap(() => {
+        return Rx.Observable.of(updateNode('search_layer', 'layers', {
+            visibility: false,
+            features: []
+        }));
     });
 
 module.exports = {
     initDataLayerEpic,
     selectAreaEpic,
     closeDataExplorerEpic,
-    itemSelectedEpic
+    itemSelectedEpic,
+    resetSearchLayerEpic
 };
