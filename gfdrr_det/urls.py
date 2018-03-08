@@ -44,8 +44,9 @@ schema_view = get_schema_view("HEV-E API")
 
 API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
 
-
-urlpatterns += [
+# geonode patterns must come last so that the regexp for our index page is not
+# overridden
+urlpatterns = [
     url(
         r'^$',
         TemplateView.as_view(template_name='site_index.html'),
@@ -53,4 +54,4 @@ urlpatterns += [
     ),
     url(API_PREFIX, include(router.urls)),
     url("{}schema/$".format(API_PREFIX), schema_view),
-]
+] + urlpatterns
