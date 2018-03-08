@@ -63,8 +63,14 @@ class FilterList extends React.Component {
                                                             datasetId,
                                                             checked: !dataset.checked
                                                         });
-                                                    }}>{dataset.name}</Checkbox>
-                                                { dataset.availableFilters &&
+                                                    }}>
+                                                        {/*<span style={{
+                                                            borderBottom: '2px solid hsl(' + Math.round(Math.random() * 360) + ', 75%, 50%)',
+                                                            display: 'inline-block'
+                                                        }}>{dataset.name}</span>*/}
+                                                        {dataset.name}
+                                                    </Checkbox>
+                                                {/* dataset.availableFilters &&
                                                     <Grid fluid>
                                                         {
                                                             dataset.availableFilters.map((availableFilter, availableFilterId) => (
@@ -97,7 +103,7 @@ class FilterList extends React.Component {
                                                             ))
                                                         }
                                                     </Grid>
-                                                }
+                                                */}
                                             </span>
                                         ))
                                     }

@@ -14,6 +14,7 @@ module.exports = {
         DataExplorerPlugin: require('./plugins/DataExplorer'),
         DataExplorerButtonPlugin: require('./plugins/DataExplorerButton'),
         BrandNavbar: require('./plugins/BrandNavbar'),
+        ZoomToSearchPlugin: require('./plugins/ZoomToSearch'),
 
         OmniBarPlugin: require('../MapStore2/web/client/plugins/OmniBar'),
         ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),

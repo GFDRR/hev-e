@@ -10,7 +10,9 @@ const {SET_FILTER, UPDATE_FILTER, SELECT_AREA, SHOW_DETAILS, SHOW_FILTER} = requ
 const set = require('lodash/fp/set');
 const {get} = require('lodash');
 
-function dataexploration(state = {}, action) {
+function dataexploration(state = {
+    filter: {}
+}, action) {
     switch (action.type) {
         case SHOW_FILTER:
             return {...state, filter: {...(state.filter || {}), show: action.show}};

@@ -16,6 +16,9 @@ const ContainerDimensions = require('react-container-dimensions').default;
 const {getStyle} = require('../../MapStore2/web/client/components/map/openlayers/VectorStyle');
 const {selectArea} = require('../actions/dataexploration');
 const {createSelector} = require('reselect');
+const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUtils');
+const {head} = require('lodash');
+const {getMainViewStyle} = require('../utils/StyleUtils');
 
 class ResizableMapComponent extends React.Component {
 
@@ -26,7 +29,8 @@ class ResizableMapComponent extends React.Component {
         onResizeMap: PropTypes.func,
         onSelectArea: PropTypes.func,
         onChangePointer: PropTypes.func,
-        mousePointer: PropTypes.string
+        mousePointer: PropTypes.string,
+        propertyId: PropTypes.string
     };
 
     static defaultProps = {
@@ -35,7 +39,8 @@ class ResizableMapComponent extends React.Component {
         onResizeMap: () => {},
         onSelectArea: () => {},
         onChangePointer: () => {},
-        mousePointer: ''
+        mousePointer: '',
+        propertyId: 'href'
     };
 
     componentWillReceiveProps(newProps) {
@@ -53,62 +58,60 @@ class ResizableMapComponent extends React.Component {
                     onClickEvent: event => {
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
                         if (featuresAtPixel && featuresAtPixel.length > 0) {
-                            const propertiesArray = featuresAtPixel.map(feature => {
+                            const newFeature = head(featuresAtPixel.map(feature => {
                                 const properties = feature.getProperties();
                                 const extent = feature.getGeometry().getExtent();
-
-                                // TODO: get crs
-                                return properties && Object.keys(properties)
+                                return {
+                                    bbox: [...extent],
+                                    crs: 'EPSG:4326',
+                                    type: 'Feature',
+                                    geometry: {
+                                        type: feature.getGeometry().getType(),
+                                        coordinates: feature.getGeometry().getCoordinates()
+                                    },
+                                    properties: properties && Object.keys(properties)
                                     .filter(key => key !== 'geometry')
                                     .reduce((newProperties, key) => ({
                                         ...newProperties,
                                         [key]: properties[key]
-                                    }), {
-                                        bbox: [...extent],
-                                        crs: 'EPSG:3857'
-                                    });
-                            }).filter(val => val);
-                            if (propertiesArray.length > 0) {
-                                this.props.onSelectArea({...propertiesArray[0]});
+                                    }), {}) || {}
+                                };
+                            }).filter(val => val));
+                            if (newFeature) {
+                                const reprojectedFeature = CoordinatesUtils.reprojectGeoJson(newFeature, 'EPSG:3857', 'EPSG:4326');
+                                this.props.onSelectArea({...reprojectedFeature});
                             }
                         }
                     },
                     onMoveEvent: event => {
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
-                        let hrefs = [];
+                        const layers = event.target && event.target.getLayers && event.target.getLayers();
+                        const layersArray = layers && layers.getArray && layers.getArray();
+                        let id = [];
                         if (featuresAtPixel && featuresAtPixel.length > 0) {
-                            hrefs = featuresAtPixel.map(feature => {
+                            id = head(featuresAtPixel.map(feature => {
                                 const properties = feature.getProperties();
-                                return properties.href;
-                            }).filter(href => href);
+                                return properties[this.props.propertyId];
+                            }).filter(idx => idx));
                             this.props.onChangePointer('pointer');
                         } else if (this.props.mousePointer !== 'default') {
                             this.props.onChangePointer('default');
                         }
-                        const layers = event.target && event.target.getLayers && event.target.getLayers();
-                        const layersArray = layers && layers.getArray && layers.getArray();
+
                         if (layersArray && layersArray.length > 0) {
                             layersArray.forEach(layer => {
                                 if (layer.type === 'VECTOR' && layer.get('msId') === 'datasets_layer' && layer.getSource) {
                                     layer.getSource().forEachFeature(feature => {
                                         const properties = feature.getProperties();
-                                        if (hrefs.indexOf(properties.href) !== -1) {
-                                            // selected style
+                                        if (id && id === properties[this.props.propertyId]) {
+                                            // hover style
                                             feature.setStyle(getStyle({
-                                                style: {
-                                                    color: '#db0033',
-                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
-                                                    weight: 7
-                                                }
+                                                style: getMainViewStyle(true)
                                             }));
                                         } else {
                                             // default style
                                             feature.setStyle(getStyle({
-                                                style: {
-                                                    color: '#db0033',
-                                                    fillColor: 'rgba(240, 240, 240, 0.5)',
-                                                    weight: 2
-                                                }
+                                                style: getMainViewStyle()
                                             }));
                                         }
                                     });
