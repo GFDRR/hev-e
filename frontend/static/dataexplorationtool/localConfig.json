@@ -29,12 +29,10 @@
                     }
                 }
             },
-            "BrandNavbar",
             {
-                "name": "OmniBar",
+                "name": "BrandNavbar",
                 "cfg": {
-                    "containerPosition": "header",
-                    "className": "navbar shadow navbar-home"
+                    "containerPosition": "header"
                 }
             },
             {

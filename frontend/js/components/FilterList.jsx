@@ -39,7 +39,7 @@ class FilterList extends React.Component {
                         <br/>
                         <Col xs={12}>
                             <FormGroup>
-                                <a href="#" className="text-hev-e-red">Clear</a>
+                                <a href="#" className="text-hev-e-primary">Clear</a>
                             </FormGroup>
                         </Col>
                     </Row>

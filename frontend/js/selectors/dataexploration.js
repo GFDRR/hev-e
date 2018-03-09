@@ -10,5 +10,8 @@ const {isObject, isEmpty} = require('lodash');
 
 module.exports = {
     selectedAreaSelector: state => state.dataexploration && isObject(state.dataexploration.area) && !isEmpty(state.dataexploration.area) && state.dataexploration.area || null,
-    currentDetailsSelector: state => state.dataexploration && isObject(state.dataexploration.currentDetails) && !isEmpty(state.dataexploration.currentDetails) && state.dataexploration.currentDetails || null
+    currentDetailsSelector: state => state.dataexploration && isObject(state.dataexploration.currentDetails) && !isEmpty(state.dataexploration.currentDetails) && state.dataexploration.currentDetails || null,
+    catalogURLSelector: state => state.dataexploration && state.dataexploration.catalogURL,
+    filterSelector: state => state.dataexploration && state.dataexploration.filter || {},
+    currentSectionSelector: state => state.dataexploration && state.dataexploration.currentSection || 'exposures'
 };

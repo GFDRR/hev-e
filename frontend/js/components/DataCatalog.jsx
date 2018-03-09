@@ -15,14 +15,14 @@ const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Tool
 class DataCatalog extends React.Component {
     static propTypes = {
         onShowDetails: PropTypes.func,
-        catalogUrl: PropTypes.string,
+        catalogURL: PropTypes.string,
         filterList: PropTypes.node,
         filterForm: PropTypes.node
     };
 
     static defaultProps = {
         onShowDetails: () => {},
-        catalogUrl: 'https://demo.geo-solutions.it/geoserver/csw',
+        catalogURL: '',
         filterList: null,
         filterForm: null
     };
@@ -32,15 +32,16 @@ class DataCatalog extends React.Component {
         return (
             <div className="et-catalog" style={{display: 'flex', flex: 1, height: '100%'}}>
                 <FilterList/>
-                <CompactCatalog
+                {this.props.catalogURL && <CompactCatalog
                     filterForm={this.props.filterForm}
                     onRecordSelected={() => {}}
+                    key={'' + this.props.catalogURL}
                     getCustomItem={
                         item => ({
                             title: <span>{item.title}</span>,
                             description: <span>{item.description}</span>,
                             caption: <span>{item.caption}</span>,
-                            preview: <i className="fa fa-building fa-4x text-center"></i>,
+                            preview: item.icon ? <i className={'fa fa-4x text-center fa-' + item.icon}></i> : null,
                             tools: <Toolbar
                                 btnDefaultProps={
                                     {
@@ -65,11 +66,11 @@ class DataCatalog extends React.Component {
                         })
                     }
                     catalog= {{
-                        url: this.props.catalogUrl,
-                        type: 'csw',
-                        title: 'Exploration tool',
+                        url: this.props.catalogURL,
+                        type: 'hev-e',
+                        title: 'HEV-E',
                         autoload: true
-                    }}/>
+                    }}/>}
             </div>
         );
     }

@@ -25,7 +25,7 @@ class DataDetails extends React.Component {
     static defaultProps = {
         currentDetails: null,
         relatedCards: [
-            {
+            /*{
                 title: 'Data',
                 preview: <i className="fa fa-building fa-4x"></i>
             },
@@ -44,7 +44,7 @@ class DataDetails extends React.Component {
             {
                 title: 'Data',
                 preview: <i className="fa fa-building fa-4x"></i>
-            }
+            }*/
         ],
         onClose: () => {}
     };
@@ -61,7 +61,7 @@ class DataDetails extends React.Component {
                     flexDirection: 'column'}}>
                     <ResizableModal
                         show
-                        title={<span><Glyphicon glyph="info-sign"/>&nbsp;Tanzania {/*this.props.currentDetails.title*/}</span>}
+                        title={<span><i className={'fa fa-' + this.props.currentDetails.icon}/>&nbsp;{this.props.currentDetails.title}</span>}
                         onClose={this.props.onClose}>
                         {/**/}
                         <Grid fluid>
@@ -89,7 +89,7 @@ Tanzania is a presidential constitutional republic and since 1996 its official c
                         <h4>Related data</h4>
                     </div>
                     <div className="et-related-list">
-                        <div className="et-related-list-container">
+                        <div className="et-related-list-container" style={{height: 186}}>
                         {
                             this.props.relatedCards.map((card, idx) => {
                                 return (

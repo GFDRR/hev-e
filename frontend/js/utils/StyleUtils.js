@@ -9,7 +9,7 @@
 module.exports = {
     getMainViewStyle: hover => ({
         color: '#ffffff',
-        fillColor: hover ? 'rgba(219, 0, 51, 0.6)' : 'rgba(219, 0, 51, 0.25)',
+        fillColor: hover ? 'rgba(33, 186, 176, 0.6)' : 'rgba(33, 186, 176, 0.25)',
         weight: 1
     }),
     getSearchLayerStyle: () => ({
@@ -32,7 +32,7 @@ module.exports = {
             41
         ],
         stroke: {
-            color: "#1477c9",
+            color: "#555",
             width: 2,
             opacity: 1,
             lineDash: [

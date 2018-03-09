@@ -14,7 +14,8 @@ const Rx = require('rxjs');
 const API = {
     "csw": require('../../../MapStore2/web/client/api/CSW'),
     "wms": require('../../../MapStore2/web/client/api/WMS'),
-    "wmts": require('../../../MapStore2/web/client/api/WMTS')
+    "wmts": require('../../../MapStore2/web/client/api/WMTS'),
+    "hev-e": require('../../api/HEVE')
 };
 
 const BorderLayout = require('../../../MapStore2/web/client/components/layout/BorderLayout');
@@ -24,7 +25,7 @@ const loadingState = require('../../../MapStore2/web/client/components/misc/enha
 const emptyState = require('../../../MapStore2/web/client/components/misc/enhancers/emptyState');
 const withControllableState = require('../../../MapStore2/web/client/components/misc/enhancers/withControllableState');
 const CatalogForm = require('../../../MapStore2/web/client/components/catalog/CatalogForm');
-const {getCatalogRecords} = require('../../../MapStore2/web/client/utils/CatalogUtils');
+// const {getCatalogRecords} = require('../../../MapStore2/web/client/utils/CatalogUtils');
 const Icon = require('../../../MapStore2/web/client/components/misc/FitIcon');
 const defaultPreview = <Icon glyph="geoserver" padding={20}/>;
 const SideGrid = compose(
@@ -46,6 +47,7 @@ const resToProps = ({records, result = {}}) => ({
         caption: record.identifier,
         description: record.description,
         preview: record.thumbnail ? <img src="thumbnail" /> : defaultPreview,
+        icon: record.icon,
         record
     })),
     total: result && result.numberOfRecordsMatched
@@ -56,7 +58,7 @@ const PAGE_SIZE = 10;
  */
 const loadPage = ({text, catalog = {}}, page = 0) => Rx.Observable
     .fromPromise(API[catalog.type].textSearch(catalog.url, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text))
-    .map((result) => ({result, records: getCatalogRecords(catalog.type, result || [])}))
+    .map((result) => ({result, records: result.records}))
     .map(resToProps);
 const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PAGE_SIZE};
 /**
@@ -76,7 +78,7 @@ const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PA
  */
 module.exports = compose(
         withControllableState('searchText', "setSearchText", ""),
-        withVirtualScroll({loadPage, scrollSpyOptions}),
+        withVirtualScroll({loadPage, scrollSpyOptions, hasMore: ({total, items}) => items.length < total}),
         mapPropsStream( props$ =>
             props$.merge(props$.take(1).switchMap(({catalog, loadFirst = () => {} }) =>
                 props$
