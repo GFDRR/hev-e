@@ -44,7 +44,7 @@ const SideGrid = compose(
 const resToProps = ({records, result = {}}) => ({
     items: (records || []).map((record = {}) => ({
         title: record.title,
-        caption: record.identifier,
+        caption: record.caption,
         description: record.description,
         preview: record.thumbnail ? <img src="thumbnail" /> : defaultPreview,
         icon: record.icon,

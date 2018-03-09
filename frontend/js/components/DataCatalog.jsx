@@ -17,14 +17,18 @@ class DataCatalog extends React.Component {
         onShowDetails: PropTypes.func,
         catalogURL: PropTypes.string,
         filterList: PropTypes.node,
-        filterForm: PropTypes.node
+        filterForm: PropTypes.node,
+        onShowBbox: PropTypes.func,
+        onZoomTo: PropTypes.func
     };
 
     static defaultProps = {
         onShowDetails: () => {},
         catalogURL: '',
         filterList: null,
-        filterForm: null
+        filterForm: null,
+        onShowBbox: () => {},
+        onZoomTo: () => {}
     };
 
     render() {
@@ -42,6 +46,52 @@ class DataCatalog extends React.Component {
                             description: <span>{item.description}</span>,
                             caption: <span>{item.caption}</span>,
                             preview: item.icon ? <i className={'fa fa-4x text-center fa-' + item.icon}></i> : null,
+                            onMouseEnter: () => {
+                                const bbox = item && item.record && item.record.bbox || null;
+                                if (bbox) {
+                                    this.props.onShowBbox('bbox_layer', 'layers', {
+                                        features: [{
+                                            type: 'Feature',
+                                            geometry: {
+                                                type: 'Polygon',
+                                                coordinates: [
+                                                    [
+                                                        [bbox[0], bbox[1]],
+                                                        [bbox[0], bbox[3]],
+                                                        [bbox[2], bbox[3]],
+                                                        [bbox[2], bbox[1]],
+                                                        [bbox[0], bbox[1]]
+                                                    ]
+                                                ]
+                                            },
+                                            properties: {}
+                                        }],
+                                        style: {
+                                            fill: {
+                                                color: "rgba(33, 186, 176, 0.25)"
+                                            },
+                                            stroke: {
+                                                color: "#555",
+                                                width: 2,
+                                                opacity: 1,
+                                                lineDash: [
+                                                    4,
+                                                    6
+                                                ]
+                                            }
+                                        }
+                                    });
+                                }
+                            },
+                            onMouseLeave: () => {
+                                this.props.onShowBbox('bbox_layer', 'layers', {
+                                    features: [],
+                                    style: {}
+                                });
+                            },
+                            onClick: () => {
+                                this.props.onShowDetails(item.record ? {...item.record} : {});
+                            },
                             tools: <Toolbar
                                 btnDefaultProps={
                                     {
@@ -51,16 +101,23 @@ class DataCatalog extends React.Component {
                                 }
                                 buttons={[
                                     {
-                                        glyph: 'info-sign',
-                                        onClick: () => {
-                                            this.props.onShowDetails(item.record ? {...item.record} : {});
+                                        glyph: 'zoom-to',
+                                        tooltip: 'Zoom to layer',
+                                        onClick: (e) => {
+                                            e.stopPropagation();
+                                            const bbox = item && item.record && item.record.bbox || null;
+                                            if (bbox) {
+                                                this.props.onZoomTo([...bbox], 'EPSG:4326');
+                                            }
                                         }
                                     },
                                     {
-                                        glyph: 'bulb-off'
+                                        glyph: 'bulb-off',
+                                        tooltip: 'Show layer'
                                     },
                                     {
-                                        glyph: 'plus'
+                                        glyph: 'plus',
+                                        tooltip: 'Add layer to download list'
                                     }
                                 ]}/>
                         })

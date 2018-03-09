@@ -90,6 +90,13 @@ const initDataLayerEpic = action$ =>
                             features: [],
                             style: getSearchLayerStyle()
                         }
+                    ),
+                    addLayer(
+                        {
+                            ...createBaseVectorLayer('bbox_layer'),
+                            features: [],
+                            style: getSearchLayerStyle()
+                        }
                     )
                 );
             })

@@ -55,6 +55,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         new NormalModuleReplacementPlugin(/VectorStyle.js/, path.join(__dirname, "js", "ms2override", "components", "VectorStyle.js")),
         new NormalModuleReplacementPlugin(/withScrollSpy.js/, path.join(__dirname, "js", "ms2override", "components", "withScrollSpy.js")),
         new NormalModuleReplacementPlugin(/withInfiniteScroll.js/, path.join(__dirname, "js", "ms2override", "components", "withInfiniteScroll.js")),
+        new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideCard.jsx")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin
