@@ -50,7 +50,7 @@ module.exports = ({
                             buttons={
                                 [
                                     {
-                                        text: <i className="fa fa-filter"></i>,
+                                        glyph: 'filter',
                                         tooltip: 'Advanced filter',
                                         active: !!showFilter,
                                         onClick: () => {

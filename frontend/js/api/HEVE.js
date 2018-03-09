@@ -158,22 +158,30 @@ const Api = {
                     {
                         title: 'Urban Environment',
                         description: 'Tanzania Urban Environment',
-                        icon: 'building'
+                        icon: 'building',
+                        caption: 'buildings',
+                        bbox: [29.79, -8.46, 33.46, -3.92]
                     },
                     {
                         title: 'Connections',
                         description: 'Tanzania Connections',
-                        icon: 'road'
+                        icon: 'road',
+                        caption: 'roads',
+                        bbox: [38.69, -10.77, 40.82, -8.31]
                     },
                     {
                         title: 'Agriculture',
                         description: 'Tanzania Agriculture',
-                        icon: 'leaf'
+                        icon: 'leaf',
+                        caption: 'crops',
+                        bbox: [35.64, -6.21, 37.56, -4.10]
                     },
                     {
                         title: 'Population',
                         description: 'Tanzania Population',
-                        icon: 'users'
+                        icon: 'users',
+                        caption: 'people',
+                        bbox: [31.97, -7.54, 43.02, -2.75]
                     }
                 ]
             };

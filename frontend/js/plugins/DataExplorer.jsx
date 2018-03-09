@@ -18,7 +18,8 @@ const DockPanel = require('../../MapStore2/web/client/components/misc/panels/Doc
 const DataCatalog = require('../components/DataCatalog');
 const DataDetails = require('../components/DataDetails');
 const ContainerDimensions = require('react-container-dimensions').default;
-
+const {updateNode} = require("../../MapStore2/web/client/actions/layers");
+const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
@@ -50,14 +51,15 @@ const FilterForm = connect(
     }
 )(require('../components/FilterForm'));
 
-
 class DataExplorerComponent extends React.Component {
     static propTypes = {
         open: PropTypes.bool,
         currentDetails: PropTypes.object,
         onClose: PropTypes.func,
         onShowDetails: PropTypes.func,
-        catalogURL: PropTypes.string
+        catalogURL: PropTypes.string,
+        onShowBbox: PropTypes.func,
+        onZoomTo: PropTypes.func
     };
 
     static defaultProps = {
@@ -65,7 +67,9 @@ class DataExplorerComponent extends React.Component {
         currentDetails: null,
         onClose: () => {},
         onShowDetails: () => {},
-        catalogURL: ''
+        catalogURL: '',
+        onShowBbox: () => {},
+        onZoomTo: () => {}
     };
 
     render() {
@@ -101,11 +105,14 @@ class DataExplorerComponent extends React.Component {
                             filterList={FilterList}
                             filterForm={FilterForm}
                             catalogURL={this.props.catalogURL}
-                            onShowDetails={this.props.onShowDetails}/>
+                            onShowDetails={this.props.onShowDetails}
+                            onShowBbox={this.props.onShowBbox}
+                            onZoomTo={this.props.onZoomTo}/>
                     </DockPanel>
                     <DataDetails
                         onClose={() => this.props.onShowDetails(null)}
-                        currentDetails={this.props.currentDetails}/>
+                        currentDetails={this.props.currentDetails}
+                        onZoomTo={this.props.onZoomTo}/>
                 </div>
                 )}
             </ContainerDimensions>
@@ -127,7 +134,9 @@ const DataExplorer = connect(
     dataExplorerSelector,
     {
         onClose: setControlProperty.bind(null, 'dataExplorer', 'enabled', false),
-        onShowDetails: showDatails
+        onShowDetails: showDatails,
+        onShowBbox: updateNode,
+        onZoomTo: zoomToExtent
     }
 )(DataExplorerComponent);
 
