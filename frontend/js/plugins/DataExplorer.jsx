@@ -13,7 +13,7 @@ const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {showDatails, updateFilter, showFilter} = require('../actions/dataexploration');
-const {currentDetailsSelector} = require('../selectors/dataexploration');
+const {currentDetailsSelector, catalogURLSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
 const DataDetails = require('../components/DataDetails');
@@ -56,14 +56,16 @@ class DataExplorerComponent extends React.Component {
         open: PropTypes.bool,
         currentDetails: PropTypes.object,
         onClose: PropTypes.func,
-        onShowDetails: PropTypes.func
+        onShowDetails: PropTypes.func,
+        catalogURL: PropTypes.string
     };
 
     static defaultProps = {
         open: true,
         currentDetails: null,
         onClose: () => {},
-        onShowDetails: () => {}
+        onShowDetails: () => {},
+        catalogURL: ''
     };
 
     render() {
@@ -98,6 +100,7 @@ class DataExplorerComponent extends React.Component {
                         <DataCatalog
                             filterList={FilterList}
                             filterForm={FilterForm}
+                            catalogURL={this.props.catalogURL}
                             onShowDetails={this.props.onShowDetails}/>
                     </DockPanel>
                     <DataDetails
@@ -112,10 +115,12 @@ class DataExplorerComponent extends React.Component {
 
 const dataExplorerSelector = createSelector([
     state => state.controls && state.controls.dataExplorer.enabled,
-    currentDetailsSelector
-], (open, currentDetails) => ({
+    currentDetailsSelector,
+    catalogURLSelector
+], (open, currentDetails, catalogURL) => ({
     open,
-    currentDetails
+    currentDetails,
+    catalogURL
 }));
 
 const DataExplorer = connect(

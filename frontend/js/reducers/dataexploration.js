@@ -6,32 +6,24 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-const {SET_FILTER, UPDATE_FILTER, SELECT_AREA, SHOW_DETAILS, SHOW_FILTER} = require('../actions/dataexploration');
-const set = require('lodash/fp/set');
-const {get} = require('lodash');
+const {SET_FILTER, SELECT_AREA, SHOW_DETAILS, SHOW_FILTER, UPDATE_DATA_URL} = require('../actions/dataexploration');
+const url = require('url');
 
 function dataexploration(state = {
-    filter: {}
+    filter: {},
+    catalogURL: ''
 }, action) {
     switch (action.type) {
         case SHOW_FILTER:
             return {...state, filter: {...(state.filter || {}), show: action.show}};
         case SET_FILTER:
-            return {...state, filter: {...(state.filter || {}), [action.name]: action.filter}};
-        case UPDATE_FILTER:
-            const updatingFilter = {...state.filter} || {};
-            const currentSection = state.currentSection || 'exposures';
-
-            if (action.options.type === 'categories') {
-                const template = action.options.filterId ?
-                `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}].availableFilters[${action.options.availableFilterId}].filters[${action.options.filterId}]`
-                : `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}]`;
-                const currentUpdate = get(updatingFilter, template);
-                const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
-                return {...state, filter: {...newFilter}};
-            }
-
-            return {...state};
+            return {...state, filter: {...action.filter}};
+        case UPDATE_DATA_URL:
+            const catalogURL = url.format({
+                pathname: '/test/api',
+                query: {...action.params}
+            });
+            return {...state, catalogURL};
         case SELECT_AREA:
             return action.area || state.area ?
                 {...state, area: {...(action.area || state.area)}}

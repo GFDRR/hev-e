@@ -9,12 +9,15 @@
 const Rx = require('rxjs');
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const {MAP_CONFIG_LOADED} = require('../../MapStore2/web/client/actions/config');
-const {SELECT_AREA, selectArea, setFilter} = require('../actions/dataexploration');
+const {SELECT_AREA, UPDATE_FILTER, selectArea, setFilter, updateDataURL} = require('../actions/dataexploration');
+const {filterSelector, currentSectionSelector} = require('../selectors/dataexploration');
 const {addLayer, updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
 const {getMainViewStyle, getSearchLayerStyle} = require('../utils/StyleUtils');
+const set = require('lodash/fp/set');
+const {get} = require('lodash');
 /*
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
@@ -46,6 +49,18 @@ const initDataLayerEpic = action$ =>
             });
         });
 */
+
+const stringifyCategory = (section, filter) => {
+    return filter[section] && Object.keys(filter[section]).reduce((params, key) => {
+        if (key === 'categories') {
+            const valuesArray = filter[section][key].reduce((arr, cat) => {
+                return [...arr, ...cat.datasetLayers];
+            }, []);
+            return {...params, [key]: valuesArray.filter(cat => cat.checked).map(cat => cat.name.toLowerCase()).join(',')};
+        }
+        return {...params};
+    }, {}) || {};
+};
 
 const createBaseVectorLayer = name => ({
     type: 'vector',
@@ -89,8 +104,9 @@ const selectAreaEpic = action$ =>
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/filterCategories.json').then(response => response.data))
                 .switchMap(data => {
                     return Rx.Observable.of(
+                        updateDataURL({}),
                         searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
-                        setFilter('exposures', {categories: [...data]}),
+                        setFilter({exposures: {categories: [...data]}}),
                         updateNode('datasets_layer', 'layers', {visibility: false}),
                         updateNode('search_layer', 'layers', {
                             visibility: true,
@@ -131,10 +147,33 @@ const resetSearchLayerEpic = action$ =>
         }));
     });
 
+const updateFilterEpic = (action$, store) =>
+    action$.ofType(UPDATE_FILTER)
+    .switchMap(action => {
+        const filter = filterSelector(store.getState());
+        const currentSection = currentSectionSelector(store.getState());
+        const updatingFilter = {...filter} || {};
+        if (action.options.type === 'categories') {
+            const template = action.options.filterId ?
+            `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}].availableFilters[${action.options.availableFilterId}].filters[${action.options.filterId}]`
+            : `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}]`;
+            const currentUpdate = get(updatingFilter, template);
+            const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
+            return Rx.Observable.of(
+                setFilter(newFilter),
+                updateDataURL({
+                    ...stringifyCategory(currentSection, newFilter)
+                })
+            );
+        }
+        return Rx.Observable.empty();
+    });
+
 module.exports = {
     initDataLayerEpic,
     selectAreaEpic,
     closeDataExplorerEpic,
     itemSelectedEpic,
-    resetSearchLayerEpic
+    resetSearchLayerEpic,
+    updateFilterEpic
 };

@@ -11,11 +11,11 @@ const UPDATE_FILTER = 'DATAEXPLORATION:UPDATE_FILTER';
 const SELECT_AREA = 'DATAEXPLORATION:SELECT_AREA';
 const SHOW_DETAILS = 'DATAEXPLORATION:SHOW_DETAILS';
 const SHOW_FILTER = 'DATAEXPLORATION:SHOW_FILTER';
+const UPDATE_DATA_URL = 'DATAEXPLORATION:UPDATE_DATA_URL';
 
-function setFilter(name, filter) {
+function setFilter(filter) {
     return {
         type: SET_FILTER,
-        name,
         filter
     };
 }
@@ -31,6 +31,13 @@ function updateFilter(options) {
     return {
         type: UPDATE_FILTER,
         options
+    };
+}
+
+function updateDataURL(params) {
+    return {
+        type: UPDATE_DATA_URL,
+        params
     };
 }
 
@@ -54,9 +61,11 @@ module.exports = {
     SHOW_DETAILS,
     SET_FILTER,
     SHOW_FILTER,
+    UPDATE_DATA_URL,
     updateFilter,
     selectArea,
     showDatails,
     setFilter,
-    showFilter
+    showFilter,
+    updateDataURL
 };

@@ -1,9 +1,10 @@
 
 @ms2-et-color-bg: #f0f0f0;
-@ms2-et-color-red: #db0033;
+@ms2-et-color-primary: #21bab0;
+@ms2-et-color-red: #dbaf00;
 
-.text-hev-e-red {
-    color: @ms2-et-color-red;
+.text-hev-e-primary {
+    color: @ms2-et-color-primary;
 }
 
 .btn-primary {
@@ -55,14 +56,58 @@ div.ol-scale-line.ol-unselectable {
 }
 
 #dataexplorationtool-view-container {
-    #mapstore-navbar-container {
+    .et-brand-navbar {
+
         .shadow-soft;
         margin-bottom: 0;
         z-index: 500;
-        display: flex;
+       
+        margin-bottom: 0;
+        border-color: transparent;
+        .navbar-nav > li > a {
+            font-size: 18px;
+        }
+        .container {
+            
+            width: auto;
+            .navbar-header {
+                margin: 0;
+                .navbar-brand {
+                    display: flex;
+                    padding: 28px 15px;
+                    a {
+                        height: 100%;
+                        padding-right: 10px;
+                        margin-right: 10px;
+                        border-right: 1px solid @ms2-et-color-bg;
+                        img {
+                            height: 100%;
+                            width: auto;
+                        }
+                    }
+                }
+                
+            }
+            .navbar-form {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+        }
 
+        &.navbar-inverse {
+            .navbar-header {
+                .navbar-brand {
+                    a {
+                        border-right: 1px solid #555;
+                    }
+                }
+                
+            }
+        }
+        
         .et-search-bar {
             #map-search-bar {
+                top: 0;
                 transition: 0.4s all;
                 .form-group {
                     display: flex;
@@ -188,11 +233,13 @@ div.ol-scale-line.ol-unselectable {
                 }
 
                 .search-result-list {
-                    position: relative !important;
-                    top: 10px;
-                    right: 0;
+                    position: absolute !important;
+                    margin-top: 20px;
+                    /*top: 10px;
+                    right: 0;*/
                     left: auto;
                     z-index: 5000;
+                    background-color: @ms2-color-background;
                 }
 
                 /*> *:last-child {
@@ -223,40 +270,7 @@ div.ol-scale-line.ol-unselectable {
             
         }
 
-        .et-brand-navbar {
-            margin-bottom: 0;
-            border-color: transparent;
-            flex: 1;
-            .navbar-nav > li > a {
-               font-size: 18px;
-            }
-            .container {
-                
-                width: auto;
-                .navbar-header {
-                    margin: 0;
-                    .navbar-brand {
-                        display: flex;
-                        padding: 28px 15px;
-                        a {
-                            height: 100%;
-                            padding-right: 10px;
-                            margin-right: 10px;
-                            border-right: 1px solid @ms2-et-color-bg;
-                            img {
-                                height: 100%;
-                                width: auto;
-                            }
-                        }
-                    }
-                    
-                }
-                .navbar-form {
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                }
-            }   
-        }
+        
 
         
     }
@@ -643,7 +657,7 @@ div.ol-scale-line.ol-unselectable {
 
 @media (max-width: 768px) {
     #dataexplorationtool-view-container {
-        #mapstore-navbar-container {
+        .et-brand-navbar {
             .et-search-bar {
                 &.et-top-left {
                     #map-search-bar {
@@ -656,27 +670,26 @@ div.ol-scale-line.ol-unselectable {
 }
 
 @media (max-width: 767px) {
-    #mapstore-navbar .MapSearchBar {
-        width: ~"calc(100% - 20px)" !important;
-        left: 10px !important;
-        margin-left: 0 !important;
-    }
-    #mapstore-navbar .search-result-list {
-        width: ~"calc(100% - 20px)" !important;
-        left: 10px !important;
-        margin-left: 0 !important;
-    }
-    #mapstore-navbar-container {
+    .et-brand-navbar {
         border: none;
-        .et-brand-navbar {
-            border: none;
-            .container {
-                background-color: @ms2-color-background;
-                .shadow-soft;
-                .navbar-header {
-                    width: 100%;
-                }
+        .container {
+            background-color: @ms2-color-background;
+            .shadow-soft;
+            .navbar-header {
+                width: 100%;
             }
+        }
+
+        .search-result-list {
+            width: ~"calc(100% - 20px)" !important;
+            left: 10px !important;
+            margin-left: 0 !important;
+        }
+
+        .MapSearchBar {
+            width: ~"calc(100% - 20px)" !important;
+            left: 10px !important;
+            margin-left: 0 !important;
         }
     }
 
@@ -685,7 +698,13 @@ div.ol-scale-line.ol-unselectable {
     }
 
     #dataexplorationtool-view-container {
-        #mapstore-navbar-container {
+        .et-brand-navbar {
+            &.navbar-inverse {
+                background-color: @navbar-inverse-bg;
+                .container {
+                    background-color: @navbar-inverse-bg;
+                }
+            }
             .et-search-bar {
                 &.et-top-left,
                 &.et-center {

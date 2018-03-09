@@ -93,7 +93,9 @@ class ResizableMapComponent extends React.Component {
                                 const properties = feature.getProperties();
                                 return properties[this.props.propertyId];
                             }).filter(idx => idx));
-                            this.props.onChangePointer('pointer');
+                            if (this.props.mousePointer !== 'pointer') {
+                                this.props.onChangePointer('pointer');
+                            }
                         } else if (this.props.mousePointer !== 'default') {
                             this.props.onChangePointer('default');
                         }

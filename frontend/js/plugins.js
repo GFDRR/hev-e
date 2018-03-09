@@ -16,7 +16,6 @@ module.exports = {
         BrandNavbar: require('./plugins/BrandNavbar'),
         ZoomToSearchPlugin: require('./plugins/ZoomToSearch'),
 
-        OmniBarPlugin: require('../MapStore2/web/client/plugins/OmniBar'),
         ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
         ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
         UndoPlugin: require('../MapStore2/web/client/plugins/History'),
