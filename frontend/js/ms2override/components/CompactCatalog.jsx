@@ -7,7 +7,7 @@
  */
 const React = require('react');
 const {compose, mapPropsStream} = require('recompose');
-const {isNil} = require('lodash');
+const {isNil, isEqual} = require('lodash');
 const Message = require('../../../MapStore2/web/client/components/I18N/Message');
 const Rx = require('rxjs');
 
@@ -56,8 +56,8 @@ const PAGE_SIZE = 10;
 /*
  * retrieves data from a catalog service and converts to props
  */
-const loadPage = ({text, catalog = {}}, page = 0) => Rx.Observable
-    .fromPromise(API[catalog.type].textSearch(catalog.url, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text))
+const loadPage = ({text, catalog = {}, sortBy, groupInfo}, page = 0) => Rx.Observable
+    .fromPromise(API[catalog.type].textSearch(catalog.url, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text, sortBy, groupInfo))
     .map((result) => ({result, records: result.records}))
     .map(resToProps);
 const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PAGE_SIZE};
@@ -80,16 +80,19 @@ module.exports = compose(
         withControllableState('searchText', "setSearchText", ""),
         withVirtualScroll({loadPage, scrollSpyOptions, hasMore: ({total, items}) => items.length < total}),
         mapPropsStream( props$ =>
-            props$.merge(props$.take(1).switchMap(({catalog, loadFirst = () => {} }) =>
+            props$.merge(props$.take(1).switchMap(({catalog, loadFirst = () => {}, sortBy, groupInfo}) =>
                 props$
                     .debounceTime(500)
-                    .startWith({searchText: "", catalog})
-                    .distinctUntilKeyChanged('searchText')
-                    .do(({searchText, catalog: nextCatalog} = {}) => loadFirst({text: searchText, catalog: nextCatalog}))
+                    .startWith({searchText: "", catalog, sortBy, groupInfo})
+                    .distinctUntilChanged((previous, next) =>
+                        previous.searchText === next.searchText
+                        && previous.sortBy === next.sortBy
+                        && isEqual(previous.groupInfo, next.groupInfo)) // 'searchText'
+                    .do(({searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo} = {}) => loadFirst({text: searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo}))
                     .ignoreElements() // don't want to emit props
         )))
 
-)(({ setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
+)(({setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
     const Form = filterForm || CatalogForm;
     return (<BorderLayout
                 className="compat-catalog"

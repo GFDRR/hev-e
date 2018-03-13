@@ -4,8 +4,8 @@
     "printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
     "themePrefix": "dataexplorationtool",
     "translationsPath": [
-        "/static/dataexplorationtool/translations",
-        "/static/dataexplorationtool/MapStore2/web/client/translations"
+        "/static/dataexplorationtool/MapStore2/web/client/translations",
+        "/static/dataexplorationtool/translations"
     ],
     "initialState": {
         "defaultState": {

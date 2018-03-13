@@ -50,12 +50,21 @@ class ResizableMapComponent extends React.Component {
         }
     }
 
+    getLayers(event) {
+        const layers = event.target && event.target.getLayers && event.target.getLayers();
+        return layers && layers.getArray && layers.getArray();
+    }
+
     render() {
         return (
             <MapPlugin
                 options={{
                     ...this.props.options,
                     onClickEvent: event => {
+                        const layers = this.getLayers(event);
+                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'datasets_layer' && layer.getVisible()))) {
+                            return null;
+                        }
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
                         if (featuresAtPixel && featuresAtPixel.length > 0) {
                             const newFeature = head(featuresAtPixel.map(feature => {
@@ -84,9 +93,14 @@ class ResizableMapComponent extends React.Component {
                         }
                     },
                     onMoveEvent: event => {
+                        const layers = this.getLayers(event);
+                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'datasets_layer' && layer.getVisible()))) {
+                            if (this.props.mousePointer !== 'default') {
+                                this.props.onChangePointer('default');
+                            }
+                            return null;
+                        }
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
-                        const layers = event.target && event.target.getLayers && event.target.getLayers();
-                        const layersArray = layers && layers.getArray && layers.getArray();
                         let id = [];
                         if (featuresAtPixel && featuresAtPixel.length > 0) {
                             id = head(featuresAtPixel.map(feature => {
@@ -100,8 +114,8 @@ class ResizableMapComponent extends React.Component {
                             this.props.onChangePointer('default');
                         }
 
-                        if (layersArray && layersArray.length > 0) {
-                            layersArray.forEach(layer => {
+                        if (layers && layers.length > 0) {
+                            layers.forEach(layer => {
                                 if (layer.type === 'VECTOR' && layer.get('msId') === 'datasets_layer' && layer.getSource) {
                                     layer.getSource().forEachFeature(feature => {
                                         const properties = feature.getProperties();

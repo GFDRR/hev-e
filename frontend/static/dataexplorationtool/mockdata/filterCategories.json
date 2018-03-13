@@ -1,6 +1,8 @@
 [
     {
         "name": "Buildings",
+        "colors": ["#333333", "#dddddd"],
+        "icon": "building",
         "datasetLayers": [
             {
                 "name": "Buildings"
@@ -9,6 +11,8 @@
     },
     {
         "name": "Infrastructure",
+        "colors": ["#41fbf0", "#9f42ff"],
+        "icon": "road",
         "datasetLayers": [
             {
                 "name": "Roads"
@@ -35,6 +39,8 @@
     },
     {
         "name": "Agriculture",
+        "colors": ["#aaff33", "#d9c80e"],
+        "icon": "leaf",
         "datasetLayers": [
             {
                 "name": "Crops"
@@ -49,6 +55,8 @@
     },
     {
         "name": "Social",
+        "colors": ["#ff42d0", "#fb4168"],
+        "icon": "users",
         "datasetLayers": [
             {
                 "name": "People"

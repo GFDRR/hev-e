@@ -9,11 +9,12 @@
 
 const React = require('react');
 
-module.exports = ({onMouseEnter = () => {}, onMouseLeave = () => {}, onClick=() => {}, size, title, preview, description, caption, tools, selected, ...more} = {}) =>
+module.exports = ({style = {}, onMouseEnter = () => {}, onMouseLeave = () => {}, onClick=() => {}, size, title, preview, description, caption, tools, selected, ...more} = {}) =>
 <div className={`mapstore-side-card${selected ? ' selected' : ''}${size ? ' ms-' + size : ''}`}
     onClick={() => onClick({title, preview, description, caption, tools, ...more})}
     onMouseEnter={() => onMouseEnter()}
-    onMouseLeave={() => onMouseLeave()}>
+    onMouseLeave={() => onMouseLeave()}
+    style={style}>
   <div className="mapstore-side-preview">
       {preview}
   </div>

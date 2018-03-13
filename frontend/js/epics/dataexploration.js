@@ -18,37 +18,7 @@ const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = requir
 const {getMainViewStyle, getSearchLayerStyle} = require('../utils/StyleUtils');
 const set = require('lodash/fp/set');
 const {get} = require('lodash');
-/*
-const initDataLayerEpic = action$ =>
-    action$.ofType(MAP_CONFIG_LOADED)
-        .switchMap(() => {
-            return Rx.Observable.fromPromise(axios.get('/gfdrr_det/api/v1/relevantcountry/?format=json').then(response => response.data))
-            .switchMap(data => {
-                const features = data && data.results && data.results.features && [...data.results.features] || [];
-                return Rx.Observable.of(
-                    addLayer(
-                        {
-                            type: "vector",
-                            id: "datasets_layer",
-                            name: "datasets_layer",
-                            title: "Datasets",
-                            visibility: true,
-                            hideLoading: true,
-                            features,
-                            style: {
-                                color: '#db0033',
-                                fillColor: 'rgba(240, 240, 240, 0.5)',
-                                weight: 2
-                            }
-                        }
-                    )
-                );
-            })
-            .catch(() => {
-                return Rx.Observable.empty();
-            });
-        });
-*/
+const chroma = require('chroma-js');
 
 const stringifyCategory = (section, filter) => {
     return filter[section] && Object.keys(filter[section]).reduce((params, key) => {
@@ -76,6 +46,9 @@ const initDataLayerEpic = action$ =>
         .switchMap(() => {
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/features.json').then(response => response.data))
             .switchMap(data => {
+                // /gfdrr_det/api/v1/relevantcountry/?format=json
+                // /static/dataexplorationtool/mockdata/features.json
+                // const features = data && data.results && data.results.features && [...data.results.features] || [];
                 return Rx.Observable.of(
                     addLayer(
                         {
@@ -109,18 +82,32 @@ const selectAreaEpic = action$ =>
     action$.ofType(SELECT_AREA)
         .switchMap((action) => {
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/filterCategories.json').then(response => response.data))
-                .switchMap(data => {
-                    return Rx.Observable.of(
-                        updateDataURL({}),
-                        searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
-                        setFilter({exposures: {categories: [...data]}}),
-                        updateNode('datasets_layer', 'layers', {visibility: false}),
-                        updateNode('search_layer', 'layers', {
-                            visibility: true,
-                            features: action.area.geometry && [{...action.area}] || []
-                        }),
-                        setControlProperty('dataExplorer', 'enabled', true),
-                        zoomToExtent(action.area.bbox, action.area.crs)
+                .switchMap(responseData => {
+                    const data = responseData.map(group => {
+                        if (group.colors) {
+                            const colors = chroma.scale([...group.colors]).mode('lch').colors(group.datasetLayers.length);
+                            return {...group, datasetLayers: group.datasetLayers.map((layer, idx) => {
+                                return {...layer, color: colors[idx]};
+                            }) };
+                        }
+                        return {...group};
+                    });
+                    return Rx.Observable.concat(
+                        Rx.Observable.of(
+                            updateDataURL({}),
+                            searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
+                            setFilter({exposures: {categories: [...data]}}),
+                            updateNode('datasets_layer', 'layers', {visibility: false}),
+                            updateNode('search_layer', 'layers', {
+                                visibility: true,
+                                features: action.area.geometry && [{...action.area}] || []
+                            }),
+                            setControlProperty('dataExplorer', 'enabled', true)
+                        ),
+                        // delay needed for bounds fit
+                        Rx.Observable.of(
+                            zoomToExtent(action.area.bbox, action.area.crs)
+                        ).delay(300)
                     );
                 });
         });
@@ -129,12 +116,17 @@ const closeDataExplorerEpic = action$ =>
     action$.ofType(SET_CONTROL_PROPERTY)
         .filter(action => action.control === 'dataExplorer' && action.property === 'enabled' && action.value === false)
         .switchMap(() => {
-            return Rx.Observable.of(
-                zoomToExtent([
-                    -7037508.34, -7037508.34,
-                    7037508.34, 14037508.34
-                ], 'EPSG:3857'),
-                updateNode('datasets_layer', 'layers', {visibility: true})
+            return Rx.Observable.concat(
+                Rx.Observable.of(
+                    updateNode('datasets_layer', 'layers', {visibility: true})
+                ),
+                // delay needed for bounds fit
+                Rx.Observable.of(
+                    zoomToExtent([
+                        -7037508.34, -7037508.34,
+                        7037508.34, 14037508.34
+                    ], 'EPSG:3857')
+                ).delay(300)
             );
         });
 
@@ -161,9 +153,16 @@ const updateFilterEpic = (action$, store) =>
         const currentSection = currentSectionSelector(store.getState());
         const updatingFilter = {...filter} || {};
         if (action.options.type === 'categories') {
-            const template = action.options.filterId ?
-            `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}].availableFilters[${action.options.availableFilterId}].filters[${action.options.filterId}]`
-            : `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}]`;
+            if (action.options.clear) {
+                const template = `${currentSection}.categories`;
+                const currentUpdate = get(updatingFilter, template);
+                const clearedFilter = currentUpdate.map(group => ({...group, datasetLayers: group.datasetLayers.map(layer => ({...layer, checked: false}))}));
+                const newFilter = set(template, clearedFilter, updatingFilter);
+                return Rx.Observable.of(
+                    setFilter(newFilter)
+                );
+            }
+            const template = `${currentSection}.categories[${action.options.categoryId}].datasetLayers[${action.options.datasetId}]`;
             const currentUpdate = get(updatingFilter, template);
             const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
             return Rx.Observable.of(

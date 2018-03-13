@@ -9,6 +9,7 @@
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const urlUtil = require('url');
 const assign = require('object-assign');
+const {head} = require('lodash');
 
 const parseUrl = (url) => {
     const parsed = urlUtil.parse(url, true);
@@ -141,7 +142,7 @@ const Api = {
             });*/
         });
     },
-    textSearch: function(url/*, startPosition, maxRecords, text*/) {
+    textSearch: function(url, startPosition, maxRecords, text, sortBy, groupInfo) {
         return new Promise((resolve) => {
             // const {Filter} = require('../../MapStore2/web/client/utils/ogc/Filter');
             // let filter = null;
@@ -150,40 +151,49 @@ const Api = {
                 filter = Filter.filter(ops);
             }*/
             // resolve(Api.getRecords(url, startPosition, maxRecords, filter));
+
+            /* MOCK */
+            const hasFilter = groupInfo && head(Object.keys(groupInfo).filter(key => groupInfo[key].checked));
+            const newText = text.toLowerCase();
+            const records = [
+                {
+                    title: 'Urban Environment',
+                    description: 'Tanzania Urban Environment',
+                    icon: 'building',
+                    caption: 'buildings',
+                    bbox: [29.79, -8.46, 33.46, -3.92]
+                },
+                {
+                    title: 'Connections',
+                    description: 'Tanzania Connections',
+                    icon: 'road',
+                    caption: 'roads',
+                    bbox: [38.69, -10.77, 40.82, -8.31]
+                },
+                {
+                    title: 'Agriculture',
+                    description: 'Tanzania Agriculture',
+                    icon: 'leaf',
+                    caption: 'crops',
+                    bbox: [35.64, -6.21, 37.56, -4.10]
+                },
+                {
+                    title: 'Population',
+                    description: 'Tanzania Population',
+                    icon: 'users',
+                    caption: 'people',
+                    bbox: [31.97, -7.54, 43.02, -2.75]
+                }
+            ].filter(rc => !newText || rc.title.toLowerCase().indexOf(newText) !== -1 || rc.description.toLowerCase().indexOf(newText) !== -1 || rc.caption.toLowerCase().indexOf(newText) !== -1)
+            .filter(rc => !hasFilter || (groupInfo[rc.caption] && groupInfo[rc.caption].checked));
+
             const results = {
-                numberOfRecordsMatched: 4,
-                numberOfRecordsReturned: 4,
+                numberOfRecordsMatched: records.length,
+                numberOfRecordsReturned: records.length,
                 nextRecord: 0,
-                records: [
-                    {
-                        title: 'Urban Environment',
-                        description: 'Tanzania Urban Environment',
-                        icon: 'building',
-                        caption: 'buildings',
-                        bbox: [29.79, -8.46, 33.46, -3.92]
-                    },
-                    {
-                        title: 'Connections',
-                        description: 'Tanzania Connections',
-                        icon: 'road',
-                        caption: 'roads',
-                        bbox: [38.69, -10.77, 40.82, -8.31]
-                    },
-                    {
-                        title: 'Agriculture',
-                        description: 'Tanzania Agriculture',
-                        icon: 'leaf',
-                        caption: 'crops',
-                        bbox: [35.64, -6.21, 37.56, -4.10]
-                    },
-                    {
-                        title: 'Population',
-                        description: 'Tanzania Population',
-                        icon: 'users',
-                        caption: 'people',
-                        bbox: [31.97, -7.54, 43.02, -2.75]
-                    }
-                ]
+                records: records.sort((a, b) => {
+                    return sortBy === 'alphabeticalAToZ' ? a.title > b.title : a.title < b.title;
+                })
             };
 
             resolve(axios.get(parseUrl(url))

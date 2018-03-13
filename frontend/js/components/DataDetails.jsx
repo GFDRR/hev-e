@@ -9,7 +9,7 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
-const {Glyphicon, Grid, Row, Col} = require('react-bootstrap');
+const {/*Glyphicon,*/ Grid, Row, Col} = require('react-bootstrap');
 const ResizableModal = require('../../MapStore2/web/client/components/misc/ResizableModal');
 const ContainerDimensions = require('react-container-dimensions').default;
 const sampleData = require('../../MapStore2/web/client/components/widgets/enhancers/sampleChartData');
@@ -17,41 +17,52 @@ const SimpleChart = sampleData(require('../../MapStore2/web/client/components/ch
 const FilterList = require('./FilterList');
 const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
+const RelatedData = require('./RelatedData');
+const DefaultWidget = require('../../MapStore2/web/client/components/widgets/widget/DefaultWidget');
+
+const data = [
+    {name: '2008', "Statistical Capacity score (Overall average)": 65.5555555555556},
+    {name: '2009', "Statistical Capacity score (Overall average)": 63.3333333333333},
+    {name: '2010', "Statistical Capacity score (Overall average)": 67.7777777777778},
+    {name: '2011', "Statistical Capacity score (Overall average)": 72.2222222222222},
+    {name: '2012', "Statistical Capacity score (Overall average)": 72.2222222222222},
+    {name: '2013', "Statistical Capacity score (Overall average)": 72.2222222222222},
+    {name: '2014', "Statistical Capacity score (Overall average)": 72.2222222222222},
+    {name: '2015', "Statistical Capacity score (Overall average)": 75.5556},
+    {name: '2016', "Statistical Capacity score (Overall average)": 73.3333666666667},
+    {name: '2017', "Statistical Capacity score (Overall average)": 71.1111}
+];
+
+const series = [{dataKey: "Statistical Capacity score (Overall average)"}];
+const xAxis = {dataKey: "name"};
 
 class DataDetails extends React.Component {
     static propTypes = {
-        relatedCards: PropTypes.array,
         currentDetails: PropTypes.object,
         onClose: PropTypes.func,
-        onZoomTo: PropTypes.func
+        onZoomTo: PropTypes.func,
+        onShowDetails: PropTypes.func,
+        onShowRelatedData: PropTypes.func,
+        showRelatedData: PropTypes.bool,
+        layout: PropTypes.object
     };
 
     static defaultProps = {
         currentDetails: null,
-        relatedCards: [
-            /*{
-                title: 'Data',
-                preview: <i className="fa fa-building fa-4x"></i>
-            },
-            {
-                title: 'Data',
-                preview: <i className="fa fa-building fa-4x"></i>
-            },
-            {
-                title: 'Data',
-                preview: <i className="fa fa-building fa-4x"></i>
-            },
-            {
-                title: 'Data',
-                preview: <i className="fa fa-building fa-4x"></i>
-            },
-            {
-                title: 'Data',
-                preview: <i className="fa fa-building fa-4x"></i>
-            }*/
-        ],
         onClose: () => {},
-        onZoomTo: () => {}
+        onZoomTo: () => {},
+        onShowDetails: () => {},
+        onShowRelatedData: () => {},
+        showRelatedData: false,
+        layout: [
+            /*{
+                widgetType: 'text',
+                text: "<p>Tanzania (/ˌtænzəˈniːə/),[12] officially the United Republic of Tanzania (Swahili: Jamhuri ya Muungano wa Tanzania), is a sovereign state in eastern Africa within the African Great Lakes region. It borders Kenya and Uganda to the north; Rwanda, Burundi, and the Democratic Republic of the Congo to the west; Zambia, Malawi, and Mozambique to the south; and the Indian Ocean to the east. Mount Kilimanjaro, Africa's highest mountain, is in north-eastern Tanzania. The United Nations estimated Tanzania's 2016 population at 55.57 million.[6] The population is composed of several ethnic, linguistic, and religious groups. Tanzania is a presidential constitutional republic and since 1996 its official capital city has been Dodoma where the president's office, the National Assembly, and some government ministries are located.[13] Dar es Salaam, the former capital, retains most government offices and is the country's largest city, principal port, and leading commercial centre.[14][15][16] Tanzania is a one party dominant state with the socialist-progressive Chama Cha Mapinduzi party in power.</p>"
+            },
+            {
+                widgetType: 'chart'
+            }*/
+        ]
     };
 
     state = {};
@@ -86,7 +97,7 @@ class DataDetails extends React.Component {
                                     buttons={[
                                         {
                                             glyph: 'filter',
-                                            tooltip: 'Filter layer',
+                                            tooltipId: this.state.showFilter ? 'heve.hideFilters' : 'heve.showFilters',
                                             visible: this.props.currentDetails.caption === 'buildings',
                                             active: this.state.showFilter,
                                             onClick: () => {
@@ -97,7 +108,7 @@ class DataDetails extends React.Component {
                                         },
                                         {
                                             glyph: 'zoom-to',
-                                            tooltip: 'Zoom to layer',
+                                            tooltipId: 'heve.zoomToLayer',
                                             onClick: (e) => {
                                                 e.stopPropagation();
                                                 const bbox = this.props.currentDetails && this.props.currentDetails.bbox || null;
@@ -107,12 +118,12 @@ class DataDetails extends React.Component {
                                             }
                                         },
                                         {
-                                            glyph: 'bulb-off',
-                                            tooltip: 'Show layer'
+                                            glyph: 'plus',
+                                            tooltipId: 'heve.showLayer'
                                         },
                                         {
-                                            glyph: 'plus',
-                                            tooltip: 'Add layer to download list'
+                                            glyph: 'download',
+                                            tooltipId: 'heve.addDownload'
                                         }
                                     ]}/>
                                     </Col>
@@ -184,12 +195,22 @@ class DataDetails extends React.Component {
                             ]}>
 
                             <Grid fluid>
+                                {
+                                    this.props.layout.map((el, idx) => {
+                                        return (
+                                            <Row key={idx}>
+                                                <Col xs={12}>
+                                                    <DefaultWidget
+                                                        {...el}/>
+                                                </Col>
+                                            </Row>
+                                        );
+                                    })
+                                }
                                 <br/>
                                 <Row>
                                     <Col xs={12}>
-                                        <p>
-                                        Tanzania (/ˌtænzəˈniːə/),[12] officially the United Republic of Tanzania (Swahili: Jamhuri ya Muungano wa Tanzania), is a sovereign state in eastern Africa within the African Great Lakes region. It borders Kenya and Uganda to the north; Rwanda, Burundi, and the Democratic Republic of the Congo to the west; Zambia, Malawi, and Mozambique to the south; and the Indian Ocean to the east. Mount Kilimanjaro, Africa's highest mountain, is in north-eastern Tanzania. The United Nations estimated Tanzania's 2016 population at 55.57 million.[6] The population is composed of several ethnic, linguistic, and religious groups. Tanzania is a presidential constitutional republic and since 1996 its official capital city has been Dodoma where the president's office, the National Assembly, and some government ministries are located.[13] Dar es Salaam, the former capital, retains most government offices and is the country's largest city, principal port, and leading commercial centre.[14][15][16] Tanzania is a one party dominant state with the socialist-progressive Chama Cha Mapinduzi party in power.
-                                        </p>
+                                        <p>Tanzania (/ˌtænzəˈniːə/),[12] officially the United Republic of Tanzania (Swahili: Jamhuri ya Muungano wa Tanzania), is a sovereign state in eastern Africa within the African Great Lakes region. It borders Kenya and Uganda to the north; Rwanda, Burundi, and the Democratic Republic of the Congo to the west; Zambia, Malawi, and Mozambique to the south; and the Indian Ocean to the east. Mount Kilimanjaro, Africa's highest mountain, is in north-eastern Tanzania. The United Nations estimated Tanzania's 2016 population at 55.57 million.[6] The population is composed of several ethnic, linguistic, and religious groups. Tanzania is a presidential constitutional republic and since 1996 its official capital city has been Dodoma where the president's office, the National Assembly, and some government ministries are located.[13] Dar es Salaam, the former capital, retains most government offices and is the country's largest city, principal port, and leading commercial centre.[14][15][16] Tanzania is a one party dominant state with the socialist-progressive Chama Cha Mapinduzi party in power.</p>
                                     </Col>
                                 </Row>
                                 <br/>
@@ -197,38 +218,31 @@ class DataDetails extends React.Component {
                                     <Col xs={12}>
                                     <ContainerDimensions>
                                         { ({width: wChart}) =>
-                                            <SimpleChart width={wChart - 40} type="bar"/>
+                                            <SimpleChart
+                                                data={data}
+                                                series={series}
+                                                xAxis={xAxis}
+                                                autoColorOptions={{
+                                                    base: 176,
+                                                    range: 0,
+                                                    s: 0.82,
+                                                    v: 0.73
+                                                }}
+                                                width={wChart - 40}
+                                                type="bar"/>
                                         }
                                         </ContainerDimensions>
                                     </Col>
-                                </Row>
+                                    </Row>
                             </Grid>
                         </BorderLayout>
                     </ResizableModal>
-                    <div className="et-related-head">
-                        <h4>Related data</h4>
-                    </div>
-                    <div className="et-related-list">
-                        <div className="et-related-list-container" style={{height: 186}}>
-                        {
-                            this.props.relatedCards.map((card, idx) => {
-                                return (
-                                    <div key={idx} className="ms-square-card">
-                                        <div className="ms-square-card-container">
-                                            <div className="ms-top-card">
-                                                <h5>{card.title}</h5>
-                                                <Glyphicon glyph="info-sign"/>
-                                            </div>
-                                            <div className="ms-preview-card">
-                                                {card.preview}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        }
-                        </div>
-                    </div>
+                    <RelatedData
+                        currentDetails={this.props.currentDetails}
+                        onZoomTo={this.props.onZoomTo}
+                        onShowDetails={this.props.onShowDetails}
+                        showData={this.props.showRelatedData}
+                        onShowData={this.props.onShowRelatedData}/>
                 </div>
             }
             </ContainerDimensions>

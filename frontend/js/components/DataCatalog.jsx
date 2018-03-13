@@ -19,7 +19,9 @@ class DataCatalog extends React.Component {
         filterList: PropTypes.node,
         filterForm: PropTypes.node,
         onShowBbox: PropTypes.func,
-        onZoomTo: PropTypes.func
+        onZoomTo: PropTypes.func,
+        sortBy: PropTypes.string,
+        groupInfo: PropTypes.object
     };
 
     static defaultProps = {
@@ -28,7 +30,9 @@ class DataCatalog extends React.Component {
         filterList: null,
         filterForm: null,
         onShowBbox: () => {},
-        onZoomTo: () => {}
+        onZoomTo: () => {},
+        sortBy: '',
+        groupInfo: {}
     };
 
     render() {
@@ -39,13 +43,17 @@ class DataCatalog extends React.Component {
                 {this.props.catalogURL && <CompactCatalog
                     filterForm={this.props.filterForm}
                     onRecordSelected={() => {}}
-                    key={'' + this.props.catalogURL}
+                    sortBy={this.props.sortBy}
+                    groupInfo={this.props.groupInfo}
                     getCustomItem={
                         item => ({
                             title: <span>{item.title}</span>,
                             description: <span>{item.description}</span>,
                             caption: <span>{item.caption}</span>,
                             preview: item.icon ? <i className={'fa fa-4x text-center fa-' + item.icon}></i> : null,
+                            style: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color ? {
+                                borderBottom: '2px solid ' + this.props.groupInfo[item.caption].color
+                            } : {},
                             onMouseEnter: () => {
                                 const bbox = item && item.record && item.record.bbox || null;
                                 if (bbox) {
@@ -68,16 +76,12 @@ class DataCatalog extends React.Component {
                                         }],
                                         style: {
                                             fill: {
-                                                color: "rgba(33, 186, 176, 0.25)"
+                                                color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
                                             },
                                             stroke: {
-                                                color: "#555",
-                                                width: 2,
-                                                opacity: 1,
-                                                lineDash: [
-                                                    4,
-                                                    6
-                                                ]
+                                                color: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color || '#aaa',
+                                                width: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color ? 2 : 1,
+                                                opacity: 1
                                             }
                                         }
                                     });
@@ -102,7 +106,7 @@ class DataCatalog extends React.Component {
                                 buttons={[
                                     {
                                         glyph: 'zoom-to',
-                                        tooltip: 'Zoom to layer',
+                                        tooltipId: 'heve.zoomToLayer',
                                         onClick: (e) => {
                                             e.stopPropagation();
                                             const bbox = item && item.record && item.record.bbox || null;
@@ -112,12 +116,12 @@ class DataCatalog extends React.Component {
                                         }
                                     },
                                     {
-                                        glyph: 'bulb-off',
-                                        tooltip: 'Show layer'
+                                        glyph: 'plus',
+                                        tooltipId: 'heve.showLayer'
                                     },
                                     {
-                                        glyph: 'plus',
-                                        tooltip: 'Add layer to download list'
+                                        glyph: 'download',
+                                        tooltipId: 'heve.addDownload'
                                     }
                                 ]}/>
                         })

@@ -1,4 +1,31 @@
 {
     "locale": "en-US",
-    "messages": {}
+    "messages": {
+        "heve": {
+            "zoomToLayer": "Zoom to layer",
+            "showLayer": "Show layer",
+            "hideLayer": "Hide layer",
+            "addDownload": "Add layer to download list",
+            "showFilters": "Show filters",
+            "hideFilters": "Hide filters",
+            "textSearchPlaceholder": "Filter title, description or category",
+            "sortBy": "Sort by",
+            "alphabeticalAToZ": "alphabetical: A to Z",
+            "alphabeticalZToA": "alphabetical: Z to A",
+            "clearAll": "Clear all",
+            "filterBy": "Filter by",
+            "hazards": "Hazards",
+            "exposures": "Exposures",
+            "vulnerabilities": "Vulnerabilities",
+            "releatedDataInterested": "You might be also interested in the following data",
+            "latestData": "Back to latest selected area",
+            "zoomToSelectedArea": "Zoom to selected area",
+            "about": "About",
+            "support": "Support",
+            "backToLayer": "Back to previous data"
+        },
+        "search":{
+            "placeholder": "Search by location name or coordinates"
+        }
+    }
 }
