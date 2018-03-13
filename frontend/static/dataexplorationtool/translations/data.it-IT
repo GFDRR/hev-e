@@ -1,4 +1,31 @@
 {
     "locale": "it-IT",
-    "messages": {}
+    "messages": {
+        "heve": {
+            "zoomToLayer": "Zoom al layer",
+            "showLayer": "Mostra layer",
+            "hideLayer": "Nascondi layer",
+            "addDownload": "Aggiungi layer alla lista di download",
+            "showFilters": "Mostra filtri",
+            "hideFilters": "Nascondi filtri",
+            "textSearchPlaceholder": "Filtra titolo, descrizione o cateogoria",
+            "sortBy": "Ordina per",
+            "alphabeticalAToZ": "alfabetico: A to Z",
+            "alphabeticalZToA": "alfabetico: Z to A",
+            "clearAll": "Rimuovi tutto",
+            "filterBy": "Filtra per",
+            "hazards": "Hazards",
+            "exposures": "Exposures",
+            "vulnerabilities": "Vulnerabilities",
+            "releatedDataInterested": "Potresti essere interessato nei seguenti dati",
+            "latestData": "Torna all'ultima area selezionata",
+            "zoomToSelectedArea": "Zoom all'area selezionata",
+            "about": "About",
+            "support": "Supporto",
+            "backToLayer": "Torna ai dati precedenti"
+        },
+        "search":{
+            "placeholder": "Cerca un indirizzo o inserieci coordinate"
+        }
+    }
 }

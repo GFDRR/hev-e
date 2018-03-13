@@ -13,5 +13,7 @@ module.exports = {
     currentDetailsSelector: state => state.dataexploration && isObject(state.dataexploration.currentDetails) && !isEmpty(state.dataexploration.currentDetails) && state.dataexploration.currentDetails || null,
     catalogURLSelector: state => state.dataexploration && state.dataexploration.catalogURL,
     filterSelector: state => state.dataexploration && state.dataexploration.filter || {},
-    currentSectionSelector: state => state.dataexploration && state.dataexploration.currentSection || 'exposures'
+    currentSectionSelector: state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    sortSelector: state => state.dataexploration && state.dataexploration.sortType || 'alphabeticalAToZ',
+    showRelatedDataSelector: state => state.dataexploration && state.dataexploration.showRelatedData
 };

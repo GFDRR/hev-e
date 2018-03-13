@@ -1,0 +1,55 @@
+
+[
+    {
+        "name": "Construction",
+        "filters": [
+            {
+                "name": "Masonry"
+            },
+            {
+                "name": "Concrete"
+            },
+            {
+                "name": "Steel Frame"
+            },
+            {
+                "name": "Composite"
+            },
+            {
+                "name": "Wood"
+            },
+            {
+                "name": "Earth"
+            },
+            {
+                "name": "Unknown"
+            }
+        ]
+    },
+    {
+        "name": "Occupancy",
+        "filters": [
+            {
+                "name": "Residential"
+            },
+            {
+                "name": "Commercial"
+            },
+            {
+                "name": "Industrial"
+            },
+            {
+                "name": "Healthcare"
+            },
+            {
+                "name": "Education"
+            },
+            {
+                "name": "Government"
+            },
+            {
+                "name": "Unknown"
+            }
+        ]
+    }
+]

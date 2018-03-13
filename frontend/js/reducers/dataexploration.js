@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-const {SET_FILTER, SELECT_AREA, SHOW_DETAILS, SHOW_FILTER, UPDATE_DATA_URL} = require('../actions/dataexploration');
+const {SET_FILTER, SELECT_AREA, SHOW_DETAILS, SHOW_FILTER, UPDATE_DATA_URL, SET_SORT_TYPE, SHOW_RELATED_DATA} = require('../actions/dataexploration');
 const url = require('url');
 
 function dataexploration(state = {
@@ -29,7 +29,11 @@ function dataexploration(state = {
                 {...state, area: {...(action.area || state.area)}}
                 : {...state};
         case SHOW_DETAILS:
-            return {...state, currentDetails: action.details ? {...action.details} : null};
+            return {...state, showRelatedData: false, currentDetails: action.details ? {...action.details} : null};
+        case SET_SORT_TYPE:
+            return {...state, sortType: action.sort};
+        case SHOW_RELATED_DATA:
+            return {...state, showRelatedData: action.show};
         default:
             return state;
     }

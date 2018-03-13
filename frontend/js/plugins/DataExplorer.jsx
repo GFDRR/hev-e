@@ -12,14 +12,15 @@ const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
-const {showDatails, updateFilter, showFilter} = require('../actions/dataexploration');
-const {currentDetailsSelector, catalogURLSelector} = require('../selectors/dataexploration');
+const {showDatails, updateFilter, showFilter, setSortType, showRelatedData} = require('../actions/dataexploration');
+const {currentDetailsSelector, catalogURLSelector, sortSelector, showRelatedDataSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
 const DataDetails = require('../components/DataDetails');
 const ContainerDimensions = require('react-container-dimensions').default;
 const {updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
+const Message = require('../../MapStore2/web/client/components/I18N/Message');
 
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
@@ -39,15 +40,18 @@ const FilterList = connect(
 
 
 const filterFormSelector = createSelector([
-    state => state.dataexploration && state.dataexploration.filter && state.dataexploration.filter.show
-], (show) => ({
-    showFilter: show
+    state => state.dataexploration && state.dataexploration.filter && state.dataexploration.filter.show,
+    sortSelector
+], (show, sortType) => ({
+    showFilter: show,
+    sortType
 }));
 
 const FilterForm = connect(
     filterFormSelector,
     {
-        onShowFilter: showFilter
+        onShowFilter: showFilter,
+        onChangeSortType: setSortType
     }
 )(require('../components/FilterForm'));
 
@@ -59,7 +63,11 @@ class DataExplorerComponent extends React.Component {
         onShowDetails: PropTypes.func,
         catalogURL: PropTypes.string,
         onShowBbox: PropTypes.func,
-        onZoomTo: PropTypes.func
+        onZoomTo: PropTypes.func,
+        sortBy: PropTypes.string,
+        onShowRelatedData: PropTypes.func,
+        showRelatedData: PropTypes.bool,
+        groupInfo: PropTypes.object
     };
 
     static defaultProps = {
@@ -69,7 +77,11 @@ class DataExplorerComponent extends React.Component {
         onShowDetails: () => {},
         catalogURL: '',
         onShowBbox: () => {},
-        onZoomTo: () => {}
+        onZoomTo: () => {},
+        sortBy: '',
+        onShowRelatedData: () => {},
+        showRelatedData: false,
+        groupInfo: {}
     };
 
     render() {
@@ -82,7 +94,7 @@ class DataExplorerComponent extends React.Component {
                     className="et-data-explorer"
                     style={{position: 'relative', order: -1, width: this.props.open ? width / 2 : 0, overflow: 'hidden' }}>
                     <DockPanel
-                        icon={<i className="fa fa-database fa-2x"/>}
+                        icon={<span></span>}
                         onClose={() => this.props.onClose()}
                         open={this.props.open}
                         fixed={false}
@@ -94,9 +106,9 @@ class DataExplorerComponent extends React.Component {
                             <Row>
                                 <Col xs={12}>
                                     <Nav bsStyle="tabs" activeKey="exposures" justified>
-                                        <NavItem eventKey="hazards" >Hazards</NavItem>
-                                        <NavItem eventKey="exposures" >Exposures</NavItem>
-                                        <NavItem eventKey="vulnerability" >Vulnerabilities</NavItem>
+                                        <NavItem eventKey="hazards" ><Message msgId="heve.hazards"/></NavItem>
+                                        <NavItem eventKey="exposures" ><Message msgId="heve.exposures"/></NavItem>
+                                        <NavItem eventKey="vulnerabilities" ><Message msgId="heve.vulnerabilities"/></NavItem>
                                     </Nav>
                                 </Col>
                             </Row>
@@ -104,15 +116,20 @@ class DataExplorerComponent extends React.Component {
                         <DataCatalog
                             filterList={FilterList}
                             filterForm={FilterForm}
+                            sortBy={this.props.sortBy}
                             catalogURL={this.props.catalogURL}
                             onShowDetails={this.props.onShowDetails}
                             onShowBbox={this.props.onShowBbox}
-                            onZoomTo={this.props.onZoomTo}/>
+                            onZoomTo={this.props.onZoomTo}
+                            groupInfo={this.props.groupInfo}/>
                     </DockPanel>
                     <DataDetails
                         onClose={() => this.props.onShowDetails(null)}
                         currentDetails={this.props.currentDetails}
-                        onZoomTo={this.props.onZoomTo}/>
+                        onZoomTo={this.props.onZoomTo}
+                        onShowDetails={this.props.onShowDetails}
+                        onShowRelatedData={this.props.onShowRelatedData}
+                        showRelatedData={this.props.showRelatedData}/>
                 </div>
                 )}
             </ContainerDimensions>
@@ -123,11 +140,19 @@ class DataExplorerComponent extends React.Component {
 const dataExplorerSelector = createSelector([
     state => state.controls && state.controls.dataExplorer.enabled,
     currentDetailsSelector,
-    catalogURLSelector
-], (open, currentDetails, catalogURL) => ({
+    catalogURLSelector,
+    sortSelector,
+    showRelatedDataSelector,
+    state => state.dataexploration && state.dataexploration.filter,
+    state => state.dataexploration && state.dataexploration.currentSection || 'exposures'
+], (open, currentDetails, catalogURL, sortBy, showData, filters, currentSection) => ({
     open,
     currentDetails,
-    catalogURL
+    catalogURL,
+    sortBy,
+    showRelatedData: showData,
+    groupInfo: filters[currentSection] && filters[currentSection].categories
+        && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.datasetLayers.reduce((sub, filt) => ({...sub, [filt.name.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
 }));
 
 const DataExplorer = connect(
@@ -136,7 +161,8 @@ const DataExplorer = connect(
         onClose: setControlProperty.bind(null, 'dataExplorer', 'enabled', false),
         onShowDetails: showDatails,
         onShowBbox: updateNode,
-        onZoomTo: zoomToExtent
+        onZoomTo: zoomToExtent,
+        onShowRelatedData: showRelatedData
     }
 )(DataExplorerComponent);
 

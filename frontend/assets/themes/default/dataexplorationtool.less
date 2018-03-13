@@ -750,8 +750,107 @@ hr {
 
 
 .et-details {
+    
     .btn-group {
         float: right;
         margin-bottom: 30px;
+    }
+    .et-related-data {
+        .catalog-form {
+            padding-bottom: 0 !important;
+        }
+        > .container-fluid {
+            > .row {
+                background-color: @ms2-et-color-bg;
+            }
+        }
+        .et-close-head {
+            span {
+                display: block;
+                transition: 0.3s;
+            }
+            &:hover {
+                span {
+                    transform: scale(1.1);
+                }
+            }
+        }
+        .et-btn-row {
+            margin-bottom: 30px;
+            height: @square-btn-size;
+            display: flex;
+            > .btn {
+                margin: auto;
+            }
+            .btn-default {
+                transition: all 0.3s;
+                .button-variant(@ms2-color-primary; @ms2-color-background; @ms2-color-background);
+                .shadow-soft;
+                &:hover {
+                    .shadow-far;
+                }
+                h4 {
+                    margin: 0;
+                }
+            }
+            
+        }
+        background-color: @ms2-color-background;
+        width: 100%;
+        
+        z-index: 400;
+        transition: height 0.3s;
+        
+        &.et-hide {
+            height: @square-btn-size;
+            &:hover {
+                height: @square-btn-size * 1.2;
+            }
+        }
+
+        &.et-show {
+            height: 100%;
+            .et-btn-row {
+                .btn-default {
+                    background-color: transparent !important;
+                    border-color: transparent !important;
+                    box-shadow: none !important;
+                    pointer-events: none;
+                    &:hover {
+                        box-shadow: none !important;
+                        background-color: transparent !important;
+                        border-color: transparent !important;
+                    }
+    
+                }
+            }
+        }
+        
+    }
+    .mapstore-side-card {
+        transform: none;
+    }
+}
+
+.modal-header {
+    .modal-title {
+        .ms-title {
+            > span {
+                &:first-child {
+                    font-size: 20px;
+                }
+            }
+        }
+        
+        .ms-header-btn {
+            font-size: 26px;
+        }
+    }
+    margin-bottom: 15px;
+}
+
+.ms-resizable-modal {
+    .ms2-border-layout-body {
+        overflow-x: hidden;
     }
 }

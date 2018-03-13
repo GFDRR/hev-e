@@ -10,7 +10,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
-const {Button} = require('react-bootstrap');
+const {Button, Glyphicon} = require('react-bootstrap');
 const tooltip = require('../../MapStore2/web/client/components/misc/enhancers/tooltip');
 const ButtonT = tooltip(Button);
 const {selectedAreaSelector} = require('../selectors/dataexploration');
@@ -31,11 +31,11 @@ class DataExplorerButtonComponent extends React.Component {
         return this.props.currentArea ? (
             <ButtonT
                 className="et-dataset-button square-button"
-                tooltip="Latest selected area"
+                tooltipId="heve.latestData"
                 tooltipPosition="right"
                 bsStyle="primary"
                 onClick={() => this.props.onClick(this.props.currentArea)}>
-                <span className="fa fa-database"></span>
+                <Glyphicon glyph="undo"/>
             </ButtonT>
         ) : null;
     }

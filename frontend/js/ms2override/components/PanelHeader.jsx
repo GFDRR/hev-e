@@ -71,7 +71,7 @@ module.exports = ({
             {icon ? icon : <Glyphicon glyph={showFullscreen ? fullscreenGlyph[position] && fullscreenGlyph[position][fullscreen] || 'resize-full' : glyph}/>}
         </Button>
     );
-    const buttons = position === 'left' ? [closeButton, glyphButton] : [glyphButton, closeButton];
+    const buttons = /*position === 'left' ? [closeButton, glyphButton] :*/ [glyphButton, closeButton];
     return (
         <Grid fluid style={{width: '100%'}} className={'ms-header ms-' + bsStyle}>
             <Row>

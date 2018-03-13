@@ -33,7 +33,7 @@ class ZoomToSearchComponent extends React.Component {
         return this.props.bbox ? (
             <ButtonT
                 className="square-button"
-                tooltip="Zoom to search area"
+                tooltipId="heve.zoomToSelectedArea"
                 tooltipPosition="left"
                 bsStyle="primary"
                 onClick={() => {
@@ -64,7 +64,6 @@ module.exports = {
             name: 'zoom-to-search',
             position: 1,
             toolStyle: "primary",
-            tooltip: "Zoom to serarch area",
             tool: true,
             priority: 1
         }

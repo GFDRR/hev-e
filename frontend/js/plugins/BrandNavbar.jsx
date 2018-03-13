@@ -17,6 +17,7 @@ const ImgT = toopltip(({getSrc, width, href, inverse, ...props}) => <a href={hre
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {SearchPlugin, epics, reducers} = require('../../MapStore2/web/client/plugins/Search');
+const Message = require('../../MapStore2/web/client/components/I18N/Message');
 
 class Search extends React.Component {
     static propTypes = {
@@ -95,10 +96,10 @@ class BrandNavbar extends React.Component {
                         </Navbar.Form>}
                         <Nav pullRight>
                             <NavItem href="#/about">
-                                About
+                                <Message msgId="heve.about"/>
                             </NavItem>
                             <NavItem href="#/support">
-                                Support
+                                <Message msgId="heve.support"/>
                             </NavItem>
                             {/*<NavItem>
                                 <SearchBar />

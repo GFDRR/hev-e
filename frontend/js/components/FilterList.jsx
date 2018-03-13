@@ -8,6 +8,8 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
+const {head} = require('lodash');
+const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const {Grid, Row, Col, FormGroup, Checkbox} = require('react-bootstrap');
 
 class FilterList extends React.Component {
@@ -15,96 +17,76 @@ class FilterList extends React.Component {
     static propTypes = {
         enabled: PropTypes.bool,
         onChange: PropTypes.func,
-        filter: PropTypes.object
+        filter: PropTypes.object,
+        type: PropTypes.string
     };
 
     static defaultProps = {
         enabled: false,
         onChange: () => {},
-        filter: {}
+        filter: {},
+        type: 'categories'
     };
 
     render() {
+        const hasFilter = this.props.filter[this.props.type] && this.hasFilter(this.props.filter[this.props.type]);
         return this.props.enabled ? (
             <div className="et-filter">
                 <Grid fluid>
                     <Row>
                         <Col xs={12}>
-                            <h4>Filter by</h4>
+                            <h4><Message msgId="heve.filterBy"/></h4>
                         </Col>
                     </Row>
                 </Grid>
-                {this.props.filter.categories && <Grid fluid>
+                {this.props.filter[this.props.type] && <Grid fluid>
                     <Row>
                         <br/>
                         <Col xs={12}>
-                            <FormGroup>
-                                <a href="#" className="text-hev-e-primary">Clear</a>
-                            </FormGroup>
+                            { hasFilter && <FormGroup>
+                                <a
+                                    href="#"
+                                    className="text-hev-e-primary"
+                                    onClick={() => {
+                                        this.props.onChange({
+                                            type: 'categories',
+                                            clear: true
+                                        });
+                                    }}><Message msgId="heve.clearAll"/></a>
+                            </FormGroup>}
                         </Col>
                     </Row>
                     {
-                        this.props.filter.categories.map((category, categoryId) => (
-                            <Row>
+                        this.props.filter[this.props.type].map((category, categoryId) => (
+
+                            <Row key={categoryId}>
                                 <Col xs={12}>
-                                    <small><strong>{category.name}</strong></small>
+                                    <small>{category.icon && <span><i className={'fa fa-' + category.icon}/>{' '}</span>}<strong>{category.name}</strong></small>
                                 </Col>
                                 <Col xs={12}>
                                     <FormGroup>
                                     {
                                         category.datasetLayers && category.datasetLayers.map((dataset, datasetId) => (
-                                            <span>
-                                                <Checkbox
-                                                    checked={dataset.checked}
-                                                    onChange={() => {
-                                                        this.props.onChange({
-                                                            type: 'categories',
-                                                            categoryId,
-                                                            datasetId,
-                                                            checked: !dataset.checked
-                                                        });
-                                                    }}>
-                                                        {/*<span style={{
-                                                            borderBottom: '2px solid hsl(' + Math.round(Math.random() * 360) + ', 75%, 50%)',
-                                                            display: 'inline-block'
-                                                        }}>{dataset.name}</span>*/}
-                                                        {dataset.name}
-                                                    </Checkbox>
-                                                {/* dataset.availableFilters &&
-                                                    <Grid fluid>
-                                                        {
-                                                            dataset.availableFilters.map((availableFilter, availableFilterId) => (
-                                                                <Row>
-                                                                    <Col xs={12}>
-                                                                        <small><strong>{availableFilter.name}</strong></small>
-                                                                    </Col>
-                                                                    <Col xs={12}>
-                                                                        <FormGroup>
-                                                                        {
-                                                                            availableFilter.filters && availableFilter.filters.map((filter, filterId) => (
-                                                                                <Checkbox
-                                                                                    checked={filter.checked}
-                                                                                    disabled={!dataset.checked}
-                                                                                    onChange={() => {
-                                                                                        this.props.onChange({
-                                                                                            type: 'categories',
-                                                                                            categoryId,
-                                                                                            datasetId,
-                                                                                            availableFilterId,
-                                                                                            filterId,
-                                                                                            checked: !filter.checked
-                                                                                        });
-                                                                                    }}>{filter.name}</Checkbox>
-                                                                            ))
-                                                                        }
-                                                                        </FormGroup>
-                                                                    </Col>
-                                                                </Row>
-                                                            ))
-                                                        }
-                                                    </Grid>
-                                                */}
-                                            </span>
+                                            <Checkbox
+                                                key={datasetId}
+                                                checked={dataset.checked || false}
+                                                onChange={() => {
+                                                    this.props.onChange({
+                                                        type: 'categories',
+                                                        categoryId,
+                                                        datasetId,
+                                                        checked: !dataset.checked
+                                                    });
+                                                }}>
+                                                <span style={
+                                                    {
+                                                        borderBottom: dataset.checked && dataset.color
+                                                            ? '2px solid ' + dataset.color
+                                                            : '2px solid transparent',
+                                                        display: 'inline-block'
+                                                    }
+                                                }>{dataset.name}</span>
+                                            </Checkbox>
                                         ))
                                     }
                                     </FormGroup>
@@ -115,6 +97,10 @@ class FilterList extends React.Component {
                 </Grid>}
             </div>
         ) : null;
+    }
+
+    hasFilter(filter) {
+        return head(filter.map(group => group.datasetLayers && head(group.datasetLayers.filter(filt => filt.checked)) || null ).filter(val => val));
     }
 }
 

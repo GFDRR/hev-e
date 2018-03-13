@@ -1,8 +1,8 @@
 {
-  "name": "dataexplorationtool",
+  "name": "hev-e",
   "version": "0.1.0",
   "description": "MapStore 2",
-  "repository": "__repo__",
+  "repository": "https://github.com/geosolutions-it/gfdrr-det",
   "main": "index.js",
   "devDependencies": {
     "acorn-jsx": "https://github.com/geosolutions-it/acorn-jsx/tarball/master",
@@ -93,6 +93,7 @@
     "bootstrap": "3.3.5",
     "canvas-to-blob": "0.0.0",
     "canvg-browser": "1.0.0",
+    "chroma-js": "1.3.6",
     "classnames": "2.2.5",
     "codemirror": "5.18.2",
     "colorbrewer": "1.0.0",
@@ -168,6 +169,7 @@
     "react-sortable-items": "https://github.com/geosolutions-it/react-sortable-items/tarball/react15",
     "react-spinkit": "2.1.2",
     "react-swipeable-views": "0.12.2",
+    "react-textfit": "1.1.0",
     "react-twitter-widgets": "1.3.0",
     "react-widgets": "3.4.8",
     "recharts": "0.22.4",
