@@ -39,29 +39,6 @@ if EMAIL_ENABLE:
 #
 # General Django development settings
 #
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': get_environment_variable("GFDRR_DET_DB_NAME", default_value="gfdrr_det"),
-        'USER': get_environment_variable("GFDRR_DET_DB_USER", default_value='geonode'),
-        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", default_value='geonode'),
-        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", default_value='localhost'),
-        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", default_value='5432'),
-        'CONN_TOUT': 900,
-    },
-    # vector datastore for uploads
-    'datastore': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        # 'ENGINE': '',  # Empty ENGINE name disables
-        'NAME': get_environment_variable("GFDRR_DET_DB_DATA_NAME", default_value="gfdrr_det_data"),
-        'USER': get_environment_variable("GFDRR_DET_DB_USER", default_value='geonode'),
-        'PASSWORD': get_environment_variable("GFDRR_DET_DB_PASSWORD", default_value='geonode'),
-        'HOST': get_environment_variable("GFDRR_DET_DB_HOST", default_value='localhost'),
-        'PORT': get_environment_variable("GFDRR_DET_DB_PORT", default_value='5432'),
-        'CONN_TOUT': 900,
-    }
-}
-
 GEOSERVER_LOCATION = os.getenv(
     'GEOSERVER_LOCATION', 'http://localhost:8080/geoserver/'
 )

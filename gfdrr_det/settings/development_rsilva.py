@@ -16,13 +16,11 @@ ALLOWED_HOSTS = [
     "10.0.1.95"
 ]
 
+SITE_HOST_NAME = "10.0.1.95"
+
 # remove qgis_server from installed apps
 # INSTALLED_APPS = tuple(
 #     app for app in INSTALLED_APPS if app != "geonode.qgis_server")
-
-INSTALLED_APPS += (
-    "gfdrr_det.exposures",
-)
 
 SECRET_KEY = get_environment_variable("DJANGO_SECRET_KEY")
 
@@ -38,14 +36,31 @@ DATABASES["datastore"].update({
     "PASSWORD": get_environment_variable("GFDRR_DET_DB_PASSWORD"),
 })
 
-DATABASES["exposures"] = {
-    'ENGINE': 'django.contrib.gis.db.backends.postgis',
-    'NAME': 'ged4all',
-    "USER": get_environment_variable("GFDRR_DET_DB_USER"),
-    "PASSWORD": get_environment_variable("GFDRR_DET_DB_PASSWORD"),
-    'HOST': 'localhost',
-    'PORT': '5432',
-    'CONN_TOUT': 900,
+OGC_SERVER = {
+    'default': {
+        'BACKEND': 'geonode.geoserver',
+        'LOCATION': "http://10.0.1.95:8080/geoserver/",
+        'LOGIN_ENDPOINT': 'j_spring_oauth2_geonode_login',
+        'LOGOUT_ENDPOINT': 'j_spring_oauth2_geonode_logout',
+        'PUBLIC_LOCATION': "http://{}:{}/geoserver/".format(
+            SITE_HOST_NAME, "8080"),
+        'USER': "admin",
+        'PASSWORD': "geoserver",
+        'MAPFISH_PRINT_ENABLED': True,
+        'PRINT_NG_ENABLED': True,
+        'GEONODE_SECURITY_ENABLED': True,
+        'GEOFENCE_SECURITY_ENABLED': True,
+        'GEOGIG_ENABLED': False,
+        'WMST_ENABLED': False,
+        'BACKEND_WRITE_ENABLED': True,
+        'WPS_ENABLED': False,
+        'LOG_FILE': '/home/geosolutions/work/logs/geoserver.log',
+        # Set to dictionary identifier of database containing spatial data in
+        # DATABASES dictionary to enable
+        'DATASTORE': 'datastore',
+        'PG_GEOGIG': False,
+        'TIMEOUT': 30  # number of seconds to allow for HTTP requests
+    }
 }
 
 EMAIL_ENABLE = True
