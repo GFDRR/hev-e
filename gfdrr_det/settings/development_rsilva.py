@@ -19,8 +19,8 @@ ALLOWED_HOSTS = [
 SITE_HOST_NAME = "10.0.1.95"
 
 # remove qgis_server from installed apps
-# INSTALLED_APPS = tuple(
-#     app for app in INSTALLED_APPS if app != "geonode.qgis_server")
+INSTALLED_APPS = tuple(
+    app for app in INSTALLED_APPS if app != "geonode.qgis_server")
 
 SECRET_KEY = get_environment_variable("DJANGO_SECRET_KEY")
 

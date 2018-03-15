@@ -611,3 +611,60 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
 }
+
+# TODO: confirm category names as more data becomes available
+# TODO: Confirm mapping of exposure categories to ISO19115 topic categories
+HEV_E = {
+    "EXPOSURES": {
+        "category_mappings": {
+            "buildings": {
+                "exposure_model_categories": ["buildings"],
+                "topic_category": "structure",
+            },
+            "road_network": {
+                "exposure_model_categories": ["road_network"],
+                "topic_category": "transportation",
+            },
+            # "rails": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "transportation",
+            # },
+            # "pipelines": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "utilitiesCommunication",
+            # },
+            # "storage_tanks": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "utilitiesCommunication",
+            # },
+            # "power_grid": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "utilitiesCommunication",
+            # },
+            # "bridges": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "structure",
+            # },
+            # "energy": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "utilitiesCommunication",
+            # },
+            # "crops": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "farming",
+            # },
+            # "livestock": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "farming",
+            # },
+            # "forestry": {
+            #     "exposure_model_categories": [],
+            #     "topic_category": "farming",
+            # },
+        },
+        "area_type_mappings": {
+            "aggregated": ["aggregated"],
+            "per_asset": ["per_asset"],
+        }
+    },
+}
