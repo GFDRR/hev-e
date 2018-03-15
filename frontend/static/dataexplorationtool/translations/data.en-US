@@ -5,6 +5,10 @@
             "zoomToLayer": "Zoom to layer",
             "showLayer": "Show layer",
             "hideLayer": "Hide layer",
+            "addLayer": "Add layer to map",
+            "removeLayer": "Remove layer from map",
+            "layerError": "Layer has not been loaded correctly or not available",
+            "filterLayers": "Filter layers",
             "addDownload": "Add layer to download list",
             "showFilters": "Show filters",
             "hideFilters": "Hide filters",
@@ -22,7 +26,9 @@
             "zoomToSelectedArea": "Zoom to selected area",
             "about": "About",
             "support": "Support",
-            "backToLayer": "Back to previous data"
+            "backToLayer": "Back to previous data",
+            "compactTOC": "Show layers added to map",
+            "noLayer": "No layer matched"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

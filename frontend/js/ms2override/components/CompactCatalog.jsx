@@ -12,9 +12,9 @@ const Message = require('../../../MapStore2/web/client/components/I18N/Message')
 const Rx = require('rxjs');
 
 const API = {
-    "csw": require('../../../MapStore2/web/client/api/CSW'),
-    "wms": require('../../../MapStore2/web/client/api/WMS'),
-    "wmts": require('../../../MapStore2/web/client/api/WMTS'),
+    // "csw": require('../../../MapStore2/web/client/api/CSW'),
+    // "wms": require('../../../MapStore2/web/client/api/WMS'),
+    // "wmts": require('../../../MapStore2/web/client/api/WMTS'),
     "hev-e": require('../../api/HEVE')
 };
 
@@ -92,7 +92,7 @@ module.exports = compose(
                     .ignoreElements() // don't want to emit props
         )))
 
-)(({setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
+)(({layers = [], setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
     const Form = filterForm || CatalogForm;
     return (<BorderLayout
                 className="compat-catalog"
@@ -107,8 +107,8 @@ module.exports = compose(
                         || selected
                         && i && i.record
                         && selected.identifier === i.record.identifier
-                            ? {...i, selected: true, ...getCustomItem(i)}
-                            : {...i, ...getCustomItem(i)})}
+                            ? {...i, selected: true, ...getCustomItem(i, layers)}
+                            : {...i, ...getCustomItem(i, layers)})}
                     loading={loading}
                     onItemClick={({record} = {}) => onRecordSelected(record, catalog)}/>
             </BorderLayout>);

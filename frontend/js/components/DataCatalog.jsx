@@ -11,6 +11,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const CompactCatalog = require('../../MapStore2/web/client/components/catalog/CompactCatalog');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
+const {head} = require('lodash');
 
 class DataCatalog extends React.Component {
     static propTypes = {
@@ -21,7 +22,9 @@ class DataCatalog extends React.Component {
         onShowBbox: PropTypes.func,
         onZoomTo: PropTypes.func,
         sortBy: PropTypes.string,
-        groupInfo: PropTypes.object
+        groupInfo: PropTypes.object,
+        onAddLayer: PropTypes.func,
+        layers: PropTypes.array
     };
 
     static defaultProps = {
@@ -32,7 +35,9 @@ class DataCatalog extends React.Component {
         onShowBbox: () => {},
         onZoomTo: () => {},
         sortBy: '',
-        groupInfo: {}
+        groupInfo: {},
+        onAddLayer: () => {},
+        layers: []
     };
 
     render() {
@@ -46,7 +51,7 @@ class DataCatalog extends React.Component {
                     sortBy={this.props.sortBy}
                     groupInfo={this.props.groupInfo}
                     getCustomItem={
-                        item => ({
+                        (item, layers) => ({
                             title: <span>{item.title}</span>,
                             description: <span>{item.description}</span>,
                             caption: <span>{item.caption}</span>,
@@ -115,17 +120,72 @@ class DataCatalog extends React.Component {
                                             }
                                         }
                                     },
+                                    /*{
+                                        glyph: 'trash',
+                                        tooltipId: 'heve.hideLayer',
+                                        visible: !!head(layers.filter(layer => layer.id === item.title)),
+                                        onClick: (e) => {
+                                            e.stopPropagation();
+                                        }
+                                    },*/
                                     {
                                         glyph: 'plus',
-                                        tooltipId: 'heve.showLayer'
-                                    },
+                                        tooltipId: 'heve.showLayer',
+                                        visible: !head(layers.filter(layer => layer.id === item.title)),
+                                        onClick: (e) => {
+                                            e.stopPropagation();
+                                            const bbox = item && item.record && item.record.bbox || null;
+                                            if (bbox) {
+                                                const params = {
+                                                    features: [{
+                                                        type: 'Feature',
+                                                        geometry: {
+                                                            type: 'Polygon',
+                                                            coordinates: [
+                                                                [
+                                                                    [bbox[0], bbox[1]],
+                                                                    [bbox[0], bbox[3]],
+                                                                    [bbox[2], bbox[3]],
+                                                                    [bbox[2], bbox[1]],
+                                                                    [bbox[0], bbox[1]]
+                                                                ]
+                                                            ]
+                                                        },
+                                                        properties: {}
+                                                    }],
+                                                    style: {
+                                                        fill: {
+                                                            color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
+                                                        },
+                                                        stroke: {
+                                                            color: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].color || '#aaa',
+                                                            width: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].color ? 2 : 1,
+                                                            opacity: 1
+                                                        }
+                                                    }
+                                                };
+                                                this.props.onAddLayer({
+                                                    type: 'vector',
+                                                    id: item.title,
+                                                    name: item.title,
+                                                    title: item.title,
+                                                    group: 'toc_layers',
+                                                    visibility: true,
+                                                    hideLoading: true,
+                                                    record: {...item},
+                                                    ...params
+                                                });
+                                            }
+                                        }
+                                    }/*,
                                     {
                                         glyph: 'download',
                                         tooltipId: 'heve.addDownload'
-                                    }
+                                    }*/
                                 ]}/>
                         })
                     }
+                    layers={this.props.layers}
                     catalog= {{
                         url: this.props.catalogURL,
                         type: 'hev-e',

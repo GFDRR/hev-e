@@ -5,6 +5,10 @@
             "zoomToLayer": "Zoom al layer",
             "showLayer": "Mostra layer",
             "hideLayer": "Nascondi layer",
+            "addLayer": "Aggiungi il layer alla mappa",
+            "layerError": "Il layer non è stato caricato correttamente o non disponibile",
+            "filterLayers": "Filtra layers",
+            "removeLayer": "Rimuovi il layer dalla mappa",
             "addDownload": "Aggiungi layer alla lista di download",
             "showFilters": "Mostra filtri",
             "hideFilters": "Nascondi filtri",
@@ -22,7 +26,9 @@
             "zoomToSelectedArea": "Zoom all'area selezionata",
             "about": "About",
             "support": "Supporto",
-            "backToLayer": "Torna ai dati precedenti"
+            "backToLayer": "Torna ai dati precedenti",
+            "compactTOC": "Mostra i layer aggiunti alla mappa",
+            "noLayer": "No layer matched"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

@@ -7,7 +7,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 const ParallelUglifyPlugin = require("webpack-parallel-uglify-plugin");
 
-module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publicPath, cssPrefix) => ({
+module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publicPath, cssPrefix, plugins = []) => ({
     entry: assign({
         'webpack-dev-server': 'webpack-dev-server/client?http://0.0.0.0:8081', // WebpackDevServer host and port
         'webpack': 'webpack/hot/only-dev-server' // "only" prevents reload on syntax errors
@@ -19,6 +19,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         chunkFilename: prod ? "[name].[hash].chunk.js" : "[name].js"
     },
     plugins: [
+        ...plugins,
         new CopyWebpackPlugin([
             { from: path.join(paths.base, 'node_modules', 'bootstrap', 'less'), to: path.join(paths.dist, "bootstrap", "less") }
         ]),
@@ -56,6 +57,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         new NormalModuleReplacementPlugin(/withScrollSpy.js/, path.join(__dirname, "js", "ms2override", "components", "withScrollSpy.js")),
         new NormalModuleReplacementPlugin(/withInfiniteScroll.js/, path.join(__dirname, "js", "ms2override", "components", "withInfiniteScroll.js")),
         new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideCard.jsx")),
+        new NormalModuleReplacementPlugin(/SideGrid.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideGrid.jsx")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin

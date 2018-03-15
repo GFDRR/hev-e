@@ -9,27 +9,32 @@
 
 const React = require('react');
 
-module.exports = ({style = {}, onMouseEnter = () => {}, onMouseLeave = () => {}, onClick=() => {}, size, title, preview, description, caption, tools, selected, ...more} = {}) =>
-<div className={`mapstore-side-card${selected ? ' selected' : ''}${size ? ' ms-' + size : ''}`}
+module.exports = ({body, className = '', style = {}, onMouseEnter = () => {}, onMouseLeave = () => {}, onClick=() => {}, size, title, preview, description, caption, tools, selected, ...more} = {}) =>
+<div className={`mapstore-side-card${selected ? ' selected' : ''}${size ? ' ms-' + size : ''} ${className}`}
     onClick={() => onClick({title, preview, description, caption, tools, ...more})}
     onMouseEnter={() => onMouseEnter()}
     onMouseLeave={() => onMouseLeave()}
     style={style}>
-  <div className="mapstore-side-preview">
-      {preview}
-  </div>
-  <div className="mapstore-side-card-info">
-      <div className="mapstore-side-card-title">
-          {title}
-      </div>
-      <div className="mapstore-side-card-desc">
-          {description}
-      </div>
-      <div className="mapstore-side-card-caption">
-          {caption}
-      </div>
-  </div>
-  <div className="mapstore-side-card-tool text-center">
-      {tools}
-  </div>
+    <div className="ms-head">
+        {preview && <div className="mapstore-side-preview">
+            {preview}
+        </div>}
+        <div className="mapstore-side-card-info">
+            <div className="mapstore-side-card-title">
+                {title}
+            </div>
+            {description && <div className="mapstore-side-card-desc">
+                {description}
+            </div>}
+            {caption && <div className="mapstore-side-card-caption">
+                {caption}
+            </div>}
+        </div>
+        <div className="mapstore-side-card-tool text-center">
+            {tools}
+        </div>
+    </div>
+    {body && <div className="ms-body">
+        {body}
+    </div>}
 </div>;

@@ -9,15 +9,16 @@
 const Rx = require('rxjs');
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const {MAP_CONFIG_LOADED} = require('../../MapStore2/web/client/actions/config');
-const {SELECT_AREA, UPDATE_FILTER, selectArea, setFilter, updateDataURL} = require('../actions/dataexploration');
+const {SORT_TOC_LAYERS, SELECT_AREA, UPDATE_FILTER, SHOW_DETAILS, selectArea, setFilter, updateDataURL} = require('../actions/dataexploration');
 const {filterSelector, currentSectionSelector} = require('../selectors/dataexploration');
-const {addLayer, updateNode} = require("../../MapStore2/web/client/actions/layers");
+const {ADD_LAYER, addLayer, updateNode, sortNode} = require("../../MapStore2/web/client/actions/layers");
+const {layersSelector} = require("../../MapStore2/web/client/selectors/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
 const {getMainViewStyle, getSearchLayerStyle} = require('../utils/StyleUtils');
 const set = require('lodash/fp/set');
-const {get} = require('lodash');
+const {get, head} = require('lodash');
 const chroma = require('chroma-js');
 
 const stringifyCategory = (section, filter) => {
@@ -175,11 +176,63 @@ const updateFilterEpic = (action$, store) =>
         return Rx.Observable.empty();
     });
 
+const openTOConAddLayerEpic = (action$, store) =>
+    action$.ofType(ADD_LAYER)
+    .filter(action => action.layer && action.layer.group === 'toc_layers')
+    .switchMap(() => {
+        const layers = layersSelector(store.getState());
+        const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
+        return tocLayers.length === 1 ? Rx.Observable.of(setControlProperty('compacttoc', 'enabled', true)) : Rx.Observable.empty();
+    });
+
+const showDetailsEpic = action$ =>
+    action$.ofType(SHOW_DETAILS)
+    .switchMap(() => {
+        return Rx.Observable.of(
+            setControlProperty('dataExplorer', 'enabled', true)
+        );
+    });
+
+const sortTocLayersEpic = (action$, store) =>
+    action$.ofType(SORT_TOC_LAYERS)
+    .switchMap(action => {
+        const layers = layersSelector(store.getState());
+        const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
+        const currentPos = head(tocLayers.map( (layer, idx) => layer.id === action.currentPos.dataId ? idx : null).filter(val => val !== null));
+        const previousPos = head(tocLayers.map( (layer, idx) => layer.id === action.previousPos.dataId ? idx : null).filter(val => val !== null));
+        const node = 'toc_layers';
+        const order = tocLayers.reduce((newOrder, layerId, idx) => {
+            if (currentPos === idx) {
+                return currentPos < previousPos ? [...newOrder, previousPos, idx] : [...newOrder, idx, previousPos];
+            }
+            if (previousPos === idx) {
+                return [...newOrder];
+            }
+            return [...newOrder, idx];
+        }, []);
+        const sortLayers = (newNodes, currentLayers) => {
+            const otherLayers = currentLayers.filter(layer => layer.group !== 'toc_layers');
+            const tLayers = currentLayers.filter(layer => layer.group === 'toc_layers');
+            return [...otherLayers, ...order.map(idx => tLayers[idx])];
+        };
+        return Rx.Observable.of(
+            sortNode(
+                node,
+                order,
+                sortLayers
+            )
+        );
+    });
+
+
 module.exports = {
     initDataLayerEpic,
     selectAreaEpic,
     closeDataExplorerEpic,
     itemSelectedEpic,
     resetSearchLayerEpic,
-    updateFilterEpic
+    updateFilterEpic,
+    openTOConAddLayerEpic,
+    showDetailsEpic,
+    sortTocLayersEpic
 };

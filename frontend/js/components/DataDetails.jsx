@@ -19,6 +19,7 @@ const BorderLayout = require('../../MapStore2/web/client/components/layout/Borde
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const RelatedData = require('./RelatedData');
 const DefaultWidget = require('../../MapStore2/web/client/components/widgets/widget/DefaultWidget');
+const {head} = require('lodash');
 
 const data = [
     {name: '2008', "Statistical Capacity score (Overall average)": 65.5555555555556},
@@ -44,7 +45,8 @@ class DataDetails extends React.Component {
         onShowDetails: PropTypes.func,
         onShowRelatedData: PropTypes.func,
         showRelatedData: PropTypes.bool,
-        layout: PropTypes.object
+        layout: PropTypes.object,
+        layers: PropTypes.array
     };
 
     static defaultProps = {
@@ -54,6 +56,7 @@ class DataDetails extends React.Component {
         onShowDetails: () => {},
         onShowRelatedData: () => {},
         showRelatedData: false,
+        layers: [],
         layout: [
             /*{
                 widgetType: 'text',
@@ -119,7 +122,8 @@ class DataDetails extends React.Component {
                                         },
                                         {
                                             glyph: 'plus',
-                                            tooltipId: 'heve.showLayer'
+                                            visible: !head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.title)),
+                                            tooltipId: 'heve.addLayer'
                                         },
                                         {
                                             glyph: 'download',
