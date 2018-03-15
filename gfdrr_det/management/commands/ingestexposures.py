@@ -136,7 +136,6 @@ def get_user(name=None):
     return user
 
 
-# FIXME: Thumbnail generation seems to be broken
 def import_layers_to_geonode(workspace_name, store_name, user_name,
                              stdout, stderr):
     # import geoserver layers into geonode using the `updatelayers` command
@@ -162,8 +161,8 @@ def complete_geonode_layer_import(exposure_model):
         "road_network": "transportation",
         "rail": "transportation",
         "pipeline": "utilitiesCommunication",
-        "storage tank": "utilitiesCommunication",
-        "power grid": "utilitiesCommunication",
+        "storage_tank": "utilitiesCommunication",
+        "power_grid": "utilitiesCommunication",
         "bridge": "structure",
         "energy": "utilitiesCommunication",
         "crop": "farming",
