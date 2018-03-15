@@ -81,8 +81,8 @@ class Command(BaseCommand):
             "-s",
             "--database_schema",
             default="exposures",
-            help="Name of the database schema where data will be put. Defaults "
-                 "to %(default)s"
+            help="Name of the database schema where data will be put. "
+                 "Defaults to %(default)s"
         )
         parser.add_argument(
             "-u",
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                 force_views=options["force_materialized_views_creation"],
                 logger=self.stdout.write
             )
-            exposure_models = get_exposure_models_details(db_cursor)
+            exposure_models = get_exposure_models(db_cursor)
         geoserver_layers = handle_geoserver_layers(
             existing_views,
             store_name=options["geoserver_store_name"],
@@ -151,25 +151,37 @@ def import_layers_to_geonode(workspace_name, store_name, user_name,
     )
 
 
+def get_hev_e_category(model_category, category_maps):
+    """Map the exposure model category to the naming used in HEV-E"""
+    for hev_e_category, maps in category_maps.items():
+        if model_category.lower() in maps["exposure_model_categories"]:
+            result = hev_e_category
+            break
+    else:
+        raise RuntimeError("Could not determine the HEV-E category to map "
+                           "with {!r}".format(model_category))
+    return result
+
+
+def get_hev_e_area_type(model_area_type, area_types_mapping):
+    """Map the exposure model category to the naming used in HEV-E"""
+    for hev_e_area_type, aliases in area_types_mapping.items():
+        if model_area_type.lower() in aliases:
+            result = hev_e_area_type
+            break
+    else:
+        raise RuntimeError("Could not determine the HEV-E area type to map "
+                           "with {!r}".format(model_area_type))
+    return result
+
+
 # TODO: improve region detection (#40)
 # TODO: add license
-# TODO: confirm mapping of exposure categories to ISO19115 topic categories
 def complete_geonode_layer_import(exposure_model):
-    iso_19115_topic_category = {
-        "buildings": "structure",
-        "indicators": "economy",
-        "road_network": "transportation",
-        "rail": "transportation",
-        "pipeline": "utilitiesCommunication",
-        "storage_tank": "utilitiesCommunication",
-        "power_grid": "utilitiesCommunication",
-        "bridge": "structure",
-        "energy": "utilitiesCommunication",
-        "crop": "farming",
-        "livestock": "farming",
-        "forestry": "farming",
-        "people": "population",
-    }[exposure_model.category]
+    category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
+    mapped_category = get_hev_e_category(
+        exposure_model.category, category_maps)
+    iso_19115_topic_category = category_maps[mapped_category]["topic_category"]
     topic_category = TopicCategory.objects.get(
         identifier=iso_19115_topic_category)
     layer_name = get_view_name(
@@ -180,14 +192,19 @@ def complete_geonode_layer_import(exposure_model):
     layer.is_approved = True
     layer.spatial_representation_type = SpatialRepresentationType.objects.get(
         identifier="vector")
+    area_types_mapping = settings.HEV_E["EXPOSURES"]["area_type_mappings"]
     keywords = [
-        exposure_model.category,
+        mapped_category,
         exposure_model.taxonomy_source,
         "exposure",
-        "HEV-E"
+        "HEV-E",
     ]
     if exposure_model.tag_names is not None:
         keywords.extend(exposure_model.tag_names.split(" "))
+    if exposure_model.area_type is not None:
+        mapped_area_type = get_hev_e_area_type(
+            exposure_model.area_type, area_types_mapping)
+        keywords.append(mapped_area_type)
     for keyword in keywords:
         layer.keywords.add(keyword)
     layer.save()
@@ -264,6 +281,7 @@ def get_postgis_store(geoserver_catalogue, store_name, workspace, db_params,
     geoserver_catalogue.save(store)
     return store
 
+
 def get_geoserver_workspace(geoserver_catalogue, create=True):
     """Get or create a GeoServer workspace"""
     name = getattr(settings, "GEOSERVER_HEV_E_WORKSPACE", "hev-e")
@@ -309,11 +327,11 @@ def handle_views(db_cursor, schema_name, force_views=False, logger=print):
             logger("Dropping materialized view {!r}...".format(existing_view))
             drop_materialized_view(db_cursor, existing_view)
         existing_views = []
-        for model_id, model_name, category in existing_models:
-            view_name = get_view_name(model_id, model_name, category)
+        for model in existing_models:
+            view_name = get_view_name(model.id, model.name, model.category)
             logger("Creating materialized view {!r}...".format(view_name))
             create_materialized_view(
-                db_cursor, view_name, schema_name, model_id, category)
+                db_cursor, view_name, schema_name, model.id, model.category)
             logger("Refreshing materialized view {}...".format(view_name))
             refresh_view(db_cursor, view_name)
             existing_views.append(view_name)
@@ -455,12 +473,14 @@ def refresh_view(db_cursor, view_name):
 
 
 def get_exposure_models(db_cursor):
-    query = "SELECT id, name, category FROM exposures.exposure_model"
-    db_cursor.execute(query)
-    return [row for row in db_cursor.fetchall()]
+    """Retrieve relevant exposure models from GED4All DB
 
+    Relevant exposure models are those whose ``category`` column maps to one
+    of the existing categories in the
+    ``settings.HEV-E["EXPOSURES"]["category_mappings"]`` mapping.
 
-def get_exposure_models_details(db_cursor):
+    """
+
     query = """
         SELECT 
             id, 
@@ -476,7 +496,16 @@ def get_exposure_models_details(db_cursor):
     db_cursor.execute(query)
     ResultTuple = namedtuple(
         "ResultTuple", [col[0] for col in db_cursor.description])
-    return [ResultTuple(*row) for row in db_cursor.fetchall()]
+    category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
+    result = []
+    for row in db_cursor.fetchall():
+        exposure_model = ResultTuple(*row)
+        try:
+            get_hev_e_category(exposure_model.category, category_maps)
+            result.append(exposure_model)
+        except RuntimeError:
+            pass  # we are not interested in using this exposure model in HEV-E
+    return result
 
 
 def get_materialized_views(db_cursor, view_name_pattern):
