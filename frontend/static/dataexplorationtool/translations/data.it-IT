@@ -28,7 +28,8 @@
             "support": "Supporto",
             "backToLayer": "Torna ai dati precedenti",
             "compactTOC": "Mostra i layer aggiunti alla mappa",
-            "noLayer": "No layer matched"
+            "noLayer": "No layer matched",
+            "layerHasFilter": "Filtro attivo su questo layer"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

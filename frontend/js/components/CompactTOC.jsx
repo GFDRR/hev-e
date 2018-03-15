@@ -115,7 +115,13 @@ class CompactTOC extends React.Component {
                             </span>,
                             title: (<span>{layer.title}</span>),
                             className: `${layer.visibility ? '' : ' ms-card-hide'}${layer.loadingError ? ' ms-card-error' : ''}`,
-                            tools: !layer.loading ? (
+                            tools: <span>
+                                {layer.title === 'Urban Environment' && <GlyphiconT
+                                    glyph="filter"
+                                    className="text-hev-e-primary"
+                                    tooltipId="heve.layerHasFilter"
+                                    />}
+                                {!layer.loading ? (
                                 <GlyphiconT
                                     glyph="trash"
                                     tooltipId="heve.removeLayer"
@@ -123,7 +129,8 @@ class CompactTOC extends React.Component {
                                         e.stopPropagation();
                                         this.props.onRemove(layer.id);
                                     }}/>
-                            ) : <div style={{width: 16, height: 16}}><div className="mapstore-small-size-loader" /></div>,
+                            ) : <div style={{width: 16, height: 16}}><div className="mapstore-small-size-loader" /></div>}
+                            </span>,
                             onClick: () => {
                                 if (layer.loadingError) {
                                     return null;
