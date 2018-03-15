@@ -14,6 +14,7 @@ const SHOW_FILTER = 'DATAEXPLORATION:SHOW_FILTER';
 const UPDATE_DATA_URL = 'DATAEXPLORATION:UPDATE_DATA_URL';
 const SET_SORT_TYPE = 'DATAEXPLORATION:SET_SORT_TYPE';
 const SHOW_RELATED_DATA = 'DATAEXPLORATION:SHOW_RELATED_DATA';
+const SORT_TOC_LAYERS = 'DATAEXPLORATION:SORT_TOC_LAYERS';
 
 function setFilter(filter) {
     return {
@@ -71,6 +72,14 @@ function setSortType(sort) {
     };
 }
 
+function sortTocLayers(currentPos, previousPos) {
+    return {
+        type: SORT_TOC_LAYERS,
+        currentPos,
+        previousPos
+    };
+}
+
 module.exports = {
     UPDATE_FILTER,
     SELECT_AREA,
@@ -80,6 +89,7 @@ module.exports = {
     UPDATE_DATA_URL,
     SET_SORT_TYPE,
     SHOW_RELATED_DATA,
+    SORT_TOC_LAYERS,
     updateFilter,
     selectArea,
     showDatails,
@@ -87,5 +97,6 @@ module.exports = {
     showFilter,
     updateDataURL,
     setSortType,
-    showRelatedData
+    showRelatedData,
+    sortTocLayers
 };

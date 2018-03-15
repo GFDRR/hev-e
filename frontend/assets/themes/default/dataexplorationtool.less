@@ -391,79 +391,7 @@ div.ol-scale-line.ol-unselectable {
                 }
             }
 
-            .empty-state-container {
-                display: flex;
-                height: 100%;
-                width: 100%;
-                transform: translateY(0) !important;
-                .empty-state-main-view {
-                    display: flex;
-                    height: 100%;
-                    width: 100%;
-                    flex-direction: column;
-                    flex: 1;
-                    .empty-state-image {
-                        width: 128px;
-                        height: 128px;
-                        margin: auto;
-                        margin-bottom: 10px;
-                    }
-                    h1 {
-                        margin: auto;
-                        margin-top: 10px;
-                    }
-                }
-                .empty-state-content {
-                    display: block;
-                }
-            }
-
-            .mapstore-side-card {
-                display: flex;
-                > div {
-                    float: none;
-                    clear: both;
-                }
-                .mapstore-side-preview {
-                    display: flex;
-                    margin: 0;
-                    width: @square-btn-size * 2;
-                    height: @square-btn-size * 2;
-                    > * {
-                        margin: auto !important;
-                        padding: 0 !important;
-                        width: 100%;
-                    }
-                }
-                .mapstore-side-card-info {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    overflow: hidden;
-                    padding: 0;
-                    & > div {
-                        flex: 1;
-                        display: flex;
-                        margin-bottom: 0;
-                        overflow: hidden;
-                        min-width: 0;
-                        align-items: center;
-                        span {
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
-                            overflow: hidden;
-                        }
-                    }
-                }
-                .mapstore-side-card-tool {
-                    width: auto;
-                    display: flex;
-                    width: auto;
-                    > * {
-                        margin: auto 10px;
-                    }
-                }
-            }
+            
         }
 
         .et-related-head {
@@ -552,6 +480,21 @@ div.ol-scale-line.ol-unselectable {
     .shadow-far;
     top: 5px;
     left: 5px;
+    height: 42px;
+    width: 42px;
+    display: flex;
+    padding: 0;
+    span {
+        margin: auto;
+        font-size: 20px;
+    }
+}
+
+.et-layer-button {
+    position: absolute;
+    .shadow-far;
+    top: 5px;
+    right: 5px;
     height: 42px;
     width: 42px;
     display: flex;
@@ -852,5 +795,167 @@ hr {
 .ms-resizable-modal {
     .ms2-border-layout-body {
         overflow-x: hidden;
+    }
+}
+
+.et-compact-toc {
+    .shadow-soft;
+    z-index: 10;
+    transition: width 0.3s;
+    .et-close {
+        font-size: @icon-size;
+        display: block;
+        margin: 8px 0;
+        cursor: pointer;
+        transition: all 0.3s;
+        &:hover {
+            transform: scale(1.1);
+        }
+    }
+    .mapstore-side-card {
+        &.ms-sm {
+            &:hover {
+                transform: none;
+            }
+        }
+    }
+    width: 220px;
+
+    > div {
+        > .container-fluid {
+            border-bottom: 1px solid @ms2-et-color-bg;
+        }
+    }
+
+    .ms2-border-layout-content {
+        overflow: hidden;
+        display: flex;
+        .msSideGrid {
+            flex: 1;
+            width: 220px;
+            overflow-y: auto;
+            margin: 0;
+            padding: 15px;
+        }
+    }
+}
+
+.mapstore-filter.form-group {
+    margin: (@square-btn-size - @square-btn-medium-size)/2 0 0 0;
+    .input-group {
+        height: @square-btn-medium-size;
+        width: 100%;
+        input {
+            height: @square-btn-medium-size;
+        }
+        .input-group-addon {
+            position: absolute;
+            z-index: 2;
+            right: 0;
+            border-color: transparent;
+            background-color: transparent;
+        }
+
+        .close-filter {
+            cursor: pointer;
+        }
+    }
+}
+
+.mapstore-side-card {
+    &.ms-card-hide {
+        opacity: 0.5;
+    }
+    &.ms-card-error {
+        background-color: @ms2-et-color-bg;
+    }
+    &.selected {
+        background-color: #222;
+        .mapstore-side-glyph {
+            color: @ms2-et-color-primary;
+        }
+        .mapstore-side-preview {
+            > .glyphicon {
+                color: @ms2-et-color-primary;
+            }
+        }
+        .mapstore-side-card-tool {
+            > .glyphicon {
+                color: @ms2-et-color-primary;
+            }
+        }
+    }
+}
+
+.noUi-target {
+    background-color: @ms2-et-color-primary;
+    &.noUi-horizontal {
+        margin: 0;
+        .noUi-base {
+            .noUi-origin {
+                .noUi-handle {
+                    border-top: 1px solid @ms2-et-color-bg;
+                    width: 10px;
+                    height: 15px;
+                    left: -5px;
+                    top: -8px;
+                }
+            } 
+        } 
+    }
+}
+
+.ms-drag-over {
+    border-color: @ms2-et-color-primary !important;
+}
+
+.ms-grab {
+    width: 7px;
+    overflow: hidden;
+    display: inline-block;
+    margin-right: 8px;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+
+    &:active { 
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
+    }
+    &:hover {
+        color: @ms2-et-color-primary;
+    }
+    &:before {
+        top: 2px;
+        position: relative;
+    }
+}
+
+
+.empty-state-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    transform: translateY(0) !important;
+    .empty-state-main-view {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        flex-direction: column;
+        flex: 1;
+        .empty-state-image {
+            width: 128px;
+            height: 128px;
+            margin: auto;
+            margin-bottom: 10px;
+        }
+        h1 {
+            margin: auto;
+            margin-top: 10px;
+        }
+    }
+    .empty-state-content {
+        display: block;
     }
 }

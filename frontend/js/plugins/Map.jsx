@@ -85,7 +85,7 @@ class ResizableMapComponent extends React.Component {
                                         [key]: properties[key]
                                     }), {}) || {}
                                 };
-                            }).filter(val => val));
+                            }).filter(val => val && val.properties && val.properties.label /* Change with ISO */));
                             if (newFeature) {
                                 const reprojectedFeature = CoordinatesUtils.reprojectGeoJson(newFeature, 'EPSG:3857', 'EPSG:4326');
                                 this.props.onSelectArea({...reprojectedFeature});

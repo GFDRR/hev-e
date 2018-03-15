@@ -21,6 +21,8 @@ const ContainerDimensions = require('react-container-dimensions').default;
 const {updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
+const {addLayer} = require("../../MapStore2/web/client/actions/layers");
+const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
@@ -67,7 +69,9 @@ class DataExplorerComponent extends React.Component {
         sortBy: PropTypes.string,
         onShowRelatedData: PropTypes.func,
         showRelatedData: PropTypes.bool,
-        groupInfo: PropTypes.object
+        groupInfo: PropTypes.object,
+        onAddLayer: PropTypes.func,
+        layers: PropTypes.array
     };
 
     static defaultProps = {
@@ -81,7 +85,9 @@ class DataExplorerComponent extends React.Component {
         sortBy: '',
         onShowRelatedData: () => {},
         showRelatedData: false,
-        groupInfo: {}
+        groupInfo: {},
+        onAddLayer: () => {},
+        layers: []
     };
 
     render() {
@@ -113,7 +119,7 @@ class DataExplorerComponent extends React.Component {
                                 </Col>
                             </Row>
                         }>
-                        <DataCatalog
+                        {!this.props.currentDetails && <DataCatalog
                             filterList={FilterList}
                             filterForm={FilterForm}
                             sortBy={this.props.sortBy}
@@ -121,9 +127,12 @@ class DataExplorerComponent extends React.Component {
                             onShowDetails={this.props.onShowDetails}
                             onShowBbox={this.props.onShowBbox}
                             onZoomTo={this.props.onZoomTo}
-                            groupInfo={this.props.groupInfo}/>
+                            groupInfo={this.props.groupInfo}
+                            onAddLayer={this.props.onAddLayer}
+                            layers={this.props.layers}/>}
                     </DockPanel>
                     <DataDetails
+                        layers={this.props.layers}
                         onClose={() => this.props.onShowDetails(null)}
                         currentDetails={this.props.currentDetails}
                         onZoomTo={this.props.onZoomTo}
@@ -144,13 +153,15 @@ const dataExplorerSelector = createSelector([
     sortSelector,
     showRelatedDataSelector,
     state => state.dataexploration && state.dataexploration.filter,
-    state => state.dataexploration && state.dataexploration.currentSection || 'exposures'
-], (open, currentDetails, catalogURL, sortBy, showData, filters, currentSection) => ({
+    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    layersSelector
+], (open, currentDetails, catalogURL, sortBy, showData, filters, currentSection, layers) => ({
     open,
     currentDetails,
     catalogURL,
     sortBy,
     showRelatedData: showData,
+    layers: layers.filter(layer => layer.group === 'toc_layers'),
     groupInfo: filters[currentSection] && filters[currentSection].categories
         && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.datasetLayers.reduce((sub, filt) => ({...sub, [filt.name.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
 }));
@@ -162,7 +173,8 @@ const DataExplorer = connect(
         onShowDetails: showDatails,
         onShowBbox: updateNode,
         onZoomTo: zoomToExtent,
-        onShowRelatedData: showRelatedData
+        onShowRelatedData: showRelatedData,
+        onAddLayer: addLayer
     }
 )(DataExplorerComponent);
 

@@ -37,6 +37,9 @@ module.exports = (config, pluginsDef) => {
         // initialize openlayers style
         require('openlayers/css/ol.css');
 
+        // initialize no ui slider style
+        require("react-nouislider/example/nouislider.css");
+
         // const { loadVersion } = require('../MapStore2/web/client/actions/version');
         // const { versionSelector } = require('../MapStore2/web/client/selectors/version');
         const { loadAfterThemeSelector } = require('../MapStore2/web/client/selectors/config');

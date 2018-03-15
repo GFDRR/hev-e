@@ -41,6 +41,13 @@
                     "containerPosition": "columns"
                 }
             },
+            {
+                "name": "TOC",
+                "cfg": {
+                    "containerPosition": "columns"
+                }
+            },
+            "TOCButton",
             "Toolbar",
             "Expander",
             "Undo",
