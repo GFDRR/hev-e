@@ -13,13 +13,19 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
+from collections import namedtuple
 import subprocess
 
 from django.db import connections
 from django.db import ProgrammingError
 from django.conf import settings
+from django.core import management
 from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
 import django.utils.text
+from geonode.layers.models import Layer
+from geonode.base.models import SpatialRepresentationType
+from geonode.base.models import TopicCategory
 from geoserver.catalog import Catalog
 
 
@@ -78,6 +84,13 @@ class Command(BaseCommand):
             help="Name of the database schema where data will be put. Defaults "
                  "to %(default)s"
         )
+        parser.add_argument(
+            "-u",
+            "--username",
+            help="Name of the user that will be the owner of the exposure "
+                 "layers in geonode. Defaults to the first admin user "
+                 "available"
+        )
 
     def handle(self, *args, **options):
         db_connection = connections[options["database_connection"]]
@@ -93,6 +106,7 @@ class Command(BaseCommand):
                 force_views=options["force_materialized_views_creation"],
                 logger=self.stdout.write
             )
+            exposure_models = get_exposure_models_details(db_cursor)
         geoserver_layers = handle_geoserver_layers(
             existing_views,
             store_name=options["geoserver_store_name"],
@@ -100,12 +114,84 @@ class Command(BaseCommand):
             schema_name=options["database_schema"],
             logger=self.stdout.write
         )
-        handle_geonode(geoserver_layers, logger=self.stdout.write)
+        user = get_user(options["username"])
+        self.stdout.write("Importing geoserver layers into geonode...")
+        import_layers_to_geonode(
+            workspace_name=geoserver_layers[0].workspace.name,
+            store_name=geoserver_layers[0].store.name,
+            user_name=user.username,
+            stdout=self.stdout,
+            stderr=self.stderr
+        )
+        for exposure_model in exposure_models:
+            complete_geonode_layer_import(exposure_model)
 
 
-def handle_geonode(geoserver_layers, logger=print):
-    # import geoserver layers into geonode
-    pass
+def get_user(name=None):
+    user_model = get_user_model()
+    if name is None:
+        user = user_model.objects.filter(is_superuser=True).first()
+    else:
+        user = user_model.objects.get(username=name)
+    return user
+
+
+# FIXME: Thumbnail generation seems to be broken
+def import_layers_to_geonode(workspace_name, store_name, user_name,
+                             stdout, stderr):
+    # import geoserver layers into geonode using the `updatelayers` command
+    management.call_command(
+        "updatelayers",
+        store=store_name,
+        workspace=workspace_name,
+        user=user_name,
+        skip_unadvertised=True,
+        skip_geonode_registered=True,
+        stdout=stdout,
+        stderr=stderr
+    )
+
+
+# TODO: improve region detection (#40)
+# TODO: add license
+# TODO: confirm mapping of exposure categories to ISO19115 topic categories
+def complete_geonode_layer_import(exposure_model):
+    iso_19115_topic_category = {
+        "buildings": "structure",
+        "indicators": "economy",
+        "road_network": "transportation",
+        "rail": "transportation",
+        "pipeline": "utilitiesCommunication",
+        "storage tank": "utilitiesCommunication",
+        "power grid": "utilitiesCommunication",
+        "bridge": "structure",
+        "energy": "utilitiesCommunication",
+        "crop": "farming",
+        "livestock": "farming",
+        "forestry": "farming",
+        "people": "population",
+    }[exposure_model.category]
+    topic_category = TopicCategory.objects.get(
+        identifier=iso_19115_topic_category)
+    layer_name = get_view_name(
+        exposure_model.id, exposure_model.name, exposure_model.category)
+    layer = Layer.objects.get(name=layer_name)
+    layer.abstract = exposure_model.description
+    layer.category = topic_category
+    layer.is_approved = True
+    layer.spatial_representation_type = SpatialRepresentationType.objects.get(
+        identifier="vector")
+    keywords = [
+        exposure_model.category,
+        exposure_model.taxonomy_source,
+        "exposure",
+        "HEV-E"
+    ]
+    if exposure_model.tag_names is not None:
+        keywords.extend(exposure_model.tag_names.split(" "))
+    for keyword in keywords:
+        layer.keywords.add(keyword)
+    layer.save()
 
 
 def handle_geoserver_layers(existing_views, store_name, db_params, schema_name,
@@ -373,6 +459,25 @@ def get_exposure_models(db_cursor):
     query = "SELECT id, name, category FROM exposures.exposure_model"
     db_cursor.execute(query)
     return [row for row in db_cursor.fetchall()]
+
+
+def get_exposure_models_details(db_cursor):
+    query = """
+        SELECT 
+            id, 
+            name, 
+            description,
+            taxonomy_source,
+            category,
+            area_type,
+            area_unit,
+            tag_names
+        FROM exposures.exposure_model
+    """
+    db_cursor.execute(query)
+    ResultTuple = namedtuple(
+        "ResultTuple", [col[0] for col in db_cursor.description])
+    return [ResultTuple(*row) for row in db_cursor.fetchall()]
 
 
 def get_materialized_views(db_cursor, view_name_pattern):
