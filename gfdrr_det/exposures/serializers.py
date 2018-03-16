@@ -59,7 +59,10 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
     class Meta:
         model = Layer
         geo_field = "bbox"
+        id_field = "id"
         fields = (
+            "id",
+            "title",
             "name",
             "description",
             "category",
