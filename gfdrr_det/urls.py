@@ -17,6 +17,7 @@ from rest_framework.schemas import get_schema_view
 from geonode.urls import urlpatterns
 
 from . import views
+from .exposures import views as exposure_views
 
 router = DefaultRouter()
 router.register(
@@ -40,6 +41,11 @@ router.register(
     base_name="datasetrepresentation"
 )
 router.register(r"region", views.RegionViewSet)
+router.register(
+    r"exposures",
+    exposure_views.ExposureLayerListViewSet,
+    base_name="exposures"
+)
 schema_view = get_schema_view("HEV-E API")
 
 API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
