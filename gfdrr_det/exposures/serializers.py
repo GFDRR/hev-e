@@ -10,6 +10,7 @@
 #########################################################################
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis import geos
 from rest_framework import serializers
 from rest_framework_gis import serializers as gis_serializers
@@ -22,6 +23,7 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
     aggregation_type = serializers.SerializerMethodField()
     bbox = gis_serializers.GeometrySerializerMethodField()
     description = serializers.CharField(source="abstract")
+    wms_url = serializers.SerializerMethodField()
 
     def get_bbox(self, obj):
         return geos.Polygon(
@@ -46,6 +48,13 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
         type_ = obj.keywords.filter(name__in=aggregation_types).first()
         return type_.name if type_ is not None else None
 
+    def get_wms_url(self, obj):
+        try:
+            wms_link = obj.link_set.get(link_type="OGC:WMS").url
+        except ObjectDoesNotExist:
+            wms_link = None
+        return wms_link
+
 
     class Meta:
         model = Layer
@@ -55,4 +64,5 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
             "description",
             "category",
             "aggregation_type",
+            "wms_url",
         )
