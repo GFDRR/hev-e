@@ -79,16 +79,16 @@ def get_area_type_qs(request):
 
 
 class ExposureLayerListFilterSet(django_filters.FilterSet):
-    category = django_filters.ModelChoiceFilter(
-        name="keywords",
+    category = django_filters.ModelMultipleChoiceFilter(
+        name="keywords__name",
         to_field_name="name",
-        queryset=get_category_qs
+        queryset=get_category_qs,
+        lookup_expr="in",
     )
     aggregation_type = django_filters.ModelChoiceFilter(
         name="keywords",
         to_field_name="name",
         queryset=get_area_type_qs)
-
 
     class Meta:
         model = Layer
@@ -193,11 +193,15 @@ def get_occupancy_by_material(db_cursor, layer_name, count_occupants=False):
             record.taxonomy, materials)
         counts.setdefault(building_material, 0)
         counts[building_material] += record.count
+
     result = {
         "title": "Occupancy by material",
-        "occupancy": counts.values(),
-        "material": counts.keys(),
+        "occupancy": [],
+        "material": [],
     }
+    for k, v in counts.items():
+        result["material"].append(k)
+        result["occupancy"].append(v)
     print("result: {}".format(result))
     return result
 
