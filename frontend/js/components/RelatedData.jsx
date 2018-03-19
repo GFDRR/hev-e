@@ -56,9 +56,9 @@ class RelatedData extends React.Component {
                             </ButtonT>}
                         </Col>
                         <Col xs={8} className="text-center">
-                            {this.props.currentDetails && this.props.currentDetails.title && <h3>Data related to: <a href="#" onClick={() => {
+                            {this.props.currentDetails && this.props.currentDetails.properties.title && <h3>Data related to: <a href="#" onClick={() => {
                                 this.props.onShowData(false);
-                            }}><strong>{this.props.currentDetails.title}</strong></a></h3>}
+                            }}><strong>{this.props.currentDetails.properties.title}</strong></a></h3>}
                         </Col>
                         <Col xs={2}/>
                     </Row> : <Row className="ms-header">

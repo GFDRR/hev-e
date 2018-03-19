@@ -40,7 +40,6 @@ const FilterList = connect(
     }
 )(require('../components/FilterList'));
 
-
 const filterFormSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter && state.dataexploration.filter.show,
     sortSelector
@@ -144,7 +143,7 @@ class DataExplorerComponent extends React.Component {
                         onZoomTo={this.props.onZoomTo}
                         onShowDetails={this.props.onShowDetails}
                         onAddLayer={this.props.onAddLayer}
-                        onRemoveLayer={this.props.onRemoveLayer}
+                        onRemove={this.props.onRemove}
                         onShowRelatedData={this.props.onShowRelatedData}
                         showRelatedData={this.props.showRelatedData}/>
                 </div>

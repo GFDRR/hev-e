@@ -205,6 +205,7 @@ const showDetailsEpic = action$ =>
     action$.ofType(SHOW_DETAILS)
     .switchMap(() => {
         return Rx.Observable.of(
+            updateNode('datasets_layer', 'layers', {visibility: false}),
             setControlProperty('dataExplorer', 'enabled', true)
         );
     });
