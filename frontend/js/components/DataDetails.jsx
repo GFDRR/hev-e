@@ -45,8 +45,11 @@ class DataDetails extends React.Component {
         onShowDetails: PropTypes.func,
         onShowRelatedData: PropTypes.func,
         showRelatedData: PropTypes.bool,
+        onAddLayer: PropTypes.func,
+        onRemoveLayer: PropTypes.func,
         layout: PropTypes.object,
-        layers: PropTypes.array
+        layers: PropTypes.array,
+        groupInfo: PropTypes.object
     };
 
     static defaultProps = {
@@ -55,6 +58,8 @@ class DataDetails extends React.Component {
         onZoomTo: () => {},
         onShowDetails: () => {},
         onShowRelatedData: () => {},
+        onAddLayer: () => {},
+        onRemoveLayer: () => {},
         showRelatedData: false,
         layers: [],
         layout: [
@@ -83,7 +88,7 @@ class DataDetails extends React.Component {
                     className="et-details">
                     <ResizableModal
                         show
-                        title={<span><i className={'fa fa-' + this.props.currentDetails.icon}/>&nbsp;{this.props.currentDetails.title}</span>}
+                        title={<span><i className={'fa fa-' + this.props.groupInfo[this.props.currentDetails.properties.category].icon}/>&nbsp;<strong>{this.props.currentDetails.properties.name}</strong></span>}
                         onClose={this.props.onClose}>
                         <BorderLayout
                             header={
@@ -114,16 +119,51 @@ class DataDetails extends React.Component {
                                             tooltipId: 'heve.zoomToLayer',
                                             onClick: (e) => {
                                                 e.stopPropagation();
-                                                const bbox = this.props.currentDetails && this.props.currentDetails.bbox || null;
-                                                if (bbox) {
+                                                const coordinates = this.props.currentDetails && this.props.currentDetails.geometry && this.props.currentDetails.geometry.coordinates;
+                                                if (coordinates) {
+                                                    const bbox = [...coordinates[0][0], ...coordinates[0][2]];
                                                     this.props.onZoomTo([...bbox], 'EPSG:4326');
                                                 }
                                             }
                                         },
                                         {
+                                            glyph: 'trash',
+                                            visible: !!head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.properties.name)),
+                                            tooltipId: 'heve.removeLayer',
+                                            onClick: (e) => {
+                                                e.stopPropagation();
+                                                this.props.onRemoveLayer(this.props.currentDetails.properties && this.props.currentDetails.properties.name);
+                                            }
+                                        },
+                                        {
                                             glyph: 'plus',
-                                            visible: !head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.title)),
-                                            tooltipId: 'heve.addLayer'
+                                            visible: !head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.properties.name)),
+                                            tooltipId: 'heve.addLayer',
+                                            onClick: (e) => {
+                                                e.stopPropagation();
+                                                const coordinates = this.props.currentDetails && this.props.currentDetails.geometry && this.props.currentDetails.geometry.coordinates;
+                                                const bbox = [...coordinates[0][0], ...coordinates[0][2]];
+                                                this.props.onAddLayer({
+                                                    type: 'wms',
+                                                    url: this.props.currentDetails.properties.wms_url,
+                                                    visibility: true,
+                                                    name: this.props.currentDetails.properties.name,
+                                                    title: this.props.currentDetails.properties.title,
+                                                    description: this.props.currentDetails.properties.description,
+                                                    group: 'toc_layers',
+                                                    bbox: {
+                                                    crs: 'EPSG:4326',
+                                                    bounds: {
+                                                        minx: bbox[0],
+                                                        miny: bbox[1],
+                                                        maxx: bbox[2],
+                                                        maxy: bbox[3]
+                                                    }
+                                                    },
+                                                    id: this.props.currentDetails.properties.name,
+                                                    record: {...this.props.currentDetails}
+                                                });
+                                            }
                                         },
                                         {
                                             glyph: 'download',
@@ -214,7 +254,7 @@ class DataDetails extends React.Component {
                                 <br/>
                                 <Row>
                                     <Col xs={12}>
-                                        <p>Tanzania (/ˌtænzəˈniːə/),[12] officially the United Republic of Tanzania (Swahili: Jamhuri ya Muungano wa Tanzania), is a sovereign state in eastern Africa within the African Great Lakes region. It borders Kenya and Uganda to the north; Rwanda, Burundi, and the Democratic Republic of the Congo to the west; Zambia, Malawi, and Mozambique to the south; and the Indian Ocean to the east. Mount Kilimanjaro, Africa's highest mountain, is in north-eastern Tanzania. The United Nations estimated Tanzania's 2016 population at 55.57 million.[6] The population is composed of several ethnic, linguistic, and religious groups. Tanzania is a presidential constitutional republic and since 1996 its official capital city has been Dodoma where the president's office, the National Assembly, and some government ministries are located.[13] Dar es Salaam, the former capital, retains most government offices and is the country's largest city, principal port, and leading commercial centre.[14][15][16] Tanzania is a one party dominant state with the socialist-progressive Chama Cha Mapinduzi party in power.</p>
+                                        <p>{this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.description}</p>
                                     </Col>
                                 </Row>
                                 <br/>
