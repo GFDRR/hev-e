@@ -17,27 +17,31 @@ const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
 const assign = require('object-assign');
+const {drawFeaturesSelector} = require('../selectors/dataexploration');
 
 class ZoomToSearchComponent extends React.Component {
     static propTypes = {
         bbox: PropTypes.array,
-        onClick: PropTypes.func
+        onClick: PropTypes.func,
+        crs: PropTypes.string,
+        tooltipId: PropTypes.string
     };
 
     static defaultProps = {
         bbox: null,
-        onClick: () => {}
+        onClick: () => {},
+        crs: 'EPSG:4326'
     };
 
     render() {
         return this.props.bbox ? (
             <ButtonT
                 className="square-button"
-                tooltipId="heve.zoomToSelectedArea"
+                tooltipId={this.props.tooltipId}
                 tooltipPosition="left"
                 bsStyle="primary"
                 onClick={() => {
-                    this.props.onClick(this.props.bbox, 'EPSG:4326');
+                    this.props.onClick(this.props.bbox, this.props.crs);
                 }}>
                 <Glyphicon glyph="zoom-to"/>
             </ButtonT>
@@ -46,9 +50,14 @@ class ZoomToSearchComponent extends React.Component {
 }
 
 const zoomToSearchSelector = createSelector([
-    layersSelector
-], (layers) => ({
-    bbox: head(layers.filter(layer => layer.id === 'search_layer').map(layer => layer.features && layer.features[0] && layer.features[0].bbox).filter(val => val)) || null
+    layersSelector,
+    drawFeaturesSelector
+], (layers, drawFeaures) => ({
+    tooltipId: drawFeaures && drawFeaures[0] && drawFeaures[0] ? 'heve.zoomToFilteredArea' : 'heve.zoomToSelectedArea',
+    crs: drawFeaures && drawFeaures[0] && drawFeaures[0].projection || 'EPSG:4326',
+    bbox: drawFeaures && drawFeaures[0] && drawFeaures[0].extent
+    || head(layers.filter(layer => layer.id === 'search_layer').map(layer => layer.features && layer.features[0] && layer.features[0].bbox).filter(val => val))
+    || null
 }));
 
 const ZoomToSearch = connect(
@@ -62,10 +71,11 @@ module.exports = {
     ZoomToSearchPlugin: assign(ZoomToSearch, {
         Toolbar: {
             name: 'zoom-to-search',
-            position: 1,
+            position: 2,
             toolStyle: "primary",
             tool: true,
-            priority: 1
+            priority: 2,
+            alwaysVisible: true
         }
     }),
     reducers: {}

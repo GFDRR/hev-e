@@ -1,39 +1,47 @@
 [
     {
         "name": "Buildings",
-        "colors": ["#333333", "#dddddd"],
+        "colors": ["#ff42d0", "#fb4168"],
         "icon": "building",
         "datasetLayers": [
             {
-                "name": "Buildings"
+                "name": "Buildings",
+                "code": "buildings"
             }
         ]
     },
     {
         "name": "Infrastructure",
-        "colors": ["#41fbf0", "#9f42ff"],
+        "colors": ["#423aed", "#41fbf0"],
         "icon": "road",
         "datasetLayers": [
             {
-                "name": "Roads"
+                "name": "Roads",
+                "code": "road_network"
             },
             {
-                "name": "Rail"
+                "name": "Rail",
+                "code": "rail"
             },
             {
-                "name": "Pipelines"
+                "name": "Pipelines",
+                "code": "pipelines"
             },
             {
-                "name": "Storage Tanks"
+                "name": "Storage Tanks",
+                "code": "storage_tanks"
             },
             {
-                "name": "Power Grid"
+                "name": "Power Grid",
+                "code": "power_grid"
             },
             {
-                "name": "Bridges"
+                "name": "Bridges",
+                "code": "bridges"
             },
             {
-                "name": "Energy"
+                "name": "Energy",
+                "code": "energy"
             }
         ]
     },
@@ -43,23 +51,27 @@
         "icon": "leaf",
         "datasetLayers": [
             {
-                "name": "Crops"
+                "name": "Crops",
+                "code": "crops"
             },
             {
-                "name": "Livestock"
+                "name": "Livestock",
+                "code": "livestock"
             },
             {
-                "name": "Forestry"
+                "name": "Forestry",
+                "code": "forestry"
             }
         ]
     },
     {
         "name": "Social",
-        "colors": ["#ff42d0", "#fb4168"],
+        "colors": ["#333333", "#dddddd"],
         "icon": "users",
         "datasetLayers": [
             {
-                "name": "People"
+                "name": "People",
+                "code": "people"
             }
         ]
     }

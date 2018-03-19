@@ -15,6 +15,8 @@ const UPDATE_DATA_URL = 'DATAEXPLORATION:UPDATE_DATA_URL';
 const SET_SORT_TYPE = 'DATAEXPLORATION:SET_SORT_TYPE';
 const SHOW_RELATED_DATA = 'DATAEXPLORATION:SHOW_RELATED_DATA';
 const SORT_TOC_LAYERS = 'DATAEXPLORATION:SORT_TOC_LAYERS';
+const TOGGLE_SPATIAL_FILTER = 'DATAEXPLORATION:TOGGLE_SPATIAL_FILTER';
+const UPDATE_BBOX_FILTER = 'DATAEXPLORATION:UPDATE_BBOX_FILTER';
 
 function setFilter(filter) {
     return {
@@ -80,6 +82,20 @@ function sortTocLayers(currentPos, previousPos) {
     };
 }
 
+function toggleSpatialFilter(method) {
+    return {
+        type: TOGGLE_SPATIAL_FILTER,
+        method
+    };
+}
+
+function updateBBOXFilter(bbox) {
+    return {
+        type: UPDATE_BBOX_FILTER,
+        bbox
+    };
+}
+
 module.exports = {
     UPDATE_FILTER,
     SELECT_AREA,
@@ -90,6 +106,8 @@ module.exports = {
     SET_SORT_TYPE,
     SHOW_RELATED_DATA,
     SORT_TOC_LAYERS,
+    TOGGLE_SPATIAL_FILTER,
+    UPDATE_BBOX_FILTER,
     updateFilter,
     selectArea,
     showDatails,
@@ -98,5 +116,7 @@ module.exports = {
     updateDataURL,
     setSortType,
     showRelatedData,
-    sortTocLayers
+    sortTocLayers,
+    toggleSpatialFilter,
+    updateBBOXFilter
 };

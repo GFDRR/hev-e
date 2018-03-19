@@ -286,14 +286,23 @@ div.ol-scale-line.ol-unselectable {
                 
                 #mapstore-toolbar-container {
                     .shadow-far;
-                    .btn-success {
-                        .button-variant(@ms2-color-primary; #c7c7c7; #c7c7c7);
+                    
+                    .btn-success,
+                    .btn-primary
+                     {
+                        .button-variant(@ms2-color-primary; @ms2-et-color-bg; darken(@ms2-et-color-bg, 7%));
                         &[disabled] {
                             opacity: 0.9;
                             background-color: @ms2-color-disabled;
                             color: @ms2-color-text-disabled;
                         }
+                        &:active,
+                        &.active {
+                            color: @ms2-et-color-primary;
+                            background-color: #222;
+                        }
                     }
+
                     .square-button {
                         height: 42px;
                         width: 42px;

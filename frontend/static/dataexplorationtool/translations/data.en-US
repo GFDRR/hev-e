@@ -24,12 +24,16 @@
             "releatedDataInterested": "You might be also interested in the following data",
             "latestData": "Back to latest selected area",
             "zoomToSelectedArea": "Zoom to selected area",
+            "zoomToFilteredArea": "Zoom to filtered area",
             "about": "About",
             "support": "Support",
             "backToLayer": "Back to previous data",
             "compactTOC": "Show layers added to map",
             "noLayer": "No layer matched",
-            "layerHasFilter": "Filter active on this layer"
+            "layerHasFilter": "Filter active on this layer",
+            "removeSpatialFilter": "Remove spatial filter",
+            "applySpatialFilter": "Apply spatial filter",
+            "drawSpatialFilter": "Draw spatial filter on map as bounding box"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

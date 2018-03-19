@@ -58,6 +58,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         new NormalModuleReplacementPlugin(/withInfiniteScroll.js/, path.join(__dirname, "js", "ms2override", "components", "withInfiniteScroll.js")),
         new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideCard.jsx")),
         new NormalModuleReplacementPlugin(/SideGrid.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideGrid.jsx")),
+        new NormalModuleReplacementPlugin(/ToggleButton.jsx/, path.join(__dirname, "js", "ms2override", "components", "ToggleButton.jsx")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin
@@ -165,7 +166,7 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
                 target: "http://localhost:8081",
                 pathRewrite: {'/dataexplorationtool/data_extraction': '/mockdata'}
             },
-            "/gfdrr_det/api": {
+            "/gfdrr_det/api/v1": {
                 target: "http://det-dev.geo-solutions.it"
             }
         }

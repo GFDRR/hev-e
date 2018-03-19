@@ -9,7 +9,6 @@
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const urlUtil = require('url');
 const assign = require('object-assign');
-const {head} = require('lodash');
 
 const parseUrl = (url) => {
     const parsed = urlUtil.parse(url, true);
@@ -142,7 +141,7 @@ const Api = {
             });*/
         });
     },
-    textSearch: function(url, startPosition, maxRecords, text, sortBy, groupInfo) {
+    textSearch: function(url, page, startPosition, maxRecords, text, sortBy, groupInfo, bboxFilter) {
         return new Promise((resolve) => {
             // const {Filter} = require('../../MapStore2/web/client/utils/ogc/Filter');
             // let filter = null;
@@ -153,7 +152,7 @@ const Api = {
             // resolve(Api.getRecords(url, startPosition, maxRecords, filter));
 
             /* MOCK */
-            const hasFilter = groupInfo && head(Object.keys(groupInfo).filter(key => groupInfo[key].checked));
+            /*const hasFilter = groupInfo && head(Object.keys(groupInfo).filter(key => groupInfo[key].checked));
             const newText = text.toLowerCase();
             const records = [
                 {
@@ -194,11 +193,47 @@ const Api = {
                 records: records.sort((a, b) => {
                     return sortBy === 'alphabeticalAToZ' ? a.title > b.title : a.title < b.title;
                 })
-            };
+            };*/
 
-            resolve(axios.get(parseUrl(url))
-                .then(() => null)
-                .catch(() => results));
+            // const hasFilter = groupInfo && head(Object.keys(groupInfo).filter(key => groupInfo[key].checked));
+
+            const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
+            const bboxObj = bboxFilter ? {bbox: bboxFilter} : { };
+            const categoryObj = hasFilter ? {category: hasFilter.join(',')} : { };
+
+            resolve(axios.get(parseUrl(url), {
+                params: {
+                    page: page + 1,
+                    page_size: maxRecords,
+                    search: text,
+                    format: 'json',
+                    ordering: sortBy,
+                    ...categoryObj,
+                    ...bboxObj
+                }
+            }).then((response) => {
+                const records = response.data && response.data.features || null;
+                const numberOfRecordsMatched = response.data && response.data.count || null;
+                if (records) {
+                    return {
+                        numberOfRecordsMatched,
+                        numberOfRecordsReturned: records.length,
+                        records
+                    };
+                }
+                /*const {total_count} = response.meta;
+                const records = response.objects;
+                const res = {
+                    numberOfRecordsMatched: records.length,
+                    numberOfRecordsReturned: records.length,
+                    nextRecord: 0,
+                    records: records.sort((a, b) => {
+                        return sortBy === 'alphabeticalAToZ' ? a.title > b.title : a.title < b.title;
+                    })
+                };*/
+                return null;
+            })
+            .catch(() => null));
         });
     }
 };

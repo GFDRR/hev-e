@@ -41,13 +41,19 @@ const SideGrid = compose(
 /*
  * converts record item into a item for SideGrid
  */
+
+const icons = {
+    buildings: 'building',
+    road_network: 'road'
+};
+
 const resToProps = ({records, result = {}}) => ({
     items: (records || []).map((record = {}) => ({
-        title: record.title,
-        caption: record.caption,
-        description: record.description,
+        title: record.properties.name,
+        caption: record.properties.category,
+        description: record.properties.description,
         preview: record.thumbnail ? <img src="thumbnail" /> : defaultPreview,
-        icon: record.icon,
+        icon: icons[record.properties.category],
         record
     })),
     total: result && result.numberOfRecordsMatched
@@ -56,8 +62,8 @@ const PAGE_SIZE = 10;
 /*
  * retrieves data from a catalog service and converts to props
  */
-const loadPage = ({text, catalog = {}, sortBy, groupInfo}, page = 0) => Rx.Observable
-    .fromPromise(API[catalog.type].textSearch(catalog.url, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text, sortBy, groupInfo))
+const loadPage = ({text, catalog = {}, sortBy, groupInfo, bboxFilter}, page = 0) => Rx.Observable
+    .fromPromise(API[catalog.type].textSearch(catalog.url, page, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text, sortBy, groupInfo, bboxFilter))
     .map((result) => ({result, records: result.records}))
     .map(resToProps);
 const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PAGE_SIZE};
@@ -80,15 +86,16 @@ module.exports = compose(
         withControllableState('searchText', "setSearchText", ""),
         withVirtualScroll({loadPage, scrollSpyOptions, hasMore: ({total, items}) => items.length < total}),
         mapPropsStream( props$ =>
-            props$.merge(props$.take(1).switchMap(({catalog, loadFirst = () => {}, sortBy, groupInfo}) =>
+            props$.merge(props$.take(1).switchMap(({catalog, loadFirst = () => {}, sortBy, groupInfo, bboxFilter}) =>
                 props$
                     .debounceTime(500)
-                    .startWith({searchText: "", catalog, sortBy, groupInfo})
+                    .startWith({searchText: "", catalog, sortBy, groupInfo, bboxFilter})
                     .distinctUntilChanged((previous, next) =>
                         previous.searchText === next.searchText
                         && previous.sortBy === next.sortBy
+                        && previous.bboxFilter === next.bboxFilter
                         && isEqual(previous.groupInfo, next.groupInfo)) // 'searchText'
-                    .do(({searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo} = {}) => loadFirst({text: searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo}))
+                    .do(({searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo, bboxFilter: newBboxFilter} = {}) => loadFirst({text: searchText, catalog: nextCatalog, sortBy: newSortBy, groupInfo: newGroupInfo, bboxFilter: newBboxFilter}))
                     .ignoreElements() // don't want to emit props
         )))
 

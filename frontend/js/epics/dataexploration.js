@@ -9,18 +9,22 @@
 const Rx = require('rxjs');
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const {MAP_CONFIG_LOADED} = require('../../MapStore2/web/client/actions/config');
-const {SORT_TOC_LAYERS, SELECT_AREA, UPDATE_FILTER, SHOW_DETAILS, selectArea, setFilter, updateDataURL} = require('../actions/dataexploration');
-const {filterSelector, currentSectionSelector} = require('../selectors/dataexploration');
+const {SORT_TOC_LAYERS, SELECT_AREA, UPDATE_FILTER, SHOW_DETAILS, TOGGLE_SPATIAL_FILTER, selectArea, setFilter, updateBBOXFilter /*, updateDataURL*/} = require('../actions/dataexploration');
+const {filterSelector, currentSectionSelector, drawFeaturesSelector} = require('../selectors/dataexploration');
 const {ADD_LAYER, addLayer, updateNode, sortNode} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require("../../MapStore2/web/client/selectors/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
-const {getMainViewStyle, getSearchLayerStyle} = require('../utils/StyleUtils');
+const {getMainViewStyle, getSearchLayerStyle, getBBOXStyle} = require('../utils/StyleUtils');
 const set = require('lodash/fp/set');
 const {get, head} = require('lodash');
 const chroma = require('chroma-js');
-
+const {changeDrawingStatus, drawSupportReset} = require('../../MapStore2/web/client/actions/draw');
+const {CHANGE_MAP_VIEW} = require('../../MapStore2/web/client/actions/map');
+const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUtils');
+const {CHANGE_DRAWING_STATUS} = require('../../MapStore2/web/client/actions/draw');
+/*
 const stringifyCategory = (section, filter) => {
     return filter[section] && Object.keys(filter[section]).reduce((params, key) => {
         if (key === 'categories') {
@@ -32,6 +36,7 @@ const stringifyCategory = (section, filter) => {
         return {...params};
     }, {}) || {};
 };
+*/
 
 const createBaseVectorLayer = name => ({
     type: 'vector',
@@ -79,9 +84,27 @@ const initDataLayerEpic = action$ =>
             });
         });
 
-const selectAreaEpic = action$ =>
+const selectAreaEpic = (action$, store) =>
     action$.ofType(SELECT_AREA)
         .switchMap((action) => {
+            const filter = filterSelector(store.getState());
+            if (filter.exposures) {
+                return Rx.Observable.concat(
+                    Rx.Observable.of(
+                        searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
+                        updateNode('datasets_layer', 'layers', {visibility: false}),
+                        updateNode('search_layer', 'layers', {
+                            visibility: true,
+                            features: action.area.geometry && [{...action.area}] || []
+                        }),
+                        setControlProperty('dataExplorer', 'enabled', true)
+                    ),
+                    // delay needed for bounds fit
+                    Rx.Observable.of(
+                        zoomToExtent(action.area.bbox, action.area.crs)
+                    ).delay(300)
+                );
+            }
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/filterCategories.json').then(response => response.data))
                 .switchMap(responseData => {
                     const data = responseData.map(group => {
@@ -95,7 +118,6 @@ const selectAreaEpic = action$ =>
                     });
                     return Rx.Observable.concat(
                         Rx.Observable.of(
-                            updateDataURL({}),
                             searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
                             setFilter({exposures: {categories: [...data]}}),
                             updateNode('datasets_layer', 'layers', {visibility: false}),
@@ -167,10 +189,7 @@ const updateFilterEpic = (action$, store) =>
             const currentUpdate = get(updatingFilter, template);
             const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
             return Rx.Observable.of(
-                setFilter(newFilter),
-                updateDataURL({
-                    ...stringifyCategory(currentSection, newFilter)
-                })
+                setFilter(newFilter)
             );
         }
         return Rx.Observable.empty();
@@ -224,6 +243,39 @@ const sortTocLayersEpic = (action$, store) =>
         );
     });
 
+const spatialFilterEpic = (action$, store) =>
+    action$.ofType(TOGGLE_SPATIAL_FILTER)
+    .switchMap(() => {
+        const features = drawFeaturesSelector(store.getState());
+        if (features.length > 0) {
+            return Rx.Observable.of(drawSupportReset('heve-spatial-filter'));
+        }
+        return Rx.Observable.of(
+            changeDrawingStatus(
+                'start',
+                'BBOX',
+                'heve-spatial-filter',
+                [],
+                {
+                    stopAfterDrawing: true
+                },
+                {...getBBOXStyle()}
+            )
+        );
+    });
+
+const updateBBOXFilterUpdateEpic = (action$, store) =>
+    action$.ofType(CHANGE_MAP_VIEW, CHANGE_DRAWING_STATUS)
+    .throttleTime(500)
+    .switchMap((action) => {
+        const drawFaetures = drawFeaturesSelector(store.getState());
+        const bbox = drawFaetures && drawFaetures[0] && { bounds: drawFaetures[0].extent, crs: drawFaetures[0].projection} || action.bbox || null;
+        if (!bbox) {
+            return Rx.Observable.empty();
+        }
+        const reprojectedBbox = CoordinatesUtils.reprojectBbox(bbox.bounds, bbox.crs, 'EPSG:4326');
+        return Rx.Observable.of(updateBBOXFilter(reprojectedBbox));
+    });
 
 module.exports = {
     initDataLayerEpic,
@@ -234,5 +286,7 @@ module.exports = {
     updateFilterEpic,
     openTOConAddLayerEpic,
     showDetailsEpic,
-    sortTocLayersEpic
+    sortTocLayersEpic,
+    spatialFilterEpic,
+    updateBBOXFilterUpdateEpic
 };

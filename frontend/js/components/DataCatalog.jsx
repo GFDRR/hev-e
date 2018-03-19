@@ -24,7 +24,9 @@ class DataCatalog extends React.Component {
         sortBy: PropTypes.string,
         groupInfo: PropTypes.object,
         onAddLayer: PropTypes.func,
-        layers: PropTypes.array
+        layers: PropTypes.array,
+        bboxFilter: PropTypes.string,
+        onRemove: PropTypes.func
     };
 
     static defaultProps = {
@@ -37,6 +39,7 @@ class DataCatalog extends React.Component {
         sortBy: '',
         groupInfo: {},
         onAddLayer: () => {},
+        onRemove: () => {},
         layers: []
     };
 
@@ -49,7 +52,9 @@ class DataCatalog extends React.Component {
                     filterForm={this.props.filterForm}
                     onRecordSelected={() => {}}
                     sortBy={this.props.sortBy}
+                    bboxFilter={this.props.bboxFilter}
                     groupInfo={this.props.groupInfo}
+                    layers={this.props.layers}
                     getCustomItem={
                         (item, layers) => ({
                             title: <span>{item.title}</span>,
@@ -60,25 +65,10 @@ class DataCatalog extends React.Component {
                                 borderBottom: '2px solid ' + this.props.groupInfo[item.caption].color
                             } : {},
                             onMouseEnter: () => {
-                                const bbox = item && item.record && item.record.bbox || null;
-                                if (bbox) {
+                                const feature = item && item.record && {...item.record};
+                                if (feature) {
                                     this.props.onShowBbox('bbox_layer', 'layers', {
-                                        features: [{
-                                            type: 'Feature',
-                                            geometry: {
-                                                type: 'Polygon',
-                                                coordinates: [
-                                                    [
-                                                        [bbox[0], bbox[1]],
-                                                        [bbox[0], bbox[3]],
-                                                        [bbox[2], bbox[3]],
-                                                        [bbox[2], bbox[1]],
-                                                        [bbox[0], bbox[1]]
-                                                    ]
-                                                ]
-                                            },
-                                            properties: {}
-                                        }],
+                                        features: [feature],
                                         style: {
                                             fill: {
                                                 color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
@@ -114,78 +104,58 @@ class DataCatalog extends React.Component {
                                         tooltipId: 'heve.zoomToLayer',
                                         onClick: (e) => {
                                             e.stopPropagation();
-                                            const bbox = item && item.record && item.record.bbox || null;
-                                            if (bbox) {
+                                            const coordinates = item && item.record && item.record.geometry && item.record.geometry.coordinates;
+                                            if (coordinates) {
+                                                const bbox = [...coordinates[0][0], ...coordinates[0][2]];
                                                 this.props.onZoomTo([...bbox], 'EPSG:4326');
                                             }
                                         }
                                     },
-                                    /*{
+                                    {
                                         glyph: 'trash',
-                                        tooltipId: 'heve.hideLayer',
-                                        visible: !!head(layers.filter(layer => layer.id === item.title)),
+                                        tooltipId: 'heve.removeLayer',
+                                        visible: !!head(layers.filter(layer => layer.id === item.record.properties.name)), // use id
                                         onClick: (e) => {
                                             e.stopPropagation();
+                                            this.props.onRemove(item.record.properties.name);
                                         }
-                                    },*/
+                                    },
                                     {
                                         glyph: 'plus',
-                                        tooltipId: 'heve.showLayer',
-                                        visible: !head(layers.filter(layer => layer.id === item.title)),
+                                        tooltipId: 'heve.addLayer',
+                                        visible: !head(layers.filter(layer => layer.id === item.record.properties.name)),
                                         onClick: (e) => {
                                             e.stopPropagation();
-                                            const bbox = item && item.record && item.record.bbox || null;
-                                            if (bbox) {
-                                                const params = {
-                                                    features: [{
-                                                        type: 'Feature',
-                                                        geometry: {
-                                                            type: 'Polygon',
-                                                            coordinates: [
-                                                                [
-                                                                    [bbox[0], bbox[1]],
-                                                                    [bbox[0], bbox[3]],
-                                                                    [bbox[2], bbox[3]],
-                                                                    [bbox[2], bbox[1]],
-                                                                    [bbox[0], bbox[1]]
-                                                                ]
-                                                            ]
-                                                        },
-                                                        properties: {}
-                                                    }],
-                                                    style: {
-                                                        fill: {
-                                                            color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
-                                                        },
-                                                        stroke: {
-                                                            color: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].color || '#aaa',
-                                                            width: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].color ? 2 : 1,
-                                                            opacity: 1
-                                                        }
-                                                    }
-                                                };
-                                                this.props.onAddLayer({
-                                                    type: 'vector',
-                                                    id: item.title,
-                                                    name: item.title,
-                                                    title: item.title,
-                                                    group: 'toc_layers',
-                                                    visibility: true,
-                                                    hideLoading: true,
-                                                    record: {...item},
-                                                    ...params
-                                                });
-                                            }
+                                            const coordinates = item && item.record && item.record.geometry && item.record.geometry.coordinates;
+                                            const bbox = [...coordinates[0][0], ...coordinates[0][2]];
+                                            this.props.onAddLayer({
+                                                type: 'wms',
+                                                url: item.record.properties.wms_url,
+                                                visibility: true,
+                                                name: item.record.properties.name,
+                                                title: item.record.properties.title,
+                                                description: item.record.properties.description,
+                                                group: 'toc_layers',
+                                                bbox: {
+                                                  crs: 'EPSG:4326',
+                                                  bounds: {
+                                                    minx: bbox[0],
+                                                    miny: bbox[1],
+                                                    maxx: bbox[2],
+                                                    maxy: bbox[3]
+                                                  }
+                                                },
+                                                params: {
+                                                  layers: 'topp:states'
+                                                },
+                                                id: item.record.properties.name,
+                                                record: {...item.record}
+                                            });
                                         }
-                                    }/*,
-                                    {
-                                        glyph: 'download',
-                                        tooltipId: 'heve.addDownload'
-                                    }*/
+                                    }
                                 ]}/>
                         })
                     }
-                    layers={this.props.layers}
                     catalog= {{
                         url: this.props.catalogURL,
                         type: 'hev-e',
