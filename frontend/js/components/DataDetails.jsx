@@ -22,20 +22,30 @@ const DefaultWidget = require('../../MapStore2/web/client/components/widgets/wid
 const {head} = require('lodash');
 
 const data = [
-    {name: '2008', "Statistical Capacity score (Overall average)": 65.5555555555556},
-    {name: '2009', "Statistical Capacity score (Overall average)": 63.3333333333333},
-    {name: '2010', "Statistical Capacity score (Overall average)": 67.7777777777778},
-    {name: '2011', "Statistical Capacity score (Overall average)": 72.2222222222222},
-    {name: '2012', "Statistical Capacity score (Overall average)": 72.2222222222222},
-    {name: '2013', "Statistical Capacity score (Overall average)": 72.2222222222222},
-    {name: '2014', "Statistical Capacity score (Overall average)": 72.2222222222222},
-    {name: '2015', "Statistical Capacity score (Overall average)": 75.5556},
-    {name: '2016', "Statistical Capacity score (Overall average)": 73.3333666666667},
-    {name: '2017', "Statistical Capacity score (Overall average)": 71.1111}
+    {name: 'Residential', "Occupancy": 50},
+    {name: 'Commercial', "Occupancy": 10},
+    {name: 'Industrial', "Occupancy": 4},
+    {name: 'Health Care', "Occupancy": 1},
+    {name: 'Education', "Occupancy": 1},
+    {name: 'Government', "Occupancy": 4},
+    {name: 'Unknown', "Occupancy": 30}
 ];
 
-const series = [{dataKey: "Statistical Capacity score (Overall average)"}];
+const series = [{dataKey: "Occupancy"}];
 const xAxis = {dataKey: "name"};
+
+const dataA = [
+    {name: 'Masonry', "Construction": 20},
+    {name: 'Concrete', "Construction": 30},
+    {name: 'Steel Frame', "Construction": 1},
+    {name: 'Composite', "Construction": 4},
+    {name: 'Wood', "Construction": 5},
+    {name: 'Earth', "Construction": 10},
+    {name: 'Unknown', "Construction": 30}
+];
+
+const seriesA = [{dataKey: "Construction"}];
+const xAxisA = {dataKey: "name"};
 
 class DataDetails extends React.Component {
     static propTypes = {
@@ -264,6 +274,29 @@ class DataDetails extends React.Component {
                                 <br/>
                                 <Row>
                                     <Col xs={12}>
+                                        <h4><strong>Occupance %</strong></h4>
+                                    </Col>
+                                    <Col xs={12}>
+                                    <ContainerDimensions>
+                                        { ({width: wChart}) =>
+                                            <SimpleChart
+                                                data={dataA}
+                                                series={seriesA}
+                                                xAxis={xAxisA}
+                                                autoColorOptions={{
+                                                    base: 176,
+                                                    range: 0,
+                                                    s: 0.82,
+                                                    v: 0.73
+                                                }}
+                                                width={wChart - 40}
+                                                type="bar"/>
+                                        }
+                                        </ContainerDimensions>
+                                    </Col>
+                                    </Row>
+                                    <Row>
+                                    <Col xs={12}>
                                     <ContainerDimensions>
                                         { ({width: wChart}) =>
                                             <SimpleChart
@@ -280,6 +313,7 @@ class DataDetails extends React.Component {
                                                 type="bar"/>
                                         }
                                         </ContainerDimensions>
+                                    
                                     </Col>
                                     </Row>
                             </Grid>
