@@ -14,7 +14,7 @@ const ResizableModal = require('../../MapStore2/web/client/components/misc/Resiz
 const ContainerDimensions = require('react-container-dimensions').default;
 const sampleData = require('../../MapStore2/web/client/components/widgets/enhancers/sampleChartData');
 const SimpleChart = sampleData(require('../../MapStore2/web/client/components/charts/SimpleChart'));
-const FilterList = require('./FilterList');
+const FilterListComponent = require('./FilterList');
 const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const RelatedData = require('./RelatedData');
@@ -46,10 +46,11 @@ class DataDetails extends React.Component {
         onShowRelatedData: PropTypes.func,
         showRelatedData: PropTypes.bool,
         onAddLayer: PropTypes.func,
-        onRemoveLayer: PropTypes.func,
+        onRemove: PropTypes.func,
         layout: PropTypes.object,
         layers: PropTypes.array,
-        groupInfo: PropTypes.object
+        groupInfo: PropTypes.object,
+        filterList: PropTypes.node
     };
 
     static defaultProps = {
@@ -59,7 +60,7 @@ class DataDetails extends React.Component {
         onShowDetails: () => {},
         onShowRelatedData: () => {},
         onAddLayer: () => {},
-        onRemoveLayer: () => {},
+        onRemove: () => {},
         showRelatedData: false,
         layers: [],
         layout: [
@@ -70,12 +71,14 @@ class DataDetails extends React.Component {
             {
                 widgetType: 'chart'
             }*/
-        ]
+        ],
+        filterList: FilterListComponent
     };
 
     state = {};
 
     render() {
+        const FilterList = this.props.filterList;
         return this.props.currentDetails ? (
             <ContainerDimensions>
             { ({width}) =>
@@ -106,7 +109,7 @@ class DataDetails extends React.Component {
                                         {
                                             glyph: 'filter',
                                             tooltipId: this.state.showFilter ? 'heve.hideFilters' : 'heve.showFilters',
-                                            visible: this.props.currentDetails.caption === 'buildings',
+                                            visible: this.props.currentDetails.properties && this.props.currentDetails.properties.category === 'buildings',
                                             active: this.state.showFilter,
                                             onClick: () => {
                                                 this.setState({
@@ -132,7 +135,8 @@ class DataDetails extends React.Component {
                                             tooltipId: 'heve.removeLayer',
                                             onClick: (e) => {
                                                 e.stopPropagation();
-                                                this.props.onRemoveLayer(this.props.currentDetails.properties && this.props.currentDetails.properties.name);
+                                                const id = this.props.currentDetails.properties && this.props.currentDetails.properties.name;
+                                                this.props.onRemove(id);
                                             }
                                         },
                                         {
@@ -177,7 +181,7 @@ class DataDetails extends React.Component {
                             columns={[
                                 <div style={{order: -1}}>
                                     <FilterList
-                                        enabled={this.state.showFilter && this.props.currentDetails.caption === 'buildings'}
+                                        enabled={this.state.showFilter && this.props.currentDetails.properties && this.props.currentDetails.properties.category === 'buildings'}
                                         filter={{
                                             categories: [
                                                 {
