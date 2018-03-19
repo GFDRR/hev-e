@@ -53,14 +53,8 @@
             "Undo",
             "Redo",
             "ZoomAll",
-            {
-                "name": "ZoomToSearch",
-                "override": {
-                    "Toolbar": {
-                        "alwaysVisible": true
-                    }
-                }
-            },
+            "SpatialFilter",
+            "ZoomToSearch",
             {
                 "name": "FullScreen",
                 "override": {

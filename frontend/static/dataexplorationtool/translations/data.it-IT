@@ -24,12 +24,16 @@
             "releatedDataInterested": "Potresti essere interessato nei seguenti dati",
             "latestData": "Torna all'ultima area selezionata",
             "zoomToSelectedArea": "Zoom all'area selezionata",
+            "zoomToFilteredArea": "Zoom al filtro spaziale",
             "about": "About",
             "support": "Supporto",
             "backToLayer": "Torna ai dati precedenti",
             "compactTOC": "Mostra i layer aggiunti alla mappa",
             "noLayer": "No layer matched",
-            "layerHasFilter": "Filtro attivo su questo layer"
+            "layerHasFilter": "Filtro attivo su questo layer",
+            "removeSpatialFilter": "Rimuovi filtro spaziale",
+            "applySpatialFilter": "Applica filtro spaziale",
+            "drawSpatialFilter": "Disegna filtro spaziale come bounding box"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

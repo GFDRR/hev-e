@@ -15,5 +15,7 @@ module.exports = {
     filterSelector: state => state.dataexploration && state.dataexploration.filter || {},
     currentSectionSelector: state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
     sortSelector: state => state.dataexploration && state.dataexploration.sortType || 'alphabeticalAToZ',
-    showRelatedDataSelector: state => state.dataexploration && state.dataexploration.showRelatedData
+    showRelatedDataSelector: state => state.dataexploration && state.dataexploration.showRelatedData,
+    drawFeaturesSelector: state => state.draw && state.draw.features || null,
+    bboxFilterStringSelector: state => state.dataexploration && state.dataexploration.bboxFilter && state.dataexploration.bboxFilter.join(',') || null
 };

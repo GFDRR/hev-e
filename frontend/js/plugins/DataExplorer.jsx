@@ -13,7 +13,7 @@ const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
 const {showDatails, updateFilter, showFilter, setSortType, showRelatedData} = require('../actions/dataexploration');
-const {currentDetailsSelector, catalogURLSelector, sortSelector, showRelatedDataSelector} = require('../selectors/dataexploration');
+const {currentDetailsSelector/*, catalogURLSelector*/, sortSelector, showRelatedDataSelector, bboxFilterStringSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
 const DataDetails = require('../components/DataDetails');
@@ -21,7 +21,7 @@ const ContainerDimensions = require('react-container-dimensions').default;
 const {updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
-const {addLayer} = require("../../MapStore2/web/client/actions/layers");
+const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 
 const filterListSelector = createSelector([
@@ -71,7 +71,9 @@ class DataExplorerComponent extends React.Component {
         showRelatedData: PropTypes.bool,
         groupInfo: PropTypes.object,
         onAddLayer: PropTypes.func,
-        layers: PropTypes.array
+        layers: PropTypes.array,
+        bboxFilter: PropTypes.string,
+        onRemove: PropTypes.func
     };
 
     static defaultProps = {
@@ -79,7 +81,7 @@ class DataExplorerComponent extends React.Component {
         currentDetails: null,
         onClose: () => {},
         onShowDetails: () => {},
-        catalogURL: '',
+        catalogURL: '/gfdrr_det/api/v1/exposures/',
         onShowBbox: () => {},
         onZoomTo: () => {},
         sortBy: '',
@@ -87,7 +89,8 @@ class DataExplorerComponent extends React.Component {
         showRelatedData: false,
         groupInfo: {},
         onAddLayer: () => {},
-        layers: []
+        layers: [],
+        onRemove: () => {}
     };
 
     render() {
@@ -119,9 +122,10 @@ class DataExplorerComponent extends React.Component {
                                 </Col>
                             </Row>
                         }>
-                        {!this.props.currentDetails && <DataCatalog
+                        {this.props.open && <DataCatalog
                             filterList={FilterList}
                             filterForm={FilterForm}
+                            bboxFilter={this.props.bboxFilter}
                             sortBy={this.props.sortBy}
                             catalogURL={this.props.catalogURL}
                             onShowDetails={this.props.onShowDetails}
@@ -129,7 +133,8 @@ class DataExplorerComponent extends React.Component {
                             onZoomTo={this.props.onZoomTo}
                             groupInfo={this.props.groupInfo}
                             onAddLayer={this.props.onAddLayer}
-                            layers={this.props.layers}/>}
+                            layers={this.props.layers}
+                            onRemove={this.props.onRemove}/>}
                     </DockPanel>
                     <DataDetails
                         layers={this.props.layers}
@@ -149,21 +154,23 @@ class DataExplorerComponent extends React.Component {
 const dataExplorerSelector = createSelector([
     state => state.controls && state.controls.dataExplorer.enabled,
     currentDetailsSelector,
-    catalogURLSelector,
+    // catalogURLSelector,
     sortSelector,
     showRelatedDataSelector,
     state => state.dataexploration && state.dataexploration.filter,
     state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
-    layersSelector
-], (open, currentDetails, catalogURL, sortBy, showData, filters, currentSection, layers) => ({
+    layersSelector,
+    bboxFilterStringSelector
+], (open, currentDetails, /*catalogURL,*/ sortBy, showData, filters, currentSection, layers, bboxFilter) => ({
     open,
     currentDetails,
-    catalogURL,
+    // catalogURL,
     sortBy,
     showRelatedData: showData,
     layers: layers.filter(layer => layer.group === 'toc_layers'),
+    bboxFilter,
     groupInfo: filters[currentSection] && filters[currentSection].categories
-        && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.datasetLayers.reduce((sub, filt) => ({...sub, [filt.name.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
+        && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.datasetLayers.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
 }));
 
 const DataExplorer = connect(
@@ -174,7 +181,8 @@ const DataExplorer = connect(
         onShowBbox: updateNode,
         onZoomTo: zoomToExtent,
         onShowRelatedData: showRelatedData,
-        onAddLayer: addLayer
+        onAddLayer: addLayer,
+        onRemove: removeLayer
     }
 )(DataExplorerComponent);
 

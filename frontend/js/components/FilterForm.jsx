@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, GeoSolutions Sas.
+ * Copyright 2018, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -27,10 +27,12 @@ module.exports = ({
     sortType,
     sortOptions = [
         {
-            value: 'alphabeticalAToZ'
+            value: 'name',
+            label: 'alphabeticalAToZ'
         },
         {
-            value: 'alphabeticalZToA'
+            value: '-name',
+            label: 'alphabeticalZToA'
         }
     ]
 }) =>(
@@ -59,7 +61,7 @@ module.exports = ({
                             onChange={e => {
                                 onChangeSortType(e.target.value);
                             }}>
-                            {sortOptions.map(option => (<option value={option.value}><Message msgId={'heve.' + option.value} /></option>))}
+                            {sortOptions.map(option => (<option value={option.value}><Message msgId={'heve.' + option.label} /></option>))}
                         </FormControl>{' '}
                         <Toolbar
                             btnDefaultProps={

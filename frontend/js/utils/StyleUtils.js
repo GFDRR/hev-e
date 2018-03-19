@@ -43,5 +43,10 @@ module.exports = {
         fill: {
             color: "rgba(18, 18, 18, 0.1)"
         }
+    }),
+    getBBOXStyle: () => ({
+        strokeColor: '#21bab0',
+        strokeWidth: 5,
+        fillColor: [255, 255, 255, 0.1]
     })
 };
