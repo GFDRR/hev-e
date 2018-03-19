@@ -6,7 +6,8 @@
         "datasetLayers": [
             {
                 "name": "Buildings",
-                "code": "buildings"
+                "code": "buildings",
+                "icon": "building"
             }
         ]
     },
@@ -17,7 +18,8 @@
         "datasetLayers": [
             {
                 "name": "Roads",
-                "code": "road_network"
+                "code": "road_network",
+                "icon": "road"
             },
             {
                 "name": "Rail",

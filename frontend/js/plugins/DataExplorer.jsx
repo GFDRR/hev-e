@@ -139,9 +139,12 @@ class DataExplorerComponent extends React.Component {
                     <DataDetails
                         layers={this.props.layers}
                         onClose={() => this.props.onShowDetails(null)}
+                        groupInfo={this.props.groupInfo}
                         currentDetails={this.props.currentDetails}
                         onZoomTo={this.props.onZoomTo}
                         onShowDetails={this.props.onShowDetails}
+                        onAddLayer={this.props.onAddLayer}
+                        onRemoveLayer={this.props.onRemoveLayer}
                         onShowRelatedData={this.props.onShowRelatedData}
                         showRelatedData={this.props.showRelatedData}/>
                 </div>

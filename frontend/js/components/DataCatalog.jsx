@@ -145,9 +145,6 @@ class DataCatalog extends React.Component {
                                                     maxy: bbox[3]
                                                   }
                                                 },
-                                                params: {
-                                                  layers: 'topp:states'
-                                                },
                                                 id: item.record.properties.name,
                                                 record: {...item.record}
                                             });

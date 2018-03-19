@@ -142,7 +142,7 @@ class CompactTOC extends React.Component {
                                 }
                             },
                             dataId: layer.id,
-                            selected: layer.record && this.props.currentDetails && this.props.currentDetails.title === layer.record.title,
+                            selected: layer.record && this.props.currentDetails && this.props.currentDetails.properties.name === layer.name,
                             body: !layer.loadingError ? (<div className="mapstore-slider" onClick={(e) => { e.stopPropagation(); }}>
                                 <Slider
                                     disabled={!layer.visibility}
