@@ -69,3 +69,62 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
             "aggregation_type",
             "wms_url",
         )
+
+
+class ExposureLayerSerializer(gis_serializers.GeoFeatureModelSerializer):
+    category = serializers.SerializerMethodField()
+    aggregation_type = serializers.SerializerMethodField()
+    bbox = gis_serializers.GeometrySerializerMethodField()
+    description = serializers.CharField(source="abstract")
+
+    def get_bbox(self, obj):
+        return geos.Polygon(
+            (
+                (obj.bbox_x0, obj.bbox_y0),
+                (obj.bbox_x0, obj.bbox_y1),
+                (obj.bbox_x1, obj.bbox_y1),
+                (obj.bbox_x1, obj.bbox_y0),
+                (obj.bbox_x0, obj.bbox_y0),
+            )
+        )
+
+    def get_category(self, obj):
+        exposure_categories = settings.HEV_E[
+            "EXPOSURES"]["category_mappings"].keys()
+        category = obj.keywords.filter(name__in=exposure_categories).first()
+        return category.name
+
+    def get_aggregation_type(self, obj):
+        aggregation_types = settings.HEV_E[
+            "EXPOSURES"]["area_type_mappings"].keys()
+        type_ = obj.keywords.filter(name__in=aggregation_types).first()
+        return type_.name if type_ is not None else None
+
+    class Meta:
+        model = Layer
+        geo_field = "bbox"
+        id_field = "id"
+        fields = (
+            "id",
+            "title",
+            "name",
+            "description",
+            "category",
+            "aggregation_type",
+        )
+
+
+class ExposureLayerBarChartSerializer(serializers.ModelSerializer):
+    barcharts = serializers.JSONField()
+
+    class Meta:
+        model = Layer
+        geo_field = "bbox"
+        id_fields = "id"
+        fields = (
+            "id",
+            "title",
+            "name",
+            "barcharts",
+        )
+
