@@ -40,7 +40,7 @@ class ResizableMapComponent extends React.Component {
         onSelectArea: () => {},
         onChangePointer: () => {},
         mousePointer: '',
-        propertyId: 'href'
+        propertyId: 'iso3'
     };
 
     componentWillReceiveProps(newProps) {
@@ -85,7 +85,7 @@ class ResizableMapComponent extends React.Component {
                                         [key]: properties[key]
                                     }), {}) || {}
                                 };
-                            }).filter(val => val && val.properties && val.properties.label /* Change with ISO */));
+                            }).filter(val => val && val.properties && val.properties[this.props.propertyId] /* Change with ISO */));
                             if (newFeature) {
                                 const reprojectedFeature = CoordinatesUtils.reprojectGeoJson(newFeature, 'EPSG:3857', 'EPSG:4326');
                                 this.props.onSelectArea({...reprojectedFeature});

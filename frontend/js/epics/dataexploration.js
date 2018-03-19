@@ -50,16 +50,13 @@ const createBaseVectorLayer = name => ({
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/features.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/countries_data.json').then(response => response.data))
             .switchMap(data => {
-                // /gfdrr_det/api/v1/relevantcountry/?format=json
-                // /static/dataexplorationtool/mockdata/features.json
-                // const features = data && data.results && data.results.features && [...data.results.features] || [];
                 return Rx.Observable.of(
                     addLayer(
                         {
                             ...createBaseVectorLayer('datasets_layer'),
-                            features: [data.features[0]],
+                            features: [...data.features],
                             style: getMainViewStyle()
                         }
                     ),
