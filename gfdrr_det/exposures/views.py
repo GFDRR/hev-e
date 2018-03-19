@@ -9,15 +9,20 @@
 #
 #########################################################################
 
+from collections import namedtuple
 from django.db.models import Q
+from django.db import connections
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as django_filters
 from django.conf import settings
 from geonode.layers.models import Layer
 from geonode.base.models import HierarchicalKeyword
 from rest_framework import viewsets
+from rest_framework.decorators import detail_route
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
+from rest_framework.response import Response
 from rest_framework_gis.pagination import GeoJsonPagination
 from rest_framework_gis.filters import InBBoxFilter
 
@@ -74,16 +79,16 @@ def get_area_type_qs(request):
 
 
 class ExposureLayerListFilterSet(django_filters.FilterSet):
-    category = django_filters.ModelChoiceFilter(
-        name="keywords",
+    category = django_filters.ModelMultipleChoiceFilter(
+        name="keywords__name",
         to_field_name="name",
-        queryset=get_category_qs
+        queryset=get_category_qs,
+        lookup_expr="in",
     )
     aggregation_type = django_filters.ModelChoiceFilter(
         name="keywords",
         to_field_name="name",
         queryset=get_area_type_qs)
-
 
     class Meta:
         model = Layer
@@ -96,10 +101,9 @@ class ExposureLayerListFilterSet(django_filters.FilterSet):
 # TODO: Add permissions
 # TODO: Enhance ordering in order to support ordering by category
 # TODO: Enhance ordering in order to support ordering by aggregation_type
-class ExposureLayerListViewSet(viewsets.ReadOnlyModelViewSet):
+class ExposureLayerViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = GeoJsonPagination
     queryset = Layer.objects.filter(keywords__name="exposure")
-    serializer_class = serializers.ExposureLayerListSerializer
     filter_backends = (
         django_filters.DjangoFilterBackend,
         GeonodeLayerInBBoxFilterBackend,
@@ -115,3 +119,102 @@ class ExposureLayerListViewSet(viewsets.ReadOnlyModelViewSet):
         "abstract",
         "name",
     )
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            result = serializers.ExposureLayerListSerializer
+        elif self.action == "barchart":
+            result = serializers.ExposureLayerBarChartSerializer
+        else:
+            result = serializers.ExposureLayerSerializer
+        return result
+
+    @detail_route(methods=["get"])
+    def barchart(self, request, pk=None, **kwargs):
+        variable = request.query_params.get("variable")
+        aggregated_by = request.query_params.get("aggregated_by")
+        layer = get_object_or_404(Layer, pk=pk)
+        with connections["hev_e"].cursor() as db_cursor:
+            barchart_data = get_exposure_barchart_data(
+                db_cursor, layer, variable, aggregated_by)
+        layer.barcharts = {
+            barchart_data["title"]: barchart_data,
+        }
+        serializer = self.get_serializer(layer)
+        return Response(serializer.data)
+
+
+def get_exposure_barchart_data(db_cursor, layer, variable, aggregated_by):
+    handler = {
+        "occupancy": {
+            "material": get_occupancy_by_material
+        },
+    }.get(variable, {}).get(aggregated_by)
+    return handler(db_cursor, layer.name)
+
+
+def get_occupancy_by_material(db_cursor, layer_name, count_occupants=False):
+    count_type = "occupants" if count_occupants else 1
+    query = """
+    SELECT 
+        taxonomy,
+        COUNT({count_type})
+    FROM exposures.{layer}
+    GROUP BY taxonomy
+    """.format(count_type=count_type, layer=layer_name)
+    db_cursor.execute(query)
+    ResultTuple = namedtuple(
+        "ResultTuple", [col[0] for col in db_cursor.description])
+    materials = (
+        ("--", "Unknown material"),
+        ("C", "Concrete, unknown reinforcement"),
+        ("CR", "Concrete, reinforced"),
+        ("CU", "Concrete, unreinforced"),
+        ("SRC", "Concrete, composite with steel section"),
+        ("S", "Steel"),
+        ("ME", "Metal(except steel)"),
+        ("M", "Masonry, unknown reinforcement"),
+        ("MUR", "Masonry, unreinforced"),
+        ("MCF", "Masonry, confined"),
+        ("MR", "Masonry, reinforced"),
+        ("E", "Earth, unknown reinforcement"),
+        ("ER", "Earth, reinforced"),
+        ("EU", "Earth, unreinforced"),
+        ("W", "Wood"),
+        ("MIX", "* MIX(material_a, material_b) *, mixed materials"
+                "(hybrid or composite)"),
+        ("INF", "Informal materials"),
+        ("MATO", "Other material"),
+    )
+    counts = {}
+    for row in db_cursor.fetchall():
+        record = ResultTuple(*row)
+        building_material = process_gem_taxonomy_entry(
+            record.taxonomy, materials)
+        counts.setdefault(building_material, 0)
+        counts[building_material] += record.count
+
+    result = {
+        "title": "Occupancy by material",
+        "occupancy": [],
+        "material": [],
+    }
+    for k, v in counts.items():
+        result["material"].append(k)
+        result["occupancy"].append(v)
+    print("result: {}".format(result))
+    return result
+
+
+def process_gem_taxonomy_entry(taxonomy, mapping):
+    code_separator = "/"
+    multiple_categories_separator = "+"
+    parsed_taxonomy = taxonomy.split(
+        code_separator)[0].split(multiple_categories_separator)[0]
+    for code, description in mapping:
+        if parsed_taxonomy == code or parsed_taxonomy == description:
+            result = description
+            break
+    else:
+        result = None
+    return result

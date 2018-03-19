@@ -43,7 +43,7 @@ router.register(
 router.register(r"region", views.RegionViewSet)
 router.register(
     r"exposures",
-    exposure_views.ExposureLayerListViewSet,
+    exposure_views.ExposureLayerViewSet,
     base_name="exposures"
 )
 schema_view = get_schema_view("HEV-E API")
