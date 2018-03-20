@@ -17,7 +17,8 @@
         "source": "light-v9",
 				"group": "background",
 				"accessToken": "pk.eyJ1IjoiZ2Vvc29sdXRpb25zIiwiYSI6ImNqZWZzbGlzZDBlNWcyd21uY2RsaDA0bXMifQ.Kqd7xVo6gglnLZ9BAQ7uEg",
-        "visibility": true
+				"visibility": true,
+				"attribution": " © <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors | Imagery from <a href=\"http://mapbox.com/about/maps/\">MapBox</a>"
       }
 		]
 	}
