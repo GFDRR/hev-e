@@ -313,7 +313,6 @@ class DataDetails extends React.Component {
                                                 type="bar"/>
                                         }
                                         </ContainerDimensions>
-                                    
                                     </Col>
                                     </Row>
                             </Grid>
