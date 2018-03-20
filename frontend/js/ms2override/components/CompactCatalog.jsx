@@ -43,7 +43,7 @@ const SideGrid = compose(
  */
 
 const icons = {
-    buildings: 'building',
+    buildings: 'home',
     road_network: 'road'
 };
 
