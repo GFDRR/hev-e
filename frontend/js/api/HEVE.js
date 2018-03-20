@@ -198,8 +198,10 @@ const Api = {
             // const hasFilter = groupInfo && head(Object.keys(groupInfo).filter(key => groupInfo[key].checked));
 
             const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
-            const bboxObj = bboxFilter ? {bbox: bboxFilter} : { };
-            const categoryObj = hasFilter ? {category: hasFilter.join(',')} : { };
+            const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
+            const categoryObj = hasFilter.length > 0 ? {category: hasFilter.join(',')} : { };
+            const searchObj = text ? {search: text} : {};
+            const sortByObj = sortBy ? {ordering: sortBy} : {};
 
             resolve(axios.get(parseUrl(url), {
                 params: {
@@ -207,7 +209,8 @@ const Api = {
                     page_size: maxRecords,
                     search: text,
                     format: 'json',
-                    ordering: sortBy,
+                    ...sortByObj,
+                    ...searchObj,
                     ...categoryObj,
                     ...bboxObj
                 }
@@ -221,16 +224,6 @@ const Api = {
                         records
                     };
                 }
-                /*const {total_count} = response.meta;
-                const records = response.objects;
-                const res = {
-                    numberOfRecordsMatched: records.length,
-                    numberOfRecordsReturned: records.length,
-                    nextRecord: 0,
-                    records: records.sort((a, b) => {
-                        return sortBy === 'alphabeticalAToZ' ? a.title > b.title : a.title < b.title;
-                    })
-                };*/
                 return null;
             })
             .catch(() => null));
