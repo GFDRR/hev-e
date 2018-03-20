@@ -199,11 +199,11 @@ const Api = {
 
             const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
             const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
-            const categoryObj = hasFilter.length > 0 ? {category: hasFilter.join(',')} : { };
+            const categoryObj = hasFilter.length > 0 ? hasFilter.map((cat) => 'category=' + cat).join('&') : '';
             const searchObj = text ? {search: text} : {};
             const sortByObj = sortBy ? {ordering: sortBy} : {};
 
-            resolve(axios.get(parseUrl(url), {
+            resolve(axios.get(parseUrl(url + '?' + categoryObj), {
                 params: {
                     page: page + 1,
                     page_size: maxRecords,
@@ -211,7 +211,6 @@ const Api = {
                     format: 'json',
                     ...sortByObj,
                     ...searchObj,
-                    ...categoryObj,
                     ...bboxObj
                 }
             }).then((response) => {
