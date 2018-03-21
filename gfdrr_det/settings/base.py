@@ -618,10 +618,22 @@ HEV_E = {
     "EXPOSURES": {
         "category_mappings": {
             "buildings": {
+                "view_geometries": {
+                    "coarse_geometry_column": "the_geom",
+                    "coarse_geometry_type": "Point",
+                    "detail_geometry_column": "full_geom",
+                    "detail_geometry_type": "Point",
+                },
                 "exposure_model_categories": ["buildings"],
                 "topic_category": "structure",
             },
             "road_network": {
+                "view_geometries": {
+                    "coarse_geometry_column": "full_geom",
+                    "coarse_geometry_type": "MultiLineString",
+                    "detail_geometry_column": "full_geom",
+                    "detail_geometry_type": "MultiLineString",
+                },
                 "exposure_model_categories": ["road_network"],
                 "topic_category": "transportation",
             },
@@ -665,6 +677,29 @@ HEV_E = {
         "area_type_mappings": {
             "aggregated": ["aggregated"],
             "per_asset": ["per_asset"],
+        },
+        "taxonomy_mappings": {
+            "GEM": {
+                "material": {
+                    "composite": ["MIX"],
+                    "concrete": ["C99", "CR", "CU", "SRC"],
+                    "earth": ["E99", "ER", "EU"],
+                    "masonry": ["M99", "MUR", "MCF", "MR"],
+                    "metal": ["ME"],
+                    "steelframe": ["S"],
+                    "unknown": ["MAT99", "MATO"],
+                    "wood": ["W"],
+                },
+                "occupancy": {
+                    "commercial": ["COM"],
+                    "education": ["EDU"],
+                    "government": ["GOV"],
+                    "healthcare": [],  # there is no GEM category for this
+                    "industrial": ["IND"],
+                    "residential": ["RES"],
+                    "unknown": ["OC99", "MIX", "OCO"],
+                },
+            }
         }
     },
 }
