@@ -39,53 +39,6 @@ Sample usage
 from collections import namedtuple
 
 from django.db import connections
-from django.core.checks import Error, register
-from django.utils.translation import ugettext as _
-
-
-@register()
-def db_sanity_checks(app_configs, **kwargs):
-    errors = []
-
-    # Checks DB consistency
-    with connections["exposures"].cursor() as cursor:
-        # Check that the "all_exposure" view actually exists
-        """
-        CREATE OR REPLACE VIEW level2.all_exposure AS
-         SELECT a.asset_ref,
-            a.taxonomy,
-            a.number_of_units,
-            a.area,
-            a.exposure_model_id,
-            occ.period,
-            occ.occupants,
-            c.value,
-            mct.cost_type_name,
-            mct.aggregation_type,
-            mct.unit,
-            st_x(a.the_geom) AS lon,
-            st_y(a.the_geom) AS lat
-           FROM level2.asset a
-             LEFT JOIN level2.cost c ON c.asset_id = a.id
-             LEFT JOIN level2.model_cost_type mct ON mct.id = c.cost_type_id
-             LEFT JOIN level2.occupancy occ ON occ.asset_id = a.id;
-        """
-
-        try:
-            cursor.execute("SELECT 1 FROM level2.all_exposure")
-        except BaseException as e:
-            check_failed = True
-            errors.append(
-                Error(
-                    e.message,
-                    hint=_('Make sure the "level2.all_exposure" VIEW actually exists'),
-                    # obj=cursor,
-                    id='gfdrr_det.exposures.models',
-                )
-            )
-
-    # Returns checks outcomes
-    return errors
 
 
 FullAsset = namedtuple("FullAsset",
