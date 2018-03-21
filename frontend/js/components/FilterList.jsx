@@ -10,7 +10,7 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const {head} = require('lodash');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
-const {Grid, Row, Col, FormGroup, Checkbox} = require('react-bootstrap');
+const {Grid, Row, Col, FormGroup, Checkbox, Radio} = require('react-bootstrap');
 
 class FilterList extends React.Component {
 
@@ -18,14 +18,18 @@ class FilterList extends React.Component {
         enabled: PropTypes.bool,
         onChange: PropTypes.func,
         filter: PropTypes.object,
-        type: PropTypes.string
+        type: PropTypes.string,
+        typeOfAction: PropTypes.string,
+        hasStyle: PropTypes.bool
     };
 
     static defaultProps = {
         enabled: false,
         onChange: () => {},
         filter: {},
-        type: 'categories'
+        type: 'categories',
+        typeOfAction: 'categories',
+        hasStyle: false
     };
 
     render() {
@@ -49,13 +53,40 @@ class FilterList extends React.Component {
                                     className="text-hev-e-primary"
                                     onClick={() => {
                                         this.props.onChange({
-                                            type: 'categories',
+                                            type: this.props.typeOfAction,
                                             clear: true
                                         });
                                     }}><Message msgId="heve.clearAll"/></a>
                             </FormGroup>}
                         </Col>
                     </Row>
+                    {this.props.hasStyle &&
+                        <Row>
+                            <Col xs={12}>
+                                <small><strong><Message msgId="heve.style"/></strong></small>
+                            </Col>
+                            <Col xs={12}>
+                            <FormGroup>
+                                {this.props.filter[this.props.type].map((category, categoryId) => (
+                                    <Radio
+                                        name="radioGroupStyle"
+                                        checked={category.styleChecked === category.style}
+                                        value={category.style}
+                                        onChange={(e) => {
+                                            this.props.onChange({
+                                                type: this.props.typeOfAction,
+                                                style: e.target.value,
+                                                categoryId
+                                            });
+                                        }}>
+                                        {category.name}
+                                    </Radio>
+                                ))}
+                                </FormGroup>
+
+                            </Col>
+                        </Row>
+                    }
                     {
                         this.props.filter[this.props.type].map((category, categoryId) => (
 
@@ -66,13 +97,13 @@ class FilterList extends React.Component {
                                 <Col xs={12}>
                                     <FormGroup>
                                     {
-                                        category.datasetLayers && category.datasetLayers.map((dataset, datasetId) => (
+                                        category.filters && category.filters.map((dataset, datasetId) => (
                                             <Checkbox
                                                 key={datasetId}
                                                 checked={dataset.checked || false}
                                                 onChange={() => {
                                                     this.props.onChange({
-                                                        type: 'categories',
+                                                        type: this.props.typeOfAction,
                                                         categoryId,
                                                         datasetId,
                                                         checked: !dataset.checked
@@ -80,7 +111,7 @@ class FilterList extends React.Component {
                                                 }}>
                                                 <span style={
                                                     {
-                                                        borderBottom: dataset.checked && dataset.color
+                                                        borderBottom: (!this.props.hasStyle && dataset.checked && dataset.color) || (this.props.hasStyle && category.styleChecked === category.style && dataset.color)
                                                             ? '2px solid ' + dataset.color
                                                             : '2px solid transparent',
                                                         display: 'inline-block'
@@ -100,7 +131,7 @@ class FilterList extends React.Component {
     }
 
     hasFilter(filter) {
-        return head(filter.map(group => group.datasetLayers && head(group.datasetLayers.filter(filt => filt.checked)) || null ).filter(val => val));
+        return head(filter.map(group => group.filters && head(group.filters.filter(filt => filt.checked)) || null ).filter(val => val)) || this.props.hasStyle && head(filter.map(group => group.styleChecked));
     }
 }
 

@@ -16,6 +16,7 @@
     },
     "plugins": {
         "dataexplorationtool": [
+            "TOC",
             {
                 "name": "Map",
                 "cfg": {
@@ -37,12 +38,6 @@
             },
             {
                 "name": "DataExplorer",
-                "cfg": {
-                    "containerPosition": "columns"
-                }
-            },
-            {
-                "name": "TOC",
                 "cfg": {
                     "containerPosition": "columns"
                 }

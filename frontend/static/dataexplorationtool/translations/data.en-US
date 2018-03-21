@@ -33,7 +33,8 @@
             "layerHasFilter": "Filter active on this layer",
             "removeSpatialFilter": "Remove spatial filter",
             "applySpatialFilter": "Apply spatial filter",
-            "drawSpatialFilter": "Draw spatial filter on map as bounding box"
+            "drawSpatialFilter": "Draw spatial filter on map as bounding box",
+            "style": "Styles"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

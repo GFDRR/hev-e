@@ -33,7 +33,8 @@
             "layerHasFilter": "Filtro attivo su questo layer",
             "removeSpatialFilter": "Rimuovi filtro spaziale",
             "applySpatialFilter": "Applica filtro spaziale",
-            "drawSpatialFilter": "Disegna filtro spaziale come bounding box"
+            "drawSpatialFilter": "Disegna filtro spaziale come bounding box",
+            "style": "Stili"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"
