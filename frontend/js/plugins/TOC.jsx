@@ -17,12 +17,13 @@ const {currentDetailsSelector} = require('../selectors/dataexploration');
 
 const tocSelector = createSelector([
     state => state.controls && state.controls.compacttoc && state.controls.compacttoc.enabled,
+    state => state.controls && state.controls.compacttoc && state.controls.compacttoc.hide,
     layersSelector,
     currentDetailsSelector
-], (enabled, layers, currentDetails) => {
+], (enabled, hide, layers, currentDetails) => {
     const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
     return {
-        enabled: enabled && head(tocLayers),
+        enabled: enabled && head(tocLayers) && !hide,
         layers: [...tocLayers.reverse()],
         currentDetails
     };

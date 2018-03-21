@@ -44,11 +44,12 @@ class TOCButtonComponent extends React.Component {
 
 const tocButtonSelector = createSelector([
     state => state.controls && state.controls.compacttoc && state.controls.compacttoc.enabled,
+    state => state.controls && state.controls.compacttoc && state.controls.compacttoc.hide,
     layersSelector
-], (enabled, layers) => {
+], (enabled, hide, layers) => {
     const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
     return {
-        enabled: !enabled && head(tocLayers)
+        enabled: !enabled && head(tocLayers) && !hide
     };
 });
 

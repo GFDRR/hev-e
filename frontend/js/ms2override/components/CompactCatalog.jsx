@@ -99,7 +99,7 @@ module.exports = compose(
                     .ignoreElements() // don't want to emit props
         )))
 
-)(({layers = [], setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
+)(({setSearchText = () => { }, selected, onRecordSelected, loading, getCustomItem = () => ({}), searchText, items = [], total, catalog, services, showCatalogSelector, title, filterForm}) => {
     const Form = filterForm || CatalogForm;
     return (<BorderLayout
                 className="compat-catalog"
@@ -114,8 +114,8 @@ module.exports = compose(
                         || selected
                         && i && i.record
                         && selected.identifier === i.record.identifier
-                            ? {...i, selected: true, ...getCustomItem(i, layers)}
-                            : {...i, ...getCustomItem(i, layers)})}
+                            ? {...i, selected: true, ...getCustomItem(i)}
+                            : {...i, ...getCustomItem(i)})}
                     loading={loading}
                     onItemClick={({record} = {}) => onRecordSelected(record, catalog)}/>
             </BorderLayout>);

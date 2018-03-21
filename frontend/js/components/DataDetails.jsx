@@ -16,36 +16,27 @@ const sampleData = require('../../MapStore2/web/client/components/widgets/enhanc
 const SimpleChart = sampleData(require('../../MapStore2/web/client/components/charts/SimpleChart'));
 const FilterListComponent = require('./FilterList');
 const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
-const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const RelatedData = require('./RelatedData');
 const DefaultWidget = require('../../MapStore2/web/client/components/widgets/widget/DefaultWidget');
-const {head} = require('lodash');
+const LayerToolbar = require('./LayerToolbar');
+const {truncate, isString, head} = require('lodash');
+
+const CustomizedAxisTick = class DataDetails extends React.Component {
+    render() {
+        const {x, y, payload} = this.props;
+        return (
+            <g transform={`translate(${x},${y})`}>
+                <title>{payload.value}</title>
+                <text x={0} y={0} dy={16} textAnchor="end" fill="#666" transform="rotate(-35)">{payload.value && isString(payload.value) && truncate(payload.value, {length: 11}) || ''}</text>
+            </g>
+        );
+    }
+};
 
 const data = [
-    {name: 'Residential', "Occupancy": 50},
-    {name: 'Commercial', "Occupancy": 10},
-    {name: 'Industrial', "Occupancy": 4},
-    {name: 'Health Care', "Occupancy": 1},
-    {name: 'Education', "Occupancy": 1},
-    {name: 'Government', "Occupancy": 4},
-    {name: 'Unknown', "Occupancy": 30}
+    [5, 4, 1, 30, 10, 20, 30],
+    [50, 10, 4, 1, 1, 4, 30]
 ];
-
-const series = [{dataKey: "Occupancy"}];
-const xAxis = {dataKey: "name"};
-
-const dataA = [
-    {name: 'Masonry', "Construction": 20},
-    {name: 'Concrete', "Construction": 30},
-    {name: 'Steel Frame', "Construction": 1},
-    {name: 'Composite', "Construction": 4},
-    {name: 'Wood', "Construction": 5},
-    {name: 'Earth', "Construction": 10},
-    {name: 'Unknown', "Construction": 30}
-];
-
-const seriesA = [{dataKey: "Construction"}];
-const xAxisA = {dataKey: "name"};
 
 class DataDetails extends React.Component {
     static propTypes = {
@@ -60,7 +51,8 @@ class DataDetails extends React.Component {
         layout: PropTypes.object,
         layers: PropTypes.array,
         groupInfo: PropTypes.object,
-        filterList: PropTypes.node
+        filterList: PropTypes.node,
+        currentTaxonomy: PropTypes.object
     };
 
     static defaultProps = {
@@ -82,13 +74,29 @@ class DataDetails extends React.Component {
                 widgetType: 'chart'
             }*/
         ],
-        filterList: FilterListComponent
+        filterList: FilterListComponent,
+        currentTaxonomy: {}
     };
 
     state = {};
 
+    getData(group, idx) {
+        const hasFilter = this.hasFilter(group);
+        return group.filters && group.filters.filter(val => !hasFilter || (hasFilter && val.checked)).map((filter, j) => {
+            return {
+                [group.name]: data[idx][j],
+                name: filter.name,
+                style: {
+                    fill: group.style === group.styleChecked ? filter.color : '#21bab0'
+                }
+            };
+        }) || [];
+    }
+
     render() {
         const FilterList = this.props.filterList;
+        const category = this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.category;
+        const taxonomy = this.props.currentTaxonomy[category];
         return this.props.currentDetails ? (
             <ContainerDimensions>
             { ({width}) =>
@@ -108,82 +116,20 @@ class DataDetails extends React.Component {
                                 <Grid fluid style={{width: '100%'}}>
                                 <Row>
                                     <Col xs={12}>
-                                <Toolbar
-                                    btnDefaultProps={
-                                        {
-                                            className: 'square-button-md',
-                                            bsStyle: 'primary'
-                                        }
-                                    }
-                                    buttons={[
-                                        {
-                                            glyph: 'filter',
-                                            tooltipId: this.state.showFilter ? 'heve.hideFilters' : 'heve.showFilters',
-                                            visible: this.props.currentDetails.properties && this.props.currentDetails.properties.category === 'buildings',
-                                            active: this.state.showFilter,
-                                            onClick: () => {
+                                        <LayerToolbar
+                                            item={{...this.props.currentDetails}}
+                                            layers={this.props.layers}
+                                            showDownload
+                                            showFilter
+                                            activeFilter={this.state.showFilter}
+                                            onToggleFilter={() => {
                                                 this.setState({
                                                     showFilter: !this.state.showFilter
                                                 });
-                                            }
-                                        },
-                                        {
-                                            glyph: 'zoom-to',
-                                            tooltipId: 'heve.zoomToLayer',
-                                            onClick: (e) => {
-                                                e.stopPropagation();
-                                                const coordinates = this.props.currentDetails && this.props.currentDetails.geometry && this.props.currentDetails.geometry.coordinates;
-                                                if (coordinates) {
-                                                    const bbox = [...coordinates[0][0], ...coordinates[0][2]];
-                                                    this.props.onZoomTo([...bbox], 'EPSG:4326');
-                                                }
-                                            }
-                                        },
-                                        {
-                                            glyph: 'trash',
-                                            visible: !!head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.properties.name)),
-                                            tooltipId: 'heve.removeLayer',
-                                            onClick: (e) => {
-                                                e.stopPropagation();
-                                                const id = this.props.currentDetails.properties && this.props.currentDetails.properties.name;
-                                                this.props.onRemove(id);
-                                            }
-                                        },
-                                        {
-                                            glyph: 'plus',
-                                            visible: !head(this.props.layers.filter(layer => layer.id === this.props.currentDetails.properties.name)),
-                                            tooltipId: 'heve.addLayer',
-                                            onClick: (e) => {
-                                                e.stopPropagation();
-                                                const coordinates = this.props.currentDetails && this.props.currentDetails.geometry && this.props.currentDetails.geometry.coordinates;
-                                                const bbox = [...coordinates[0][0], ...coordinates[0][2]];
-                                                this.props.onAddLayer({
-                                                    type: 'wms',
-                                                    url: this.props.currentDetails.properties.wms_url,
-                                                    visibility: true,
-                                                    name: this.props.currentDetails.properties.name,
-                                                    title: this.props.currentDetails.properties.title,
-                                                    description: this.props.currentDetails.properties.description,
-                                                    group: 'toc_layers',
-                                                    bbox: {
-                                                    crs: 'EPSG:4326',
-                                                    bounds: {
-                                                        minx: bbox[0],
-                                                        miny: bbox[1],
-                                                        maxx: bbox[2],
-                                                        maxy: bbox[3]
-                                                    }
-                                                    },
-                                                    id: this.props.currentDetails.properties.name,
-                                                    record: {...this.props.currentDetails}
-                                                });
-                                            }
-                                        },
-                                        {
-                                            glyph: 'download',
-                                            tooltipId: 'heve.addDownload'
-                                        }
-                                    ]}/>
+                                            }}
+                                            onZoomTo={this.props.onZoomTo}
+                                            onRemoveLayer={this.props.onRemove}
+                                            onAddLayer={this.props.onAddLayer}/>
                                     </Col>
                                 </Row>
                             </Grid>
@@ -192,63 +138,9 @@ class DataDetails extends React.Component {
                                 <div style={{order: -1}}>
                                     <FilterList
                                         enabled={this.state.showFilter && this.props.currentDetails.properties && this.props.currentDetails.properties.category === 'buildings'}
-                                        filter={{
-                                            categories: [
-                                                {
-                                                    "name": "Construction",
-                                                    "datasetLayers": [
-                                                        {
-                                                            "name": "Masonry"
-                                                        },
-                                                        {
-                                                            "name": "Concrete"
-                                                        },
-                                                        {
-                                                            "name": "Steel Frame"
-                                                        },
-                                                        {
-                                                            "name": "Composite"
-                                                        },
-                                                        {
-                                                            "name": "Wood"
-                                                        },
-                                                        {
-                                                            "name": "Earth"
-                                                        },
-                                                        {
-                                                            "name": "Unknown"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "name": "Occupancy",
-                                                    "datasetLayers": [
-                                                        {
-                                                            "name": "Residential"
-                                                        },
-                                                        {
-                                                            "name": "Commercial"
-                                                        },
-                                                        {
-                                                            "name": "Industrial"
-                                                        },
-                                                        {
-                                                            "name": "Healthcare"
-                                                        },
-                                                        {
-                                                            "name": "Education"
-                                                        },
-                                                        {
-                                                            "name": "Government"
-                                                        },
-                                                        {
-                                                            "name": "Unknown"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }}
-                                        />
+                                        type={this.props.currentDetails.properties && this.props.currentDetails.properties.category}
+                                        hasStyle
+                                        typeOfAction="taxonomy"/>
                                 </div>
                             ]}>
 
@@ -274,47 +166,27 @@ class DataDetails extends React.Component {
                                 <br/>
                                 <Row>
                                     <Col xs={12}>
-                                        <h4><strong>Occupance %</strong></h4>
+                                        <h3 className="text-center">Occupance %</h3>
                                     </Col>
-                                    <Col xs={12}>
-                                    <ContainerDimensions>
-                                        { ({width: wChart}) =>
-                                            <SimpleChart
-                                                data={dataA}
-                                                series={seriesA}
-                                                xAxis={xAxisA}
-                                                autoColorOptions={{
-                                                    base: 176,
-                                                    range: 0,
-                                                    s: 0.82,
-                                                    v: 0.73
-                                                }}
-                                                width={wChart - 40}
-                                                type="bar"/>
-                                        }
-                                        </ContainerDimensions>
-                                    </Col>
-                                    </Row>
-                                    <Row>
-                                    <Col xs={12}>
-                                    <ContainerDimensions>
-                                        { ({width: wChart}) =>
-                                            <SimpleChart
-                                                data={data}
-                                                series={series}
-                                                xAxis={xAxis}
-                                                autoColorOptions={{
-                                                    base: 176,
-                                                    range: 0,
-                                                    s: 0.82,
-                                                    v: 0.73
-                                                }}
-                                                width={wChart - 40}
-                                                type="bar"/>
-                                        }
-                                        </ContainerDimensions>
-                                    </Col>
-                                    </Row>
+                                    {taxonomy && taxonomy.map((group, idx) =>
+                                        <Col xs={12} style={{marginBottom: 40}}>
+                                            <h4 className="text-center" style={{textDecoration: 'underline'}}>{group.name}</h4>
+                                            <ContainerDimensions>
+                                                { ({width: wChart}) =>
+                                                    <SimpleChart
+                                                        data={this.getData(group, idx)}
+                                                        type="bar"
+                                                        legend={false}
+                                                        series={{dataKey: group.name, isAnimationActive: false}}
+                                                        xAxis={{dataKey: 'name', tick: <CustomizedAxisTick/>, interval: 0}}
+                                                        width={wChart - 40}
+                                                        colorGenerator={() => ['#21bab0']}/>
+                                                }
+                                            </ContainerDimensions>
+                                        </Col>
+                                    )}
+                                    <hr />
+                                </Row>
                             </Grid>
                         </BorderLayout>
                     </ResizableModal>
@@ -328,6 +200,10 @@ class DataDetails extends React.Component {
             }
             </ContainerDimensions>
         ) : null;
+    }
+
+    hasFilter(group) {
+        return head(group.filters.filter(filt => filt.checked));
     }
 }
 

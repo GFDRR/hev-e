@@ -16,13 +16,13 @@ const {showDatails, updateFilter, showFilter, setSortType, showRelatedData} = re
 const {currentDetailsSelector/*, catalogURLSelector*/, sortSelector, showRelatedDataSelector, bboxFilterStringSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
-const DataDetails = require('../components/DataDetails');
 const ContainerDimensions = require('react-container-dimensions').default;
 const {updateNode} = require("../../MapStore2/web/client/actions/layers");
 const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
+const {head} = require('lodash');
 
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
@@ -35,6 +35,25 @@ const filterListSelector = createSelector([
 
 const FilterList = connect(
     filterListSelector,
+    {
+        onChange: updateFilter
+    }
+)(require('../components/FilterList'));
+
+
+const filterTaxonomyListSelector = createSelector([
+    state => state.dataexploration && state.dataexploration.filter,
+    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    layersSelector
+], (filter, currentSection, layers) => {
+    const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+    return {
+        filter: tmpLayer && tmpLayer.taxonomy || filter[currentSection] && filter[currentSection].taxonomy || {}
+    };
+});
+
+const FilterTaxonomyList = connect(
+    filterTaxonomyListSelector,
     {
         onChange: updateFilter
     }
@@ -55,6 +74,38 @@ const FilterForm = connect(
         onChangeSortType: setSortType
     }
 )(require('../components/FilterForm'));
+
+const dataDetailsSelector = createSelector([
+    currentDetailsSelector,
+    sortSelector,
+    showRelatedDataSelector,
+    state => state.dataexploration && state.dataexploration.filter,
+    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    layersSelector
+], (currentDetails, sortBy, showData, filters, currentSection, layers) => {
+    const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+    return {
+        currentDetails,
+        showRelatedData: showData,
+        layers: layers.filter(layer => layer.group === 'toc_layers'),
+        currentTaxonomy: tmpLayer && tmpLayer.taxonomy || filters[currentSection] && filters[currentSection].taxonomy || {},
+        groupInfo: filters[currentSection] && filters[currentSection].categories
+            && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
+    };
+});
+
+const DataDetails = connect(
+    dataDetailsSelector,
+    {
+        onClose: showDatails.bind(null, null),
+        onShowDetails: showDatails,
+        onZoomTo: zoomToExtent,
+        onShowRelatedData: showRelatedData,
+        onAddLayer: addLayer,
+        onRemove: removeLayer
+    }
+)(require('../components/DataDetails'));
+
 
 class DataExplorerComponent extends React.Component {
     static propTypes = {
@@ -135,17 +186,7 @@ class DataExplorerComponent extends React.Component {
                             layers={this.props.layers}
                             onRemove={this.props.onRemove}/>}
                     </DockPanel>
-                    <DataDetails
-                        layers={this.props.layers}
-                        onClose={() => this.props.onShowDetails(null)}
-                        groupInfo={this.props.groupInfo}
-                        currentDetails={this.props.currentDetails}
-                        onZoomTo={this.props.onZoomTo}
-                        onShowDetails={this.props.onShowDetails}
-                        onAddLayer={this.props.onAddLayer}
-                        onRemove={this.props.onRemove}
-                        onShowRelatedData={this.props.onShowRelatedData}
-                        showRelatedData={this.props.showRelatedData}/>
+                    <DataDetails filterList={FilterTaxonomyList}/>
                 </div>
                 )}
             </ContainerDimensions>
@@ -164,15 +205,15 @@ const dataExplorerSelector = createSelector([
     layersSelector,
     bboxFilterStringSelector
 ], (open, currentDetails, /*catalogURL,*/ sortBy, showData, filters, currentSection, layers, bboxFilter) => ({
-    open,
-    currentDetails,
-    // catalogURL,
-    sortBy,
-    showRelatedData: showData,
-    layers: layers.filter(layer => layer.group === 'toc_layers'),
-    bboxFilter,
-    groupInfo: filters[currentSection] && filters[currentSection].categories
-        && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.datasetLayers.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
+        open,
+        currentDetails,
+        // catalogURL,
+        sortBy,
+        showRelatedData: showData,
+        layers: layers.filter(layer => layer.group === 'toc_layers'),
+        bboxFilter,
+        groupInfo: filters[currentSection] && filters[currentSection].categories
+            && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
 }));
 
 const DataExplorer = connect(

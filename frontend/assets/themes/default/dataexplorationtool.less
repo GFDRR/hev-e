@@ -551,7 +551,8 @@ div.ol-scale-line.ol-unselectable {
     }
 }
 
-.et-catalog {
+.et-catalog,
+.et-details .ms2-border-layout-body {
     .et-filter {
         width: 220px;
         height: 100%;
@@ -572,7 +573,8 @@ div.ol-scale-line.ol-unselectable {
 }
 
 @media screen and (max-width: 1366px) {
-    .et-catalog {
+    .et-catalog,
+    .et-details .ms2-border-layout-body {
         flex-direction: column;
         .et-filter {
             width: 100%;
@@ -705,10 +707,23 @@ hr {
 
 
 .et-details {
+
+    .recharts-wrapper {
+        > svg {
+            overflow: visible;
+        }
+    }
     
     .btn-group {
         float: right;
         margin-bottom: 30px;
+    }
+    .ms2-border-layout-body {
+        overflow: hidden;
+    }
+    .ms2-border-layout-content {
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     .et-related-data {
         .catalog-form {
@@ -814,6 +829,10 @@ hr {
     .shadow-soft;
     z-index: 10;
     transition: width 0.3s;
+    position: absolute;
+    right: 0;
+    height: 100%;
+    background-color: @ms2-color-background;
     .et-close {
         font-size: @icon-size;
         display: block;
@@ -851,6 +870,33 @@ hr {
         }
     }
 }
+
+
+/* move elements when TOC open needs TOC, Map, MapToolbar in this order (localConfig.json)*/
+
+#mapstore-toolbar #mapstore-toolbar-container {
+    right: 0;
+    transition: right 0.3s;
+}
+
+#map {
+    .ol-attribution.ol-uncollapsible {
+        right: 0;
+        transition: right 0.3s;
+    }
+}
+
+.et-compact-toc.et-open + #map {
+    .ol-attribution.ol-uncollapsible {
+        right: 220px;
+    }
+}
+
+.et-compact-toc.et-open + #map + #mapstore-toolbar #mapstore-toolbar-container {
+    right: 220px;
+}
+
+/* end move elements when TOC open*/
 
 .mapstore-filter.form-group {
     margin: (@square-btn-size - @square-btn-medium-size)/2 0 0 0;

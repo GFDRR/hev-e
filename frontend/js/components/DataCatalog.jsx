@@ -10,8 +10,9 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 const CompactCatalog = require('../../MapStore2/web/client/components/catalog/CompactCatalog');
-const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
-const {head} = require('lodash');
+/*const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
+const {head} = require('lodash');*/
+const LayerToolbar = require('./LayerToolbar');
 
 class DataCatalog extends React.Component {
     static propTypes = {
@@ -56,7 +57,7 @@ class DataCatalog extends React.Component {
                     groupInfo={this.props.groupInfo}
                     layers={this.props.layers}
                     getCustomItem={
-                        (item, layers) => ({
+                        (item) => ({
                             title: <span>{item.title}</span>,
                             description: <span>{item.description}</span>,
                             caption: <span>{item.caption}</span>,
@@ -91,66 +92,15 @@ class DataCatalog extends React.Component {
                             onClick: () => {
                                 this.props.onShowDetails(item.record ? {...item.record} : {});
                             },
-                            tools: <Toolbar
-                                btnDefaultProps={
-                                    {
-                                        className: 'square-button-md',
-                                        bsStyle: 'primary'
-                                    }
-                                }
-                                buttons={[
-                                    {
-                                        glyph: 'zoom-to',
-                                        tooltipId: 'heve.zoomToLayer',
-                                        onClick: (e) => {
-                                            e.stopPropagation();
-                                            const coordinates = item && item.record && item.record.geometry && item.record.geometry.coordinates;
-                                            if (coordinates) {
-                                                const bbox = [...coordinates[0][0], ...coordinates[0][2]];
-                                                this.props.onZoomTo([...bbox], 'EPSG:4326');
-                                            }
-                                        }
-                                    },
-                                    {
-                                        glyph: 'trash',
-                                        tooltipId: 'heve.removeLayer',
-                                        visible: !!head(layers.filter(layer => layer.id === item.record.properties.name)), // use id
-                                        onClick: (e) => {
-                                            e.stopPropagation();
-                                            this.props.onRemove(item.record.properties.name);
-                                        }
-                                    },
-                                    {
-                                        glyph: 'plus',
-                                        tooltipId: 'heve.addLayer',
-                                        visible: !head(layers.filter(layer => layer.id === item.record.properties.name)),
-                                        onClick: (e) => {
-                                            e.stopPropagation();
-                                            const coordinates = item && item.record && item.record.geometry && item.record.geometry.coordinates;
-                                            const bbox = [...coordinates[0][0], ...coordinates[0][2]];
-                                            this.props.onAddLayer({
-                                                type: 'wms',
-                                                url: item.record.properties.wms_url,
-                                                visibility: true,
-                                                name: item.record.properties.name,
-                                                title: item.record.properties.title,
-                                                description: item.record.properties.description,
-                                                group: 'toc_layers',
-                                                bbox: {
-                                                  crs: 'EPSG:4326',
-                                                  bounds: {
-                                                    minx: bbox[0],
-                                                    miny: bbox[1],
-                                                    maxx: bbox[2],
-                                                    maxy: bbox[3]
-                                                  }
-                                                },
-                                                id: item.record.properties.name,
-                                                record: {...item.record}
-                                            });
-                                        }
-                                    }
-                                ]}/>
+                            tools: <LayerToolbar
+                                item={{...item.record}}
+                                showAddLayer
+                                showRemoveLayer
+                                layers={this.props.layers}
+                                showFilter={false}
+                                onZoomTo={this.props.onZoomTo}
+                                onRemoveLayer={this.props.onRemove}
+                                onAddLayer={this.props.onAddLayer}/>
                         })
                     }
                     catalog= {{
