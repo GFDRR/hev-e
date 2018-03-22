@@ -11,23 +11,16 @@ CREATE MATERIALIZED VIEW {{ name }} AS
         m.area_type,
         m.area_unit,
         m.tag_names,
-        occ.period,
-        occ.occupants,
-        c.value AS cost_value,
-        mct.cost_type_name AS cost_type,
-        mct.aggregation_type AS cost_aggregation_type,
-        mct.unit AS cost_unit,
-        {{ schema }}.normalize_taxonomy(a.taxonomy) AS hev_e_taxonomy,
+        {{ schema }}.normalize_taxonomy(a.taxonomy) AS parsed_taxonomy,
         ST_CollectionExtract(
-            a.{{ geometry_column }},
-            {{ numeric_type }}
-        )::geometry({{ geometry_type }}, 4326) AS geom
+            ST_Multi({{ coarse_geometry_column }}),
+            {{ coarse_numeric_type }}
+        )::geometry({{ coarse_geometry_type }}, 4326) AS geom,
+        ST_CollectionExtract(
+            ST_Multi({{ detail_geometry_column }}),
+            {{ detail_numeric_type }}
+        )::geometry({{ detail_geometry_type }}, 4326) AS full_geom
     FROM {{ schema }}.asset AS a
         JOIN {{ schema }}.exposure_model as m ON m.id = a.exposure_model_id
-        LEFT JOIN {{ schema }}.cost AS c ON c.asset_id = a.id
-        LEFT JOIN {{ schema }}.model_cost_type AS mct ON (
-            mct.id = c.cost_type_id
-        )
-        LEFT JOIN {{ schema }}.occupancy AS occ ON occ.asset_id = a.id
-    WHERE m.id = %(exposure_model_id)s
+    WHERE m.id = {{ exposure_model_id }}
 WITH NO DATA

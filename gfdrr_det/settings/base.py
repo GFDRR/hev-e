@@ -620,7 +620,7 @@ HEV_E = {
             "buildings": {
                 "view_geometries": {
                     "coarse_geometry_column": "the_geom",
-                    "coarse_geometry_type": "Point",
+                    "coarse_geometry_type": "MultiPoint",
                     "detail_geometry_column": "full_geom",
                     "detail_geometry_type": "MultiPolygon",
                 },
