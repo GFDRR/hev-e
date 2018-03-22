@@ -14,6 +14,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from collections import namedtuple
+import json
 import subprocess
 
 from django.db import connections
@@ -22,6 +23,7 @@ from django.conf import settings
 from django.core import management
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.template.loader import get_template
 import django.utils.text
 from geonode.layers.models import Layer
 from geonode.base.models import SpatialRepresentationType
@@ -91,22 +93,37 @@ class Command(BaseCommand):
                  "layers in geonode. Defaults to the first admin user "
                  "available"
         )
+        parser.add_argument(
+            "-m",
+            "--exposure_model_id",
+            action="append",
+            help="Limit processing of views to the supplied exposure model "
+                 "id. This option can be specified multiple times. If not "
+                 "specified, all exposure models will be processed"
+        )
 
     def handle(self, *args, **options):
         db_connection = connections[options["database_connection"]]
         db_params = db_connection.get_connection_params()
+        restricted = [int(i) for i in options["exposure_model_id"] or []]
         with db_connection.cursor() as db_cursor:
+            exposure_models = get_exposure_models(db_cursor)
+            if any(restricted):
+                models_to_use = [
+                    m for m in exposure_models if m.id in restricted]
+            else:
+                models_to_use = exposure_models
             existing_views = handle_database_tasks(
                 db_cursor,
                 db_params,
                 options["database_schema"],
+                models_to_use,
                 ddl_file_path=options["ddl_file_path"],
                 data_file_path=options["data_file_path"],
                 force_ddl=options["force_schema_creation"],
                 force_views=options["force_materialized_views_creation"],
                 logger=self.stdout.write
             )
-            exposure_models = get_exposure_models(db_cursor)
         geoserver_layers = handle_geoserver_layers(
             existing_views,
             store_name=options["geoserver_store_name"],
@@ -121,10 +138,12 @@ class Command(BaseCommand):
             store_name=geoserver_layers[0].store.name,
             user_name=user.username,
             stdout=self.stdout,
-            stderr=self.stderr
+            stderr=self.stderr,
+            filter_="coarse"
         )
-        for exposure_model in exposure_models:
-            complete_geonode_layer_import(exposure_model)
+        for model in models_to_use:
+            complete_geonode_layer_import(
+                model, name_suffix="coarse", logger=self.stdout.write)
 
 
 def get_user(name=None):
@@ -137,8 +156,7 @@ def get_user(name=None):
 
 
 def import_layers_to_geonode(workspace_name, store_name, user_name,
-                             stdout, stderr):
-    # import geoserver layers into geonode using the `updatelayers` command
+                             stdout, stderr, filter_=None):
     management.call_command(
         "updatelayers",
         store=store_name,
@@ -146,9 +164,41 @@ def import_layers_to_geonode(workspace_name, store_name, user_name,
         user=user_name,
         skip_unadvertised=True,
         skip_geonode_registered=True,
+        filter=filter_,
         stdout=stdout,
         stderr=stderr
     )
+
+
+def _unfold_mapping(mapping):
+    result = {}
+    for key, values_list in mapping.items():
+        for value in values_list:
+            result[value] = key
+    return result
+
+
+def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
+                                            logger=print):
+    """Installs PL/pgSQL function in the database for normalizing taxonomies"""
+    function_name = "{}.normalize_taxonomy".format(schema_name)
+    query_template = get_template("exposures/normalize_taxonomy_function.sql")
+    occupancy_map = settings.HEV_E[
+        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["occupancy"]
+    material_map = settings.HEV_E[
+        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["material"]
+    unfolded_material_map = _unfold_mapping(material_map)
+    unfolded_occupancy_map = _unfold_mapping(occupancy_map)
+    query = query_template.render(context={
+        "function_name": function_name,
+        "material_map": json.dumps(unfolded_material_map),
+        "materials": [str(i) for i in unfolded_material_map.keys()],
+        "default_material": material_map["unknown"][0],
+        "occupancy_map": json.dumps(_unfold_mapping(occupancy_map)),
+        "occupancies": [str(i) for i in unfolded_occupancy_map.keys()],
+        "default_occupancy": occupancy_map["unknown"][0],
+    })
+    db_cursor.execute(query)
 
 
 def get_hev_e_category(model_category, category_maps):
@@ -177,7 +227,8 @@ def get_hev_e_area_type(model_area_type, area_types_mapping):
 
 # TODO: improve region detection (#40)
 # TODO: add license
-def complete_geonode_layer_import(exposure_model):
+def complete_geonode_layer_import(exposure_model, name_suffix="",
+                                  logger=print):
     category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
     mapped_category = get_hev_e_category(
         exposure_model.category, category_maps)
@@ -185,8 +236,17 @@ def complete_geonode_layer_import(exposure_model):
     topic_category = TopicCategory.objects.get(
         identifier=iso_19115_topic_category)
     layer_name = get_view_name(
-        exposure_model.id, exposure_model.name, exposure_model.category)
+        model_id=exposure_model.id,
+        model_name=exposure_model.name,
+        category=exposure_model.category,
+        suffix=name_suffix
+    )
+    logger("layer_name: {}".format(layer_name))
     layer = Layer.objects.get(name=layer_name)
+    layer.title = get_humanized_view_name(
+        exposure_model.id, exposure_model.name, exposure_model.category,
+        suffix=name_suffix
+    )
     layer.abstract = exposure_model.description
     layer.category = topic_category
     layer.is_approved = True
@@ -210,14 +270,15 @@ def complete_geonode_layer_import(exposure_model):
     layer.save()
 
 
-def handle_geoserver_layers(existing_views, store_name, db_params, schema_name,
+def handle_geoserver_layers(view_pairs, store_name, db_params, schema_name,
                             logger=print):
     """Publish database views as GeoServer layers
 
     Parameters
     ----------
-    existing_views: list
-        An iterable with the names of database views that are to be published
+    view_pairs: list
+        An iterable of two-element tuples with the names of the
+        ``coarse`` and ``detail`` database views that are to be published
         as GeoServer layers
     store_name: str
         Name of the GeoServer store to use. This store will be created in case
@@ -249,16 +310,13 @@ def handle_geoserver_layers(existing_views, store_name, db_params, schema_name,
         store = get_postgis_store(gs_catalog, store_name, workspace, db_params,
                                   schema_name)
     layers = []
-    for view_name in existing_views:
-        logger("Adding {!r} as a geoserver layer...".format(view_name))
-        featuretype = gs_catalog.publish_featuretype(
-            view_name,
-            store,
-            "EPSG:4326",
-            srs="EPSG:4326"
-        )
-        gs_catalog.save(featuretype)
-        layers.append(featuretype)
+    for view_pair in view_pairs:
+        for item in view_pair:
+            logger("Adding {!r} as a geoserver layer...".format(item))
+            featuretype = gs_catalog.publish_featuretype(
+                item, store, "EPSG:4326", srs="EPSG:4326")
+            gs_catalog.save(featuretype)
+            layers.append(featuretype)
     return layers
 
 
@@ -292,7 +350,8 @@ def get_geoserver_workspace(geoserver_catalogue, create=True):
     return workspace
 
 
-def handle_database_tasks(db_cursor, db_params, schema_name,
+# TODO: improve plpgsql functions
+def handle_database_tasks(db_cursor, db_params, schema_name, models_to_use,
                           ddl_file_path=None, data_file_path=None,
                           force_ddl=False, force_views=False, logger=print):
     """Perform database ingestion of the GED4All data"""
@@ -310,41 +369,148 @@ def handle_database_tasks(db_cursor, db_params, schema_name,
         )
         logger("stdout: {}".format(stdout))
         logger("stderr: {}".format(stderr))
+    logger("Installing custom database functions...")
+    install_normalize_gem_taxonomy_function(
+        db_cursor, schema_name, logger=logger)
+    logger("Handling materialized views...")
     existing_views, created = handle_views(
-        db_cursor, schema_name, force_views=force_views, logger=logger)
+        db_cursor, schema_name, models_to_use,
+        force_views=force_views, logger=logger)
     if created:
         logger("VACUUMing the database...")
         db_cursor.execute("VACUUM ANALYZE")
     return existing_views
 
 
-def handle_views(db_cursor, schema_name, force_views=False, logger=print):
-    existing_models = get_exposure_models(db_cursor)
-    existing_views = get_materialized_views(db_cursor, "layer_%")
+def handle_views(db_cursor, schema_name, models_to_use,
+                 force_views=False, logger=print):
+    """Handle ingestion aspects that deal with database views
+
+    This function will create two materialized views for each exposure model:
+
+    * coarse view - uses the simple geometry that is in the model's assets
+    * detail view - uses the full geometry of each asset, if it exists. if
+    there is no full geometry it uses the same geometry as the coarse view.
+
+    Views are created, indexed and registered in postgis' catalogue.
+
+    """
+
+    models_with_full_geom = get_models_with_geom(
+        db_cursor, schema_name, "full_geom")
+    existing_detail = get_materialized_views(db_cursor, "%_detail")
+    existing_coarse = get_materialized_views(db_cursor, "%_coarse")
+    cat_mappings = settings.HEV_E["EXPOSURES"]["category_mappings"]
     created = False
-    if (len(existing_views) < len(existing_models)) or force_views:
-        for existing_view in existing_views:
-            logger("Dropping materialized view {!r}...".format(existing_view))
-            drop_materialized_view(db_cursor, existing_view)
-        existing_views = []
-        for model in existing_models:
-            view_name = get_view_name(model.id, model.name, model.category)
-            logger("Creating materialized view {!r}...".format(view_name))
-            create_materialized_view(
-                db_cursor, view_name, schema_name, model.id, model.category)
-            logger("Refreshing materialized view {}...".format(view_name))
-            refresh_view(db_cursor, view_name)
-            existing_views.append(view_name)
-        created = True
-    return existing_views, created
+    result = []
+    for model in models_to_use:
+        detail_name = get_view_name(
+            model.id, model.name, model.category, suffix="detail")
+        coarse_name = get_view_name(
+            model.id, model.name, model.category, suffix="coarse")
+        mapped_category = get_hev_e_category(model.category, cat_mappings)
+        view_mappings = cat_mappings[mapped_category]["view_geometries"]
+        coarse_geom_column = view_mappings["coarse_geometry_column"]
+        coarse_geom_type = view_mappings["coarse_geometry_type"]
+        result.append((coarse_name, detail_name))
+        if not (coarse_name in existing_coarse) or force_views:
+            logger("Creating coarse view {!r}...".format(coarse_name))
+            coarse_qualified_name = "{schema}.{name}".format(
+                schema=schema_name, name=coarse_name)
+            create_coarse_view(
+                db_cursor,
+                coarse_qualified_name,
+                model.id,
+                coarse_geom_column,
+                coarse_geom_type,
+                logger=logger)
+            logger("Refreshing view {!r}...".format(coarse_name))
+            refresh_view(db_cursor, coarse_qualified_name)
+            created = True
+        if not (detail_name in existing_detail) or force_views:
+            logger("Creating detail view {!r}...".format(detail_name))
+            detail_qualified_name = "{schema}.{name}".format(
+                schema=schema_name, name=detail_name)
+            create_detail_view(
+                db_cursor,
+                detail_qualified_name,
+                model.id,
+                has_full_geom=model.id in models_with_full_geom,
+                coarse_geom_col=coarse_geom_column,
+                coarse_geom_type=coarse_geom_type,
+                detail_geom_col=view_mappings["detail_geometry_column"],
+                detail_geom_type=view_mappings["detail_geometry_type"],
+                logger=logger
+            )
+            logger("Refreshing view {!r}...".format(detail_name))
+            refresh_view(db_cursor, detail_qualified_name)
+            created = True
+    return result, created
 
 
-def get_view_name(model_id, model_name, category):
+def create_coarse_view(db_cursor, name, model_id, geom_col, geom_type,
+                       logger=print):
+    drop_materialized_view(db_cursor, name)
+    create_materialized_view(db_cursor, name, model_id, geom_col, geom_type,
+                             logger=logger)
+
+
+def create_detail_view(db_cursor, name, model_id, has_full_geom,
+                       coarse_geom_col, coarse_geom_type,
+                       detail_geom_col, detail_geom_type,
+                       logger=print):
+    drop_materialized_view(db_cursor, name)
+    if has_full_geom:
+        geom_col_detail = detail_geom_col
+        geom_type_detail = detail_geom_type
+    else:
+        geom_col_detail = coarse_geom_col
+        geom_type_detail = coarse_geom_type
+    create_materialized_view(db_cursor, name, model_id, geom_col_detail,
+                             geom_type_detail, logger=logger)
+
+
+def get_models_with_geom(db_cursor, schema_name, geom_column_name):
+    query = """
+    SELECT DISTINCT exposure_model_id
+    FROM {schema}.asset
+    WHERE {geom} IS NOT NULL
+    """.format(schema=schema_name, geom=geom_column_name)
+    db_cursor.execute(query)
+    return [row[0] for row in db_cursor.fetchall()]
+
+
+def get_humanized_view_name(model_id, model_name, category, prefix="",
+                            suffix="", separator="_"):
+    view_name = get_view_name(
+        model_id,
+        model_name,
+        category,
+        prefix=prefix,
+        suffix=suffix,
+        separator=separator
+    )
+    return view_name.replace(separator, " ").capitalize()
+
+
+def get_view_name(model_id, model_name, category, prefix="", suffix="",
+                  separator="_"):
     """Return a name for a view that is also a valid GeoServer layer name"""
-    result = django.utils.text.slugify(
-        "layer_{}_{}_{}".format(model_id, model_name, category)
-    ).replace("-", "_")
-    return result
+    pattern = "{prefix}{name}{sep}{category}{sep}{id}{suffix}"
+    final_prefix = "{prefix}{sep}".format(
+        prefix=prefix, sep=separator) if prefix != "" else prefix
+    final_suffix = "{sep}{suffix}".format(
+        suffix=suffix, sep=separator) if suffix != "" else suffix
+    return django.utils.text.slugify(
+        pattern.format(
+            prefix=final_prefix,
+            sep=separator,
+            id=model_id,
+            name=model_name,
+            category=category,
+            suffix=final_suffix
+        )
+    ).replace("-", separator)
 
 
 def handle_database_schema(db_cursor, ddl_file_path, schema_name,
@@ -403,8 +569,49 @@ def rename_schema(db_cursor, old_name, new_name):
             )
 
 
-def create_materialized_view(db_cursor, view_name, schema_name,
-                             exposure_model_id, category, logger=print):
+def create_materialized_view(db_cursor, view_name,
+                             exposure_model_id, geometry_column,
+                             geometry_type, logger=print):
+    schema_name, base_name = view_name.partition(".")[::2]
+    query_template = get_template(
+        "exposures/create_materialized_view_query.sql")
+    query = query_template.render(context={
+        "name": view_name,
+        "schema": schema_name,
+        "geometry_column": geometry_column,
+        "numeric_type": (1 if "Point" in geometry_type else
+                         2 if "Line" in geometry_type else 3),
+        "geometry_type": geometry_type,
+    })
+    db_cursor.execute(query, {"exposure_model_id": exposure_model_id})
+    db_cursor.execute(
+        "SELECT Populate_Geometry_Columns(%(name)s::regclass)",
+        {"name": view_name}
+    )
+    indexes = {
+        "id": "btree",
+        "geom": "gist",
+        "hev_e_taxonomy": "btree",
+    }
+    for index_column, index_type in indexes.items():
+        index_name = "{}_{}_idx".format(base_name, index_column)
+        logger("Creating index {!r}...".format(index_name))
+        db_cursor.execute("DROP INDEX IF EXISTS {} CASCADE".format(index_name))
+        index_query = """
+        CREATE index {index_name} 
+        ON {table} 
+        USING {index_type} ({column})
+        """.format(
+            index_name=index_name,
+            table=base_name,
+            index_type=index_type,
+            column=index_column,
+        )
+        db_cursor.execute(index_query)
+
+
+def old_create_materialized_view(db_cursor, view_name, schema_name,
+                                 exposure_model_id, category, logger=print):
     qualified_name = "{}.{}".format(schema_name, view_name)
     query = """
     CREATE MATERIALIZED VIEW {name} AS
@@ -540,4 +747,3 @@ def _load_sql_file(path, host, name, user, search_path=None):
         stderr=subprocess.PIPE
     )
     return process_.communicate()
-
