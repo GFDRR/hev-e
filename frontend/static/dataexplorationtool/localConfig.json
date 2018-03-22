@@ -42,6 +42,7 @@
                     "containerPosition": "columns"
                 }
             },
+            "MapLoading",
             "TOCButton",
             "Toolbar",
             "Expander",

@@ -25,6 +25,8 @@ const {CHANGE_MAP_VIEW} = require('../../MapStore2/web/client/actions/map');
 const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUtils');
 const {CHANGE_DRAWING_STATUS} = require('../../MapStore2/web/client/actions/draw');
 
+const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
+
 const createBaseVectorLayer = name => ({
     type: 'vector',
     id: name,
@@ -33,6 +35,15 @@ const createBaseVectorLayer = name => ({
     visibility: true,
     hideLoading: true
 });
+
+const reprojectBbox = (bbox, state) => {
+    const reprojectedBbox = CoordinatesUtils.reprojectBbox(bbox.bounds, bbox.crs, 'EPSG:4326');
+    const bboxFilter = bboxFilterSelector(state);
+    if (bboxFilter && reprojectedBbox && reprojectedBbox.join(',') === bboxFilter.join(',')) {
+        return Rx.Observable.empty();
+    }
+    return Rx.Observable.of(updateBBOXFilter(reprojectedBbox));
+};
 
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
@@ -357,14 +368,16 @@ const sortTocLayersEpic = (action$, store) =>
 const spatialFilterEpic = (action$, store) =>
     action$.ofType(TOGGLE_SPATIAL_FILTER)
     .switchMap(() => {
+        const state = store.getState();
         const features = drawFeaturesSelector(store.getState());
-        if (features.length > 0) {
+        const drawStatus = state.draw && state.draw.drawStatus || '';
+        if (features.length > 0 || drawStatus === 'start') {
             return Rx.Observable.of(drawSupportReset('heve-spatial-filter'));
         }
         return Rx.Observable.of(
             changeDrawingStatus(
                 'start',
-                'BBOX',
+                'DRAGBOX',
                 'heve-spatial-filter',
                 [],
                 {
@@ -376,9 +389,16 @@ const spatialFilterEpic = (action$, store) =>
     });
 
 const updateBBOXFilterUpdateEpic = (action$, store) =>
-    action$.ofType(CHANGE_MAP_VIEW, CHANGE_DRAWING_STATUS)
+    action$.ofType(CHANGE_MAP_VIEW, CHANGE_DRAWING_STATUS, TOGGLE_SPATIAL_FILTER)
     .switchMap((action) => {
+
         const state = store.getState();
+
+        if (action.status === 'clean') {
+            const map = mapSelector(state);
+            return reprojectBbox(map.bbox, state);
+        }
+
         const currentDetails = currentDetailsSelector(state);
         const currentDetailsEnabled = state.controls && state.controls.currentDetails && state.controls.currentDetails.enabled;
 
@@ -394,12 +414,8 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         if (!bbox) {
             return Rx.Observable.empty();
         }
-        const reprojectedBbox = CoordinatesUtils.reprojectBbox(bbox.bounds, bbox.crs, 'EPSG:4326');
-        const bboxFilter = bboxFilterSelector(store.getState());
-        if (bboxFilter && reprojectedBbox && reprojectedBbox.join(',') === bboxFilter.join(',')) {
-            return Rx.Observable.empty();
-        }
-        return Rx.Observable.of(updateBBOXFilter(reprojectedBbox));
+
+        return reprojectBbox(bbox, state);
     });
 
 module.exports = {

@@ -24,6 +24,12 @@ const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/laye
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
 
+
+const getGroupInfo = filters => {
+    return filters && filters.categories
+    && filters.categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name, icon: group.icon}}), {})}), {}) || {};
+};
+
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
     state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
@@ -89,8 +95,7 @@ const dataDetailsSelector = createSelector([
         showRelatedData: showData,
         layers: layers.filter(layer => layer.group === 'toc_layers'),
         currentTaxonomy: tmpLayer && tmpLayer.taxonomy || filters[currentSection] && filters[currentSection].taxonomy || {},
-        groupInfo: filters[currentSection] && filters[currentSection].categories
-            && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
+        groupInfo: getGroupInfo(filters[currentSection])
     };
 });
 
@@ -212,8 +217,7 @@ const dataExplorerSelector = createSelector([
         showRelatedData: showData,
         layers: layers.filter(layer => layer.group === 'toc_layers'),
         bboxFilter,
-        groupInfo: filters[currentSection] && filters[currentSection].categories
-            && filters[currentSection].categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name}}), {})}), {}) || {}
+        groupInfo: getGroupInfo(filters[currentSection])
 }));
 
 const DataExplorer = connect(

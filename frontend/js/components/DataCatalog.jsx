@@ -9,9 +9,7 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
-const CompactCatalog = require('../../MapStore2/web/client/components/catalog/CompactCatalog');
-/*const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
-const {head} = require('lodash');*/
+const CompactCatalog = require('./CompactCatalog');
 const LayerToolbar = require('./LayerToolbar');
 
 class DataCatalog extends React.Component {

@@ -14,6 +14,44 @@
         background-color: @ms2-color-disabled;
         color: @ms2-color-text-disabled;
     }
+    &:active,
+    &.active {
+        color: @ms2-et-color-primary;
+        background-color: #222;
+    }
+}
+
+.ol-box.ol-dragbox {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+    border-radius: 0;
+    border: 2px dashed rgba(0, 0, 0, 0.5);
+    /*&::before {
+        position: absolute;
+        box-sizing: border-box;
+        content: "";
+        display: block;
+        left: -6px;
+        top: -6px;
+        width: 12px;
+        height: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        background-color: transparent;
+    }
+    &::after {
+        position: absolute;
+        box-sizing: border-box;
+        content: "";
+        display: block;
+        left: ~"calc(100% - 6px)";
+        top: ~"calc(100% - 6px)";
+        width: 12px;
+        height: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        background-color: transparent;
+    }*/
 }
 
 .leaflet-control-scale {

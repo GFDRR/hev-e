@@ -110,7 +110,8 @@ class DataDetails extends React.Component {
                     <ResizableModal
                         show
                         title={<span><i className={'fa fa-' + this.props.groupInfo[this.props.currentDetails.properties.category].icon}/>&nbsp;<strong>{this.props.currentDetails.properties.name}</strong></span>}
-                        onClose={this.props.onClose}>
+                        onClose={this.props.onClose}
+                        clickOutEnabled={false}>
                         <BorderLayout
                             header={
                                 <Grid fluid style={{width: '100%'}}>

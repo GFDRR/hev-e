@@ -20,6 +20,7 @@ const {drawFeaturesSelector} = require('../selectors/dataexploration');
 class SpatialFilterComponent extends React.Component {
     static propTypes = {
         draw: PropTypes.bool,
+        enabled: PropTypes.bool,
         drawStatus: PropTypes.string,
         onClick: PropTypes.func
     };
@@ -30,7 +31,7 @@ class SpatialFilterComponent extends React.Component {
     };
 
     render() {
-        return (
+        return this.props.enabled ? (
             <ButtonT
                 className="square-button"
                 tooltipId={this.props.draw ? 'heve.removeSpatialFilter' : this.props.drawStatus === 'start' ? 'heve.drawSpatialFilter' : 'heve.applySpatialFilter'}
@@ -42,16 +43,19 @@ class SpatialFilterComponent extends React.Component {
                 }}>
                 <Glyphicon glyph={this.props.draw ? 'remove-square' : 'bbox'}/>
             </ButtonT>
-        );
+        ) : null;
     }
 }
 
 const spatialFilterSelector = createSelector([
     drawFeaturesSelector,
-    state => state.draw && state.draw.drawStatus
-], (features, drawStatus) => ({
+    state => state.draw && state.draw.drawStatus,
+    state => state.dataexploration && state.dataexploration.currentDetails,
+    state => state.controls && state.controls.dataExplorer && state.controls.dataExplorer.enabled
+], (features, drawStatus, currentDetails, dataExplorerEnabled) => ({
     draw: !(features && features.length === 0),
-    drawStatus
+    drawStatus,
+    enabled: !currentDetails && dataExplorerEnabled
 }));
 
 const SpatialFilter = connect(
@@ -65,10 +69,10 @@ module.exports = {
     SpatialFilterPlugin: assign(SpatialFilter, {
         Toolbar: {
             name: 'spatial-filter',
-            position: 1,
+            position: 2,
             toolStyle: "primary",
             tool: true,
-            priority: 1,
+            priority: 10,
             alwaysVisible: true
         }
     }),

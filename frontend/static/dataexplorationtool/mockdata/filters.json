@@ -6,12 +6,11 @@
                 "#ff42d0",
                 "#fb4168"
             ],
-            "icon": "building",
+            "icon": "home",
             "filters": [
                 {
                     "name": "Buildings",
-                    "code": "buildings",
-                    "icon": "building"
+                    "code": "buildings"
                 }
             ]
         },
@@ -25,8 +24,7 @@
             "filters": [
                 {
                     "name": "Roads",
-                    "code": "road_network",
-                    "icon": "road"
+                    "code": "road_network"
                 },
                 {
                     "name": "Rail",
