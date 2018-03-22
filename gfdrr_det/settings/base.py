@@ -622,7 +622,7 @@ HEV_E = {
                     "coarse_geometry_column": "the_geom",
                     "coarse_geometry_type": "Point",
                     "detail_geometry_column": "full_geom",
-                    "detail_geometry_type": "Point",
+                    "detail_geometry_type": "MultiPolygon",
                 },
                 "exposure_model_categories": ["buildings"],
                 "topic_category": "structure",
