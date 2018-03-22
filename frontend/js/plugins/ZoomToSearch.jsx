@@ -71,7 +71,7 @@ module.exports = {
     ZoomToSearchPlugin: assign(ZoomToSearch, {
         Toolbar: {
             name: 'zoom-to-search',
-            position: 2,
+            position: 3,
             toolStyle: "primary",
             tool: true,
             priority: 2,

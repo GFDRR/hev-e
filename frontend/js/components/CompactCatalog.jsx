@@ -8,26 +8,24 @@
 const React = require('react');
 const {compose, mapPropsStream} = require('recompose');
 const {isNil, isEqual} = require('lodash');
-const Message = require('../../../MapStore2/web/client/components/I18N/Message');
+const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const Rx = require('rxjs');
 
 const API = {
-    // "csw": require('../../../MapStore2/web/client/api/CSW'),
-    // "wms": require('../../../MapStore2/web/client/api/WMS'),
-    // "wmts": require('../../../MapStore2/web/client/api/WMTS'),
-    "hev-e": require('../../api/HEVE')
+    'hev-e': require('../api/HEVE')
 };
 
-const BorderLayout = require('../../../MapStore2/web/client/components/layout/BorderLayout');
-const LoadingSpinner = require('../../../MapStore2/web/client/components/misc/LoadingSpinner');
-const withVirtualScroll = require('../../../MapStore2/web/client/components/misc/enhancers/infiniteScroll/withInfiniteScroll');
-const loadingState = require('../../../MapStore2/web/client/components/misc/enhancers/loadingState');
-const emptyState = require('../../../MapStore2/web/client/components/misc/enhancers/emptyState');
-const withControllableState = require('../../../MapStore2/web/client/components/misc/enhancers/withControllableState');
-const CatalogForm = require('../../../MapStore2/web/client/components/catalog/CatalogForm');
-// const {getCatalogRecords} = require('../../../MapStore2/web/client/utils/CatalogUtils');
-const Icon = require('../../../MapStore2/web/client/components/misc/FitIcon');
+const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
+const LoadingSpinner = require('../../MapStore2/web/client/components/misc/LoadingSpinner');
+const withVirtualScroll = require('../../MapStore2/web/client/components/misc/enhancers/infiniteScroll/withInfiniteScroll');
+const loadingState = require('../../MapStore2/web/client/components/misc/enhancers/loadingState');
+const emptyState = require('../../MapStore2/web/client/components/misc/enhancers/emptyState');
+const withControllableState = require('../../MapStore2/web/client/components/misc/enhancers/withControllableState');
+const CatalogForm = require('../../MapStore2/web/client/components/catalog/CatalogForm');
+
+const Icon = require('../../MapStore2/web/client/components/misc/FitIcon');
 const defaultPreview = <Icon glyph="geoserver" padding={20}/>;
+
 const SideGrid = compose(
     loadingState(({loading, items = []} ) => items.length === 0 && loading),
     emptyState(
@@ -37,35 +35,27 @@ const SideGrid = compose(
             style: { transform: "translateY(50%)"}
         })
 
-)(require('../../../MapStore2/web/client/components/misc/cardgrids/SideGrid'));
-/*
- * converts record item into a item for SideGrid
- */
+)(require('../../MapStore2/web/client/components/misc/cardgrids/SideGrid'));
 
-const icons = {
-    buildings: 'home',
-    road_network: 'road'
-};
-
-const resToProps = ({records, result = {}}) => ({
+const resToProps = ({records, result = {}}, groupInfo) => ({
     items: (records || []).map((record = {}) => ({
         title: record.properties.name,
         caption: record.properties.category,
         description: record.properties.description,
         preview: record.thumbnail ? <img src="thumbnail" /> : defaultPreview,
-        icon: icons[record.properties.category],
+        icon: groupInfo[record.properties.category] && groupInfo[record.properties.category].icon || 'database',
         record
     })),
     total: result && result.numberOfRecordsMatched
 });
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 /*
  * retrieves data from a catalog service and converts to props
  */
 const loadPage = ({text, catalog = {}, sortBy, groupInfo, bboxFilter}, page = 0) => Rx.Observable
     .fromPromise(API[catalog.type].textSearch(catalog.url, page, page * PAGE_SIZE + (catalog.type === "csw" ? 1 : 0), PAGE_SIZE, text, sortBy, groupInfo, bboxFilter))
     .map((result) => ({result, records: result.records}))
-    .map(resToProps);
+    .map(({records, result = {}}) => resToProps({records, result}, groupInfo));
 const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PAGE_SIZE};
 /**
  * Compat catalog : Reusable catalog component, with infinite scroll.
