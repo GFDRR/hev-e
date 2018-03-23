@@ -36,6 +36,22 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "-a",
+            "--do_not_vacuum",
+            action="store_true",
+            help="Whether to VACUUM ANALYZE the database when new views are "
+                 "added. Defaults to %(default)s. This option is only useful "
+                 "while in development"
+        )
+        parser.add_argument(
+            "-c",
+            "--database_connection",
+            default="hev_e",
+            help="Name of the django DATABASES key that has the connection "
+                 "details for the destination of the GED4All import. Defaults "
+                 "to %(default)s"
+        )
+        parser.add_argument(
             "-d",
             "--ddl_file_path",
             help="Path to the file that has the SQL CREATE commands of the "
@@ -51,11 +67,26 @@ class Command(BaseCommand):
                  "or refreshed (in case they already exist)"
         )
         parser.add_argument(
-            "-x",
-            "--force_schema_creation",
+            "-g",
+            "--geoserver_store_name",
+            default="exposures",
+            help="Name of the GeoServer store that will be used. Defaults to "
+                 "%(default)s"
+        )
+        parser.add_argument(
+            "-m",
+            "--exposure_model_id",
+            action="append",
+            help="Limit processing of views to the supplied exposure model "
+                 "id. This option can be specified multiple times. If not "
+                 "specified, all exposure models will be processed"
+        )
+        parser.add_argument(
+            "-n",
+            "--sql_dry_run",
             action="store_true",
-            help="Whether to import the DDL file path even if the target "
-                 "schema already exists in the database"
+            help="Do not run any command, just output the commands SQL "
+                 "commands that would get executed"
         )
         parser.add_argument(
             "-r",
@@ -63,21 +94,6 @@ class Command(BaseCommand):
             action="store_true",
             help="Whether to DROP existing materialized views and recreate "
                  "them"
-        )
-        parser.add_argument(
-            "-c",
-            "--database_connection",
-            default="hev_e",
-            help="Name of the django DATABASES key that has the connection "
-                 "details for the destination of the GED4All import. Defaults "
-                 "to %(default)s"
-        )
-        parser.add_argument(
-            "-g",
-            "--geoserver_store_name",
-            default="exposures",
-            help="Name of the GeoServer store that will be used. Defaults to "
-                 "%(default)s"
         )
         parser.add_argument(
             "-s",
@@ -94,12 +110,11 @@ class Command(BaseCommand):
                  "available"
         )
         parser.add_argument(
-            "-m",
-            "--exposure_model_id",
-            action="append",
-            help="Limit processing of views to the supplied exposure model "
-                 "id. This option can be specified multiple times. If not "
-                 "specified, all exposure models will be processed"
+            "-x",
+            "--force_schema_creation",
+            action="store_true",
+            help="Whether to import the DDL file path even if the target "
+                 "schema already exists in the database"
         )
 
     def handle(self, *args, **options):
@@ -107,7 +122,7 @@ class Command(BaseCommand):
         db_params = db_connection.get_connection_params()
         restricted = [int(i) for i in options["exposure_model_id"] or []]
         with db_connection.cursor() as db_cursor:
-            exposure_models = get_exposure_models(db_cursor)
+            exposure_models = get_exposure_models(db_cursor)  # does not need dry_run
             if any(restricted):
                 models_to_use = [
                     m for m in exposure_models if m.id in restricted]
@@ -122,28 +137,29 @@ class Command(BaseCommand):
                 data_file_path=options["data_file_path"],
                 force_ddl=options["force_schema_creation"],
                 force_views=options["force_materialized_views_creation"],
+                perform_vacuum=not options["do_not_vacuum"],
+                dry_run=options["sql_dry_run"],
                 logger=self.stdout.write
             )
-        geoserver_layers = handle_geoserver_layers(
-            existing_views,
-            store_name=options["geoserver_store_name"],
-            db_params=db_params,
-            schema_name=options["database_schema"],
-            logger=self.stdout.write
-        )
-        user = get_user(options["username"])
-        self.stdout.write("Importing geoserver layers into geonode...")
-        import_layers_to_geonode(
-            workspace_name=geoserver_layers[0].workspace.name,
-            store_name=geoserver_layers[0].store.name,
-            user_name=user.username,
-            stdout=self.stdout,
-            stderr=self.stderr,
-            filter_="coarse"
-        )
-        for model in models_to_use:
-            complete_geonode_layer_import(
-                model, name_suffix="coarse", logger=self.stdout.write)
+        if not options["sql_dry_run"]:
+            geoserver_layers = handle_geoserver_layers(
+                existing_views,
+                store_name=options["geoserver_store_name"],
+                db_params=db_params,
+                schema_name=options["database_schema"],
+                logger=self.stdout.write
+            )
+            user = get_user(options["username"])
+            self.stdout.write("Importing geoserver layers into geonode...")
+            import_layers_to_geonode(
+                workspace_name=geoserver_layers[0].workspace.name,
+                store_name=geoserver_layers[0].store.name,
+                user_name=user.username,
+                stdout=self.stdout,
+                stderr=self.stderr,
+            )
+            for model in models_to_use:
+                complete_geonode_layer_import(model, logger=self.stdout.write)
 
 
 def get_user(name=None):
@@ -179,7 +195,7 @@ def _unfold_mapping(mapping):
 
 
 def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
-                                            logger=print):
+                                            dry_run=False, logger=print):
     """Installs PL/pgSQL function in the database for normalizing taxonomies"""
     function_name = "{}.normalize_taxonomy".format(schema_name)
     query_template = get_template("exposures/normalize_taxonomy_function.sql")
@@ -198,7 +214,10 @@ def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
         "occupancies": [str(i) for i in unfolded_occupancy_map.keys()],
         "default_occupancy": occupancy_map["unknown"][0],
     })
-    db_cursor.execute(query)
+    if dry_run:
+        logger(query)
+    else:
+        db_cursor.execute(query)
 
 
 def get_hev_e_category(model_category, category_maps):
@@ -227,8 +246,7 @@ def get_hev_e_area_type(model_area_type, area_types_mapping):
 
 # TODO: improve region detection (#40)
 # TODO: add license
-def complete_geonode_layer_import(exposure_model, name_suffix="",
-                                  logger=print):
+def complete_geonode_layer_import(exposure_model, logger=print):
     category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
     mapped_category = get_hev_e_category(
         exposure_model.category, category_maps)
@@ -239,13 +257,11 @@ def complete_geonode_layer_import(exposure_model, name_suffix="",
         model_id=exposure_model.id,
         model_name=exposure_model.name,
         category=exposure_model.category,
-        suffix=name_suffix
     )
     logger("layer_name: {}".format(layer_name))
     layer = Layer.objects.get(name=layer_name)
     layer.title = get_humanized_view_name(
         exposure_model.id, exposure_model.name, exposure_model.category,
-        suffix=name_suffix
     )
     layer.abstract = exposure_model.description
     layer.category = topic_category
@@ -270,7 +286,7 @@ def complete_geonode_layer_import(exposure_model, name_suffix="",
     layer.save()
 
 
-def handle_geoserver_layers(view_pairs, store_name, db_params, schema_name,
+def handle_geoserver_layers(view_names, store_name, db_params, schema_name,
                             logger=print):
     """Publish database views as GeoServer layers
 
@@ -310,13 +326,12 @@ def handle_geoserver_layers(view_pairs, store_name, db_params, schema_name,
         store = get_postgis_store(gs_catalog, store_name, workspace, db_params,
                                   schema_name)
     layers = []
-    for view_pair in view_pairs:
-        for item in view_pair:
-            logger("Adding {!r} as a geoserver layer...".format(item))
-            featuretype = gs_catalog.publish_featuretype(
-                item, store, "EPSG:4326", srs="EPSG:4326")
-            gs_catalog.save(featuretype)
-            layers.append(featuretype)
+    for view_name in view_names:
+        logger("Adding {!r} as a geoserver layer...".format(view_name))
+        featuretype = gs_catalog.publish_featuretype(
+            view_name, store, "EPSG:4326", srs="EPSG:4326")
+        gs_catalog.save(featuretype)
+        layers.append(featuretype)
     return layers
 
 
@@ -353,7 +368,9 @@ def get_geoserver_workspace(geoserver_catalogue, create=True):
 # TODO: improve plpgsql functions
 def handle_database_tasks(db_cursor, db_params, schema_name, models_to_use,
                           ddl_file_path=None, data_file_path=None,
-                          force_ddl=False, force_views=False, logger=print):
+                          force_ddl=False, force_views=False,
+                          perform_vacuum=True, dry_run=False,
+                          logger=print):
     """Perform database ingestion of the GED4All data"""
     if ddl_file_path is not None:
         handle_database_schema(
@@ -371,67 +388,44 @@ def handle_database_tasks(db_cursor, db_params, schema_name, models_to_use,
         logger("stderr: {}".format(stderr))
     logger("Installing custom database functions...")
     install_normalize_gem_taxonomy_function(
-        db_cursor, schema_name, logger=logger)
+        db_cursor, schema_name, dry_run=dry_run, logger=logger)
     logger("Handling materialized views...")
     existing_views, created = handle_views(
         db_cursor, schema_name, models_to_use,
-        force_views=force_views, logger=logger)
-    if created:
+        force_views=force_views, dry_run=dry_run, logger=logger)
+    if created and not dry_run and perform_vacuum:
         logger("VACUUMing the database...")
         db_cursor.execute("VACUUM ANALYZE")
     return existing_views
 
 
 def handle_views(db_cursor, schema_name, models_to_use,
-                 force_views=False, logger=print):
+                     force_views=False, dry_run=False, logger=print):
     """Handle ingestion aspects that deal with database views
 
-    This function will create two materialized views for each exposure model:
-
-    * coarse view - uses the simple geometry that is in the model's assets
-    * detail view - uses the full geometry of each asset, if it exists. if
-    there is no full geometry it uses the same geometry as the coarse view.
-
+    This function will create a materialized view for each exposure model.
     Views are created, indexed and registered in postgis' catalogue.
 
     """
 
     models_with_full_geom = get_models_with_geom(
         db_cursor, schema_name, "full_geom")
-    existing_detail = get_materialized_views(db_cursor, "%_detail")
-    existing_coarse = get_materialized_views(db_cursor, "%_coarse")
+    existing_views = get_materialized_views(db_cursor, "%")
     cat_mappings = settings.HEV_E["EXPOSURES"]["category_mappings"]
     created = False
     result = []
     for model in models_to_use:
-        detail_name = get_view_name(
-            model.id, model.name, model.category, suffix="detail")
-        coarse_name = get_view_name(
-            model.id, model.name, model.category, suffix="coarse")
+        name = get_view_name(model.id, model.name, model.category)
         mapped_category = get_hev_e_category(model.category, cat_mappings)
         view_mappings = cat_mappings[mapped_category]["view_geometries"]
         coarse_geom_column = view_mappings["coarse_geometry_column"]
         coarse_geom_type = view_mappings["coarse_geometry_type"]
-        result.append((coarse_name, detail_name))
-        if not (coarse_name in existing_coarse) or force_views:
-            logger("Creating coarse view {!r}...".format(coarse_name))
-            coarse_qualified_name = "{schema}.{name}".format(
-                schema=schema_name, name=coarse_name)
-            create_coarse_view(
-                db_cursor,
-                coarse_qualified_name,
-                model.id,
-                coarse_geom_column,
-                coarse_geom_type,
-                logger=logger)
-            logger("Refreshing view {!r}...".format(coarse_name))
-            refresh_view(db_cursor, coarse_qualified_name)
-            created = True
-        if not (detail_name in existing_detail) or force_views:
-            logger("Creating detail view {!r}...".format(detail_name))
+        result.append(name)
+        if not (name in existing_views) or force_views:
+            logger("Creating view {!r}...".format(name))
             detail_qualified_name = "{schema}.{name}".format(
-                schema=schema_name, name=detail_name)
-            create_detail_view(
+                schema=schema_name, name=name)
+            create_view(
                 db_cursor,
                 detail_qualified_name,
                 model.id,
@@ -440,34 +434,14 @@ def handle_views(db_cursor, schema_name, models_to_use,
                 coarse_geom_type=coarse_geom_type,
                 detail_geom_col=view_mappings["detail_geometry_column"],
                 detail_geom_type=view_mappings["detail_geometry_type"],
+                dry_run=dry_run,
                 logger=logger
             )
-            logger("Refreshing view {!r}...".format(detail_name))
-            refresh_view(db_cursor, detail_qualified_name)
+            logger("Refreshing view {!r}...".format(name))
+            refresh_view(db_cursor, detail_qualified_name,
+                         dry_run=dry_run, logger=logger)
             created = True
     return result, created
-
-
-def create_coarse_view(db_cursor, name, model_id, geom_col, geom_type,
-                       logger=print):
-    drop_materialized_view(db_cursor, name)
-    create_materialized_view(db_cursor, name, model_id, geom_col, geom_type,
-                             logger=logger)
-
-
-def create_detail_view(db_cursor, name, model_id, has_full_geom,
-                       coarse_geom_col, coarse_geom_type,
-                       detail_geom_col, detail_geom_type,
-                       logger=print):
-    drop_materialized_view(db_cursor, name)
-    if has_full_geom:
-        geom_col_detail = detail_geom_col
-        geom_type_detail = detail_geom_type
-    else:
-        geom_col_detail = coarse_geom_col
-        geom_type_detail = coarse_geom_type
-    create_materialized_view(db_cursor, name, model_id, geom_col_detail,
-                             geom_type_detail, logger=logger)
 
 
 def get_models_with_geom(db_cursor, schema_name, geom_column_name):
@@ -540,9 +514,13 @@ def handle_database_schema(db_cursor, ddl_file_path, schema_name,
     rename_schema(db_cursor, "level2", schema_name)
 
 
-def drop_materialized_view(db_cursor, view_name):
-    db_cursor.execute(
-        "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE".format(view_name))
+def drop_materialized_view(db_cursor, view_name, dry_run=False, logger=print):
+    drop_query = "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE".format(
+        view_name)
+    if dry_run:
+        logger(drop_query)
+    else:
+        db_cursor.execute(drop_query)
 
 
 def schema_exists(db_cursor, schema_name):
@@ -569,114 +547,116 @@ def rename_schema(db_cursor, old_name, new_name):
             )
 
 
+def create_view(db_cursor, name, model_id, has_full_geom,
+                coarse_geom_col, coarse_geom_type,
+                detail_geom_col, detail_geom_type,
+                dry_run=False, logger=print):
+    drop_materialized_view(db_cursor, name, dry_run=dry_run, logger=logger)
+    if has_full_geom:
+        geom_col_detail = detail_geom_col
+        geom_type_detail = detail_geom_type
+    else:
+        geom_col_detail = coarse_geom_col
+        geom_type_detail = coarse_geom_type
+    create_materialized_view(
+        db_cursor,
+        name,
+        model_id,
+        coarse_geometry_column=coarse_geom_col,
+        coarse_geometry_type=coarse_geom_type,
+        detail_geometry_column=geom_col_detail,
+        detail_geometry_type=geom_type_detail,
+        dry_run=dry_run,
+        logger=logger
+    )
+
+
+def _get_geometry_type_clause(geometry_type, geometry_column):
+    if "multi" in geometry_type.lower():
+        result = "ST_Multi({})".format(geometry_column)
+    else:
+        result = geometry_column
+    return result
+
+
 def create_materialized_view(db_cursor, view_name,
-                             exposure_model_id, geometry_column,
-                             geometry_type, logger=print):
+                             exposure_model_id, coarse_geometry_column,
+                             coarse_geometry_type, detail_geometry_column,
+                             detail_geometry_type,
+                             dry_run=False,
+                             logger=print):
     schema_name, base_name = view_name.partition(".")[::2]
     query_template = get_template(
         "exposures/create_materialized_view_query.sql")
+    coarse_clause = _get_geometry_type_clause(
+        coarse_geometry_type, coarse_geometry_column)
+    detail_clause = _get_geometry_type_clause(
+        detail_geometry_type, detail_geometry_column)
     query = query_template.render(context={
         "name": view_name,
         "schema": schema_name,
-        "geometry_column": geometry_column,
-        "numeric_type": (1 if "Point" in geometry_type else
-                         2 if "Line" in geometry_type else 3),
-        "geometry_type": geometry_type,
+        "coarse_geometry_column_clause": coarse_clause,
+        "coarse_numeric_type": (1 if "Point" in coarse_geometry_type else
+                         2 if "Line" in coarse_geometry_type else 3),
+        "coarse_geometry_type": coarse_geometry_type,
+        "detail_geometry_column_clause": detail_clause,
+        "detail_numeric_type": (1 if "Point" in detail_geometry_type else
+                                2 if "Line" in detail_geometry_type else 3),
+        "detail_geometry_type": detail_geometry_type,
+        "exposure_model_id": exposure_model_id,
     })
-    db_cursor.execute(query, {"exposure_model_id": exposure_model_id})
-    db_cursor.execute(
-        "SELECT Populate_Geometry_Columns(%(name)s::regclass)",
-        {"name": view_name}
-    )
+    if dry_run:
+        logger(query)
+    else:
+        db_cursor.execute(query)
+    geometry_columns_query = """
+    SELECT Populate_Geometry_Columns(%(name)s::regclass)
+    """
+    if dry_run:
+        logger(geometry_columns_query)
+    else:
+        db_cursor.execute(geometry_columns_query, {"name": view_name})
     indexes = {
-        "id": "btree",
+        "id": "unique",
+        "parsed_taxonomy": "btree",
         "geom": "gist",
-        "hev_e_taxonomy": "btree",
+        "full_geom": "gist",
     }
     for index_column, index_type in indexes.items():
         index_name = "{}_{}_idx".format(base_name, index_column)
         logger("Creating index {!r}...".format(index_name))
         db_cursor.execute("DROP INDEX IF EXISTS {} CASCADE".format(index_name))
-        index_query = """
-        CREATE index {index_name} 
-        ON {table} 
-        USING {index_type} ({column})
-        """.format(
-            index_name=index_name,
-            table=base_name,
-            index_type=index_type,
-            column=index_column,
-        )
-        db_cursor.execute(index_query)
-
-
-def old_create_materialized_view(db_cursor, view_name, schema_name,
-                                 exposure_model_id, category, logger=print):
-    qualified_name = "{}.{}".format(schema_name, view_name)
-    query = """
-    CREATE MATERIALIZED VIEW {name} AS
-        SELECT
-            a.id,
-            m.name AS model_name,
-            m.description AS model_description,
-            m.category,
-            a.taxonomy,
-            m.taxonomy_source,
-            a.number_of_units,
-            a.area,
-            m.area_type,
-            m.area_unit,
-            m.tag_names,
-            occ.period,
-            occ.occupants,
-            c.value AS cost_value,
-            mct.cost_type_name AS cost_type,
-            mct.aggregation_type AS cost_aggregation_type,
-            mct.unit AS cost_unit,
-            a.the_geom,
-            a.full_geom
-        FROM {schema}.asset AS a
-            JOIN {schema}.exposure_model as m ON m.id = a.exposure_model_id
-            LEFT JOIN {schema}.cost AS c ON c.asset_id = a.id
-            LEFT JOIN {schema}.model_cost_type AS mct ON (
-                mct.id = c.cost_type_id
+        if index_type == "unique":
+            index_query = """
+            CREATE UNIQUE INDEX {index_name} ON {table} ({column})
+            """.format(
+                index_name=index_name,
+                table=base_name,
+                column=index_column,
             )
-            LEFT JOIN {schema}.occupancy AS occ ON occ.asset_id = a.id
-        WHERE m.id = %(exposure_model_id)s
-            AND m.category = %(category)s
-    WITH NO DATA
-    """.format(schema=schema_name, name=qualified_name)
-    db_cursor.execute(query, {
-        "exposure_model_id": exposure_model_id,
-        "category": category
-    })
-    db_cursor.execute(
-        "SELECT Populate_Geometry_Columns(%(name)s::regclass)",
-        {"name": qualified_name}
-    )
-    indexes = {
-        "id": "btree",
-        "the_geom": "gist",
-        "full_geom": "gist",
-    }
-    for index_column, index_type in indexes.items():
-        index_name = "{}_{}_idx".format(view_name, index_column)
-        logger("Creating index {!r}...".format(index_name))
-        db_cursor.execute("DROP INDEX IF EXISTS {} CASCADE".format(index_name))
-        index_query = """
-        CREATE index {index_name} ON {table} USING {index_type} ({column})
-        """.format(
-            index_name=index_name,
-            table=view_name,
-            index_type=index_type,
-            column=index_column,
-        )
-        db_cursor.execute(index_query)
+        else:
+            index_query = """
+            CREATE index {index_name} 
+            ON {table} 
+            USING {index_type} ({column})
+            """.format(
+                index_name=index_name,
+                table=base_name,
+                index_type=index_type,
+                column=index_column,
+            )
+        if dry_run:
+            logger(index_query)
+        else:
+            db_cursor.execute(index_query)
 
 
-def refresh_view(db_cursor, view_name):
-    db_cursor.execute(
-        "REFRESH MATERIALIZED VIEW {} WITH DATA".format(view_name))
+def refresh_view(db_cursor, view_name, dry_run=False, logger=print):
+    query = "REFRESH MATERIALIZED VIEW {} WITH DATA".format(view_name)
+    if dry_run:
+        logger(query)
+    else:
+        db_cursor.execute(query)
 
 
 def get_exposure_models(db_cursor):
