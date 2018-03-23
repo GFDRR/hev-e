@@ -15,6 +15,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from collections import namedtuple
 import json
+import re
 import subprocess
 
 from django.db import connections
@@ -29,6 +30,9 @@ from geonode.layers.models import Layer
 from geonode.base.models import SpatialRepresentationType
 from geonode.base.models import TopicCategory
 from geoserver.catalog import Catalog
+
+from gfdrr_det import models
+from gfdrr_det.constants import DatasetType
 
 
 class Command(BaseCommand):
@@ -141,6 +145,13 @@ class Command(BaseCommand):
                 dry_run=options["sql_dry_run"],
                 logger=self.stdout.write
             )
+            taxonomy_details = {}
+            if not options["sql_dry_run"]:
+                for view_name in existing_views:
+                    self.stdout.write(
+                        "Gathering details for view {!r}...".format(view_name))
+                    taxonomy_details[view_name] = gather_taxonomy_counts(
+                        db_cursor, options["database_schema"], view_name)
         if not options["sql_dry_run"]:
             geoserver_layers = handle_geoserver_layers(
                 existing_views,
@@ -159,7 +170,8 @@ class Command(BaseCommand):
                 stderr=self.stderr,
             )
             for model in models_to_use:
-                complete_geonode_layer_import(model, logger=self.stdout.write)
+                complete_geonode_layer_import(
+                    model, taxonomy_details, logger=self.stdout.write)
 
 
 def get_user(name=None):
@@ -246,7 +258,8 @@ def get_hev_e_area_type(model_area_type, area_types_mapping):
 
 # TODO: improve region detection (#40)
 # TODO: add license
-def complete_geonode_layer_import(exposure_model, logger=print):
+def complete_geonode_layer_import(exposure_model, taxonomy_details,
+                                  logger=print):
     category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
     mapped_category = get_hev_e_category(
         exposure_model.category, category_maps)
@@ -281,9 +294,51 @@ def complete_geonode_layer_import(exposure_model, logger=print):
         mapped_area_type = get_hev_e_area_type(
             exposure_model.area_type, area_types_mapping)
         keywords.append(mapped_area_type)
+    else:
+        mapped_area_type = None
     for keyword in keywords:
         layer.keywords.add(keyword)
     layer.save()
+    det, created = models.HeveDetails.objects.get_or_create(layer=layer)
+    det.dataset_type = DatasetType.exposure.name
+    det.details = {
+            "category": mapped_category,
+            "taxonomy_source": exposure_model.taxonomy_source,
+            "area_type": mapped_area_type,
+            "taxonomic_categories": taxonomy_details.get(layer_name)
+    }
+    det.save()
+
+
+def gather_taxonomy_counts(db_cursor, schema_name, layer_name):
+    qualified_name = "{}.{}".format(schema_name, layer_name)
+    parsed_taxonomies_counts_query = """
+        SELECT 
+            COUNT(1) AS count, 
+            parsed_taxonomy AS taxonomy
+        FROM {layer} 
+        GROUP BY parsed_taxonomy
+    """.format(layer=qualified_name)
+    db_cursor.execute(parsed_taxonomies_counts_query)
+    ResultTuple = namedtuple(
+        "ResultTuple", [col[0] for col in db_cursor.description])
+    taxonomy_counts = [ResultTuple(*row) for row in db_cursor.fetchall()]
+    taxonomic_categories = {
+        "material": re.compile(r"material:(\w+)#"),
+        "occupancy": re.compile(r"occupancy:(\w+)#"),
+        "construction_date": re.compile(r"construction_date:(\w+)"),
+    }
+    result = {}
+    for taxonomic_category, regex_pattern in taxonomic_categories.items():
+        category_counts = result.setdefault(taxonomic_category, {})
+        for taxonomy_combination in taxonomy_counts:
+            category_re_obj = regex_pattern.search(
+                taxonomy_combination.taxonomy)
+            if category_re_obj is not None:
+                category = category_re_obj.group(1)
+                category_counts.setdefault(category, 0)
+                category_counts[category] += taxonomy_combination.count
+    return result
 
 
 def handle_geoserver_layers(view_names, store_name, db_params, schema_name,
