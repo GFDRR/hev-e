@@ -11,12 +11,18 @@
 
 from collections import namedtuple
 from django.core.urlresolvers import reverse
-from django.db import models
 from django.contrib.gis.db import models as gismodels
+from django.db import models
+from django.db.models import CASCADE
+# jsonfield conflicts with django's native JSONField but we have to use it
+# here because geonode is also using it somewhere. More info on this:
+# https://bitbucket.org/schinckel/django-jsonfield/issues/57/cannot-use-in-the-same-project-as-djangos
+from jsonfield import JSONField
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 
 from . import validators
+from .constants import DatasetType
 
 
 BBox = namedtuple("BBox", [
@@ -237,3 +243,21 @@ class DatasetRepresentation(gismodels.Model):
 
     class Meta:
         unique_together = ("dataset_id", "dataset_type")
+
+
+class HeveDetails(models.Model):
+    dataset_type = models.CharField(
+        max_length=20,
+        choices=[(t.name, t.name) for t in DatasetType],
+        validators=[validators.validate_dataset_type],
+    )
+    layer = models.OneToOneField(
+        "layers.Layer",
+        on_delete=CASCADE,
+        null=True,
+        blank=True
+    )
+    details = JSONField(
+        blank=True,
+        null=True
+    )
