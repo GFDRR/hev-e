@@ -13,11 +13,11 @@ CREATE MATERIALIZED VIEW {{ name }} AS
         m.tag_names,
         {{ schema }}.normalize_taxonomy(a.taxonomy) AS parsed_taxonomy,
         ST_CollectionExtract(
-            ST_Multi({{ coarse_geometry_column }}),
+            {{ coarse_geometry_column_clause }},
             {{ coarse_numeric_type }}
         )::geometry({{ coarse_geometry_type }}, 4326) AS geom,
         ST_CollectionExtract(
-            ST_Multi({{ detail_geometry_column }}),
+            {{ detail_geometry_column_clause }},
             {{ detail_numeric_type }}
         )::geometry({{ detail_geometry_type }}, 4326) AS full_geom
     FROM {{ schema }}.asset AS a

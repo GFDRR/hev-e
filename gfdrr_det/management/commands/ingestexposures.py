@@ -571,6 +571,14 @@ def create_view(db_cursor, name, model_id, has_full_geom,
     )
 
 
+def _get_geometry_type_clause(geometry_type, geometry_column):
+    if "multi" in geometry_type.lower():
+        result = "ST_Multi({})".format(geometry_column)
+    else:
+        result = geometry_column
+    return result
+
+
 def create_materialized_view(db_cursor, view_name,
                              exposure_model_id, coarse_geometry_column,
                              coarse_geometry_type, detail_geometry_column,
@@ -580,14 +588,18 @@ def create_materialized_view(db_cursor, view_name,
     schema_name, base_name = view_name.partition(".")[::2]
     query_template = get_template(
         "exposures/create_materialized_view_query.sql")
+    coarse_clause = _get_geometry_type_clause(
+        coarse_geometry_type, coarse_geometry_column)
+    detail_clause = _get_geometry_type_clause(
+        detail_geometry_type, detail_geometry_column)
     query = query_template.render(context={
         "name": view_name,
         "schema": schema_name,
-        "coarse_geometry_column": coarse_geometry_column,
+        "coarse_geometry_column_clause": coarse_clause,
         "coarse_numeric_type": (1 if "Point" in coarse_geometry_type else
                          2 if "Line" in coarse_geometry_type else 3),
         "coarse_geometry_type": coarse_geometry_type,
-        "detail_geometry_column": detail_geometry_column,
+        "detail_geometry_column_clause": detail_clause,
         "detail_numeric_type": (1 if "Point" in detail_geometry_type else
                                 2 if "Line" in detail_geometry_type else 3),
         "detail_geometry_type": detail_geometry_type,
