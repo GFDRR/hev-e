@@ -9,7 +9,6 @@
 #
 #########################################################################
 
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis import geos
 from rest_framework import serializers
@@ -19,11 +18,28 @@ from geonode.layers.models import Layer
 
 
 class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
-    category = serializers.SerializerMethodField()
-    aggregation_type = serializers.SerializerMethodField()
+    aggregation_type = serializers.CharField(
+        source="hevedetails.details.area_type")
     bbox = gis_serializers.GeometrySerializerMethodField()
+    category = serializers.CharField(source="hevedetails.details.category")
     description = serializers.CharField(source="abstract")
+    url = serializers.HyperlinkedIdentityField(view_name="exposures-detail")
     wms_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Layer
+        geo_field = "bbox"
+        id_field = "id"
+        fields = (
+            "id",
+            "url",
+            "title",
+            "name",
+            "description",
+            "category",
+            "aggregation_type",
+            "wms_url",
+        )
 
     def get_bbox(self, obj):
         return geos.Polygon(
@@ -35,18 +51,6 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
                 (obj.bbox_x0, obj.bbox_y0),
             )
         )
-
-    def get_category(self, obj):
-        exposure_categories = settings.HEV_E[
-            "EXPOSURES"]["category_mappings"].keys()
-        category = obj.keywords.filter(name__in=exposure_categories).first()
-        return category.name
-
-    def get_aggregation_type(self, obj):
-        aggregation_types = settings.HEV_E[
-            "EXPOSURES"]["area_type_mappings"].keys()
-        type_ = obj.keywords.filter(name__in=aggregation_types).first()
-        return type_.name if type_ is not None else None
 
     def get_wms_url(self, obj):
         try:
@@ -56,75 +60,28 @@ class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
         return wms_link
 
 
+class ExposureLayerSerializer(ExposureLayerListSerializer):
+    counts = serializers.SerializerMethodField()
+
+    def get_counts(self, obj):
+        return {
+            "name": "Number of assets",
+            "data": obj.hevedetails.details["taxonomic_categories"]["counts"]
+        }
+
+
     class Meta:
         model = Layer
         geo_field = "bbox"
         id_field = "id"
         fields = (
             "id",
+            "url",
             "title",
             "name",
             "description",
             "category",
             "aggregation_type",
             "wms_url",
+            "counts",
         )
-
-
-class ExposureLayerSerializer(gis_serializers.GeoFeatureModelSerializer):
-    category = serializers.SerializerMethodField()
-    aggregation_type = serializers.SerializerMethodField()
-    bbox = gis_serializers.GeometrySerializerMethodField()
-    description = serializers.CharField(source="abstract")
-
-    def get_bbox(self, obj):
-        return geos.Polygon(
-            (
-                (obj.bbox_x0, obj.bbox_y0),
-                (obj.bbox_x0, obj.bbox_y1),
-                (obj.bbox_x1, obj.bbox_y1),
-                (obj.bbox_x1, obj.bbox_y0),
-                (obj.bbox_x0, obj.bbox_y0),
-            )
-        )
-
-    def get_category(self, obj):
-        exposure_categories = settings.HEV_E[
-            "EXPOSURES"]["category_mappings"].keys()
-        category = obj.keywords.filter(name__in=exposure_categories).first()
-        return category.name
-
-    def get_aggregation_type(self, obj):
-        aggregation_types = settings.HEV_E[
-            "EXPOSURES"]["area_type_mappings"].keys()
-        type_ = obj.keywords.filter(name__in=aggregation_types).first()
-        return type_.name if type_ is not None else None
-
-    class Meta:
-        model = Layer
-        geo_field = "bbox"
-        id_field = "id"
-        fields = (
-            "id",
-            "title",
-            "name",
-            "description",
-            "category",
-            "aggregation_type",
-        )
-
-
-class ExposureLayerBarChartSerializer(serializers.ModelSerializer):
-    barcharts = serializers.JSONField()
-
-    class Meta:
-        model = Layer
-        geo_field = "bbox"
-        id_fields = "id"
-        fields = (
-            "id",
-            "title",
-            "name",
-            "barcharts",
-        )
-

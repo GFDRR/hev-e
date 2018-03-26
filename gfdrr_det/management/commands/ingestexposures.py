@@ -147,11 +147,26 @@ class Command(BaseCommand):
             )
             taxonomy_details = {}
             if not options["sql_dry_run"]:
-                for view_name in existing_views:
+                for exposure_model in models_to_use:
+                    view_name = get_view_name(
+                        exposure_model.id,
+                        exposure_model.name,
+                        exposure_model.category
+                    )
                     self.stdout.write(
                         "Gathering details for view {!r}...".format(view_name))
-                    taxonomy_details[view_name] = gather_taxonomy_counts(
-                        db_cursor, options["database_schema"], view_name)
+                    mapped_taxonomy = get_hev_e_taxonomy_source(
+                        exposure_model.taxonomy_source,
+                        settings.HEV_E["EXPOSURES"][
+                            "taxonomy_mappings"]["taxonomy_sources"]
+                    )
+                    taxonomy_details[view_name] = {
+                        "counts": gather_taxonomy_counts(
+                            db_cursor, options["database_schema"],
+                            view_name,
+                            mapped_taxonomy
+                        ),
+                    }
         if not options["sql_dry_run"]:
             geoserver_layers = handle_geoserver_layers(
                 existing_views,
@@ -198,14 +213,6 @@ def import_layers_to_geonode(workspace_name, store_name, user_name,
     )
 
 
-def _unfold_mapping(mapping):
-    result = {}
-    for key, values_list in mapping.items():
-        for value in values_list:
-            result[value] = key
-    return result
-
-
 def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
                                             dry_run=False, logger=print):
     """Installs PL/pgSQL function in the database for normalizing taxonomies"""
@@ -214,7 +221,7 @@ def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
     occupancy_map = settings.HEV_E[
         "EXPOSURES"]["taxonomy_mappings"]["GEM"]["occupancy"]
     material_map = settings.HEV_E[
-        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["material"]
+        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["construction_material"]
     unfolded_material_map = _unfold_mapping(material_map)
     unfolded_occupancy_map = _unfold_mapping(occupancy_map)
     query = query_template.render(context={
@@ -253,6 +260,18 @@ def get_hev_e_area_type(model_area_type, area_types_mapping):
     else:
         raise RuntimeError("Could not determine the HEV-E area type to map "
                            "with {!r}".format(model_area_type))
+    return result
+
+
+def get_hev_e_taxonomy_source(model_taxonomy_source, taxonomy_mappings):
+    """Map the taxonomy source of a model"""
+    for hev_e_taxonomy_type, aliases in taxonomy_mappings.items():
+        if model_taxonomy_source.lower() in aliases:
+            result = hev_e_taxonomy_type
+            break
+    else:
+        raise RuntimeError("Could not determine the HEV-E taxonomy type to "
+                           "map with {!r}".format(model_taxonomy_source))
     return result
 
 
@@ -310,7 +329,7 @@ def complete_geonode_layer_import(exposure_model, taxonomy_details,
     det.save()
 
 
-def gather_taxonomy_counts(db_cursor, schema_name, layer_name):
+def gather_taxonomy_counts(db_cursor, schema_name, layer_name, source):
     qualified_name = "{}.{}".format(schema_name, layer_name)
     parsed_taxonomies_counts_query = """
         SELECT 
@@ -323,21 +342,18 @@ def gather_taxonomy_counts(db_cursor, schema_name, layer_name):
     ResultTuple = namedtuple(
         "ResultTuple", [col[0] for col in db_cursor.description])
     taxonomy_counts = [ResultTuple(*row) for row in db_cursor.fetchall()]
-    taxonomic_categories = {
-        "material": re.compile(r"material:(\w+)#"),
-        "occupancy": re.compile(r"occupancy:(\w+)#"),
-        "construction_date": re.compile(r"construction_date:(\w+)"),
-    }
+    taxonomic_categories = settings.HEV_E[
+        "EXPOSURES"]["taxonomy_mappings"][source].keys()
     result = {}
-    for taxonomic_category, regex_pattern in taxonomic_categories.items():
-        category_counts = result.setdefault(taxonomic_category, {})
-        for taxonomy_combination in taxonomy_counts:
-            category_re_obj = regex_pattern.search(
-                taxonomy_combination.taxonomy)
+    for category in taxonomic_categories:
+        regex_pattern = re.compile(r"{}:(\w+)#".format(category))
+        category_counts = result.setdefault(category, {})
+        for combination in taxonomy_counts:
+            category_re_obj = regex_pattern.search(combination.taxonomy)
             if category_re_obj is not None:
                 category = category_re_obj.group(1)
                 category_counts.setdefault(category, 0)
-                category_counts[category] += taxonomy_combination.count
+                category_counts[category] += combination.count
     return result
 
 
@@ -782,3 +798,11 @@ def _load_sql_file(path, host, name, user, search_path=None):
         stderr=subprocess.PIPE
     )
     return process_.communicate()
+
+
+def _unfold_mapping(mapping):
+    result = {}
+    for key, values_list in mapping.items():
+        for value in values_list:
+            result[value] = key
+    return result

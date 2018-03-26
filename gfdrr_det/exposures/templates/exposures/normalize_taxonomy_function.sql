@@ -48,10 +48,10 @@ CREATE OR REPLACE FUNCTION {{ function_name }}(
         END IF;
         normalized_text := concat_ws(
                 '#',
-                'material:' || normalized_material,
+                'construction_material:' || normalized_material,
                 'occupancy:' || normalized_occupancy,
                 'construction_date:' || normalized_date
-            );
+            ) || '#';
         RETURN;
     END;
 $$ LANGUAGE plpgsql;
