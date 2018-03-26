@@ -679,8 +679,12 @@ HEV_E = {
             "per_asset": ["per_asset"],
         },
         "taxonomy_mappings": {
+            "taxonomy_sources": {
+                "GEM": ["gem_building_taxonomy_2.0", "gem taxonomy"],
+                "GED4ALL": ["ged4all taxonomy"]
+            },
             "GEM": {
-                "material": {
+                "construction_material": {
                     "composite": ["MIX"],
                     "concrete": ["C99", "CR", "CU", "SRC"],
                     "earth": ["E99", "ER", "EU"],
@@ -699,6 +703,7 @@ HEV_E = {
                     "residential": ["RES"],
                     "unknown": ["OC99", "MIX", "OCO"],
                 },
+                "construction_date": [],
             }
         }
     },
