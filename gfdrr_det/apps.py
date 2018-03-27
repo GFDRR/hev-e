@@ -9,4 +9,14 @@
 #
 #########################################################################
 
-default_app_config = "gfdrr_det.apps.GfdrrdetConfig"
+from django.apps import AppConfig
+from django.conf import settings
+
+
+class GfdrrdetConfig(AppConfig):
+    name = "gfdrr_det"
+
+    def ready(self):
+        if settings.USE_NATIVE_JSONFIELD:
+            from jsonfield_compat import register_app
+            register_app(self)

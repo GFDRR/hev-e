@@ -33,6 +33,7 @@ from geoserver.catalog import Catalog
 
 from gfdrr_det import models
 from gfdrr_det.constants import DatasetType
+from gfdrr_det.exposures import utils
 
 
 class Command(BaseCommand):
@@ -147,25 +148,16 @@ class Command(BaseCommand):
             )
             taxonomy_details = {}
             if not options["sql_dry_run"]:
-                for exposure_model in models_to_use:
-                    view_name = get_view_name(
-                        exposure_model.id,
-                        exposure_model.name,
-                        exposure_model.category
-                    )
+                for model in models_to_use:
+                    view_name = get_view_name(model.id, model.name,
+                                              model.category)
                     self.stdout.write(
                         "Gathering details for view {!r}...".format(view_name))
-                    mapped_taxonomy = get_hev_e_taxonomy_source(
-                        exposure_model.taxonomy_source,
-                        settings.HEV_E["EXPOSURES"][
-                            "taxonomy_mappings"]["taxonomy_sources"]
-                    )
                     taxonomy_details[view_name] = {
-                        "counts": gather_taxonomy_counts(
-                            db_cursor, options["database_schema"],
-                            view_name,
-                            mapped_taxonomy
-                        ),
+                        "counts": utils.calculate_taxonomic_counts(
+                            db_cursor, view_name, model.taxonomy_source,
+                            schema_name=options["database_schema"]
+                        )
                     }
         if not options["sql_dry_run"]:
             geoserver_layers = handle_geoserver_layers(
@@ -239,50 +231,13 @@ def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
         db_cursor.execute(query)
 
 
-def get_hev_e_category(model_category, category_maps):
-    """Map the exposure model category to the naming used in HEV-E"""
-    for hev_e_category, maps in category_maps.items():
-        if model_category.lower() in maps["exposure_model_categories"]:
-            result = hev_e_category
-            break
-    else:
-        raise RuntimeError("Could not determine the HEV-E category to map "
-                           "with {!r}".format(model_category))
-    return result
-
-
-def get_hev_e_area_type(model_area_type, area_types_mapping):
-    """Map the exposure model category to the naming used in HEV-E"""
-    for hev_e_area_type, aliases in area_types_mapping.items():
-        if model_area_type.lower() in aliases:
-            result = hev_e_area_type
-            break
-    else:
-        raise RuntimeError("Could not determine the HEV-E area type to map "
-                           "with {!r}".format(model_area_type))
-    return result
-
-
-def get_hev_e_taxonomy_source(model_taxonomy_source, taxonomy_mappings):
-    """Map the taxonomy source of a model"""
-    for hev_e_taxonomy_type, aliases in taxonomy_mappings.items():
-        if model_taxonomy_source.lower() in aliases:
-            result = hev_e_taxonomy_type
-            break
-    else:
-        raise RuntimeError("Could not determine the HEV-E taxonomy type to "
-                           "map with {!r}".format(model_taxonomy_source))
-    return result
-
-
 # TODO: improve region detection (#40)
 # TODO: add license
 def complete_geonode_layer_import(exposure_model, taxonomy_details,
                                   logger=print):
-    category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
-    mapped_category = get_hev_e_category(
-        exposure_model.category, category_maps)
-    iso_19115_topic_category = category_maps[mapped_category]["topic_category"]
+    mapped_category = utils.get_mapped_category(exposure_model.category)
+    iso_19115_topic_category = settings.HEV_E["EXPOSURES"][
+        "category_mappings"][mapped_category]["topic_category"]
     topic_category = TopicCategory.objects.get(
         identifier=iso_19115_topic_category)
     layer_name = get_view_name(
@@ -300,7 +255,6 @@ def complete_geonode_layer_import(exposure_model, taxonomy_details,
     layer.is_approved = True
     layer.spatial_representation_type = SpatialRepresentationType.objects.get(
         identifier="vector")
-    area_types_mapping = settings.HEV_E["EXPOSURES"]["area_type_mappings"]
     keywords = [
         mapped_category,
         exposure_model.taxonomy_source,
@@ -310,8 +264,7 @@ def complete_geonode_layer_import(exposure_model, taxonomy_details,
     if exposure_model.tag_names is not None:
         keywords.extend(exposure_model.tag_names.split(" "))
     if exposure_model.area_type is not None:
-        mapped_area_type = get_hev_e_area_type(
-            exposure_model.area_type, area_types_mapping)
+        mapped_area_type = utils.get_mapped_area_type(exposure_model.area_type)
         keywords.append(mapped_area_type)
     else:
         mapped_area_type = None
@@ -327,34 +280,6 @@ def complete_geonode_layer_import(exposure_model, taxonomy_details,
             "taxonomic_categories": taxonomy_details.get(layer_name)
     }
     det.save()
-
-
-def gather_taxonomy_counts(db_cursor, schema_name, layer_name, source):
-    qualified_name = "{}.{}".format(schema_name, layer_name)
-    parsed_taxonomies_counts_query = """
-        SELECT 
-            COUNT(1) AS count, 
-            parsed_taxonomy AS taxonomy
-        FROM {layer} 
-        GROUP BY parsed_taxonomy
-    """.format(layer=qualified_name)
-    db_cursor.execute(parsed_taxonomies_counts_query)
-    ResultTuple = namedtuple(
-        "ResultTuple", [col[0] for col in db_cursor.description])
-    taxonomy_counts = [ResultTuple(*row) for row in db_cursor.fetchall()]
-    taxonomic_categories = settings.HEV_E[
-        "EXPOSURES"]["taxonomy_mappings"][source].keys()
-    result = {}
-    for category in taxonomic_categories:
-        regex_pattern = re.compile(r"{}:(\w+)#".format(category))
-        category_counts = result.setdefault(category, {})
-        for combination in taxonomy_counts:
-            category_re_obj = regex_pattern.search(combination.taxonomy)
-            if category_re_obj is not None:
-                category = category_re_obj.group(1)
-                category_counts.setdefault(category, 0)
-                category_counts[category] += combination.count
-    return result
 
 
 def handle_geoserver_layers(view_names, store_name, db_params, schema_name,
@@ -482,13 +407,13 @@ def handle_views(db_cursor, schema_name, models_to_use,
     models_with_full_geom = get_models_with_geom(
         db_cursor, schema_name, "full_geom")
     existing_views = get_materialized_views(db_cursor, "%")
-    cat_mappings = settings.HEV_E["EXPOSURES"]["category_mappings"]
     created = False
     result = []
     for model in models_to_use:
         name = get_view_name(model.id, model.name, model.category)
-        mapped_category = get_hev_e_category(model.category, cat_mappings)
-        view_mappings = cat_mappings[mapped_category]["view_geometries"]
+        mapped_category = utils.get_mapped_category(model.category)
+        view_mappings = settings.HEV_E["EXPOSURES"]["category_mappings"][
+            mapped_category]["view_geometries"]
         coarse_geom_column = view_mappings["coarse_geometry_column"]
         coarse_geom_type = view_mappings["coarse_geometry_type"]
         result.append(name)
@@ -754,12 +679,11 @@ def get_exposure_models(db_cursor):
     db_cursor.execute(query)
     ResultTuple = namedtuple(
         "ResultTuple", [col[0] for col in db_cursor.description])
-    category_maps = settings.HEV_E["EXPOSURES"]["category_mappings"]
     result = []
     for row in db_cursor.fetchall():
         exposure_model = ResultTuple(*row)
         try:
-            get_hev_e_category(exposure_model.category, category_maps)
+            utils.get_mapped_category(exposure_model.category)
             result.append(exposure_model)
         except RuntimeError:
             pass  # we are not interested in using this exposure model in HEV-E

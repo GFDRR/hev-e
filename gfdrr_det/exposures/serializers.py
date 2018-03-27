@@ -66,7 +66,7 @@ class ExposureLayerSerializer(ExposureLayerListSerializer):
     def get_counts(self, obj):
         return {
             "name": "Number of assets",
-            "data": obj.hevedetails.details["taxonomic_categories"]["counts"]
+            "data": self.context["taxonomic_counts"]
         }
 
 

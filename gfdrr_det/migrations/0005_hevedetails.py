@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import django.db.models.deletion
 import gfdrr_det.validators
-import jsonfield.fields
+from jsonfield_compat.fields import JSONField
 
 
 class Migration(migrations.Migration):
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('dataset_type', models.CharField(choices=[(b'exposure', b'exposure'), (b'hazard', b'hazard')], max_length=20, validators=[gfdrr_det.validators.validate_dataset_type])),
-                ('details', jsonfield.fields.JSONField(blank=True, null=True)),
+                ('details', JSONField(blank=True, null=True)),
                 ('layer', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='layers.Layer')),
             ],
         ),

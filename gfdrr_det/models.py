@@ -14,10 +14,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models as gismodels
 from django.db import models
 from django.db.models import CASCADE
-# jsonfield conflicts with django's native JSONField but we have to use it
-# here because geonode is also using it somewhere. More info on this:
-# https://bitbucket.org/schinckel/django-jsonfield/issues/57/cannot-use-in-the-same-project-as-djangos
-from jsonfield import JSONField
+from jsonfield_compat.fields import JSONField
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 
