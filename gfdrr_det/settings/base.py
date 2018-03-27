@@ -130,7 +130,7 @@ INSTALLED_APPS += (
     "django_filters",
     "rest_framework",
     "rest_framework_gis",
-    PROJECT_NAME,
+    "gfdrr_det.apps.GfdrrdetConfig",
     "{}.exposures".format(PROJECT_NAME),
 )
 
@@ -595,6 +595,8 @@ LOGGING = {
     },
 }
 
+USE_NATIVE_JSONFIELD = True
+
 # TODO: Add DEFAULT_AUTHENTICATION_CLASSES
 # TODO: Add DEFAULT_PERMISSION_CLASSES
 # TODO: Add DEFAULT_PAGINATION_CLASS
@@ -680,8 +682,14 @@ HEV_E = {
         },
         "taxonomy_mappings": {
             "taxonomy_sources": {
-                "GEM": ["gem_building_taxonomy_2.0", "gem taxonomy"],
-                "GED4ALL": ["ged4all taxonomy"]
+                "GEM": [
+                    "gem_building_taxonomy_2.0",
+                    "gem taxonomy",
+                    "simple taxonomy"
+                ],
+                "GED4ALL": [
+                    "ged4all taxonomy"
+                ]
             },
             "GEM": {
                 "construction_material": {
@@ -704,7 +712,8 @@ HEV_E = {
                     "unknown": ["OC99", "MIX", "OCO"],
                 },
                 "construction_date": [],
-            }
+            },
+            "GED4ALL": {}
         }
     },
 }

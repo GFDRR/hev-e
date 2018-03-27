@@ -1,3 +1,24 @@
+/*
+Differences between GEM and GED4ALL building:
+
+- GED4ALL Buildings has 14 categories while GEM had 13
+- GED4ALL has a unique ID for each attribute
+- GED4ALL separates attributes with the underscore character ('_')
+- GED4ALL uses the hyphen character ('-') to include additional level of
+  detail for a given attribute
+- GED4ALL uses parenthesis to enclose numerical input
+
+The GED4ALL Buildings taxonomy also has a simplified form, that employs only
+seven categories
+
+GED4ALL Multi-hazard infrastructure taxonomy:
+
+- lifelines (roads, railways, power grid, pipelines (water, waste, oil, gas)
+  and storage tanks
+- bridges
+- energy-generation facilities
+
+ */
 CREATE OR REPLACE FUNCTION {{ function_name }}(
     raw_taxonomy varchar,
     OUT normalized_text varchar

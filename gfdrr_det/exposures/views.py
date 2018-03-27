@@ -9,20 +9,30 @@
 #
 #########################################################################
 
+from django.db import connections
 from django.db.models import Q
-from django_filters import rest_framework as django_filters
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as django_filters
 from geonode.layers.models import Layer
-from geonode.base.models import HierarchicalKeyword
 from rest_framework import viewsets
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
+from rest_framework.response import Response
 from rest_framework_gis.pagination import GeoJsonPagination
 from rest_framework_gis.filters import InBBoxFilter
 
 from . import serializers
+from . import utils
 from ..constants import DatasetType
+
+
+def get_filter_bbox(bbox_string):
+    try:
+        return tuple(float(i) for i in bbox_string.split(","))
+    except ValueError:
+        raise ParseError("Invalid bbox string")
 
 
 # This class is inspired by django-rest-framework-gis' InBBoxFilter, with
@@ -35,7 +45,7 @@ class GeonodeLayerInBBoxFilterBackend(InBBoxFilter):
         bbox_string = request.query_params.get(self.bbox_param, None)
         if bbox_string is not None:
             try:
-                result = tuple(float(i) for i in bbox_string.split(","))
+                result = get_filter_bbox(bbox_string)
             except ValueError:
                 raise ParseError("Invalid bbox string supplied for "
                                  "parameter {0}".format(self.bbox_param))
@@ -59,24 +69,15 @@ class GeonodeLayerInBBoxFilterBackend(InBBoxFilter):
 
 class ExposureLayerListFilterSet(django_filters.FilterSet):
     aggregation_type = django_filters.ChoiceFilter(
-        name="keywords__name",
+        name="hevedetails__details__area_type",
+        empty_label="",
         choices=[
             (v, v) for v in settings.HEV_E[
                 "EXPOSURES"]["area_type_mappings"].keys()
         ],
     )
-    # FIXME: This filter should use name=hevedetails__details__category instead
-    #        The problem is the current version of django-jsonfield's
-    #        JSONField does not support doing lookups inside JSON. Django's
-    #        native JSONField does support this, but we cannot use it while
-    #        geonode is still using django-jsonfield. The two are incompatible
-    #        and cannot be used in the same project because the serialization
-    #        becomes broken.
-    #        This problem will only be properly fixed once geonode adopts
-    #        django's native JSONField and we update to that version of
-    #        geonode.
     category = django_filters.MultipleChoiceFilter(
-        name="keywords__name",
+        name="hevedetails__details__category",
         choices=[
             (v, v) for v in settings.HEV_E[
                 "EXPOSURES"]["category_mappings"].keys()
@@ -120,3 +121,27 @@ class ExposureLayerViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             result = serializers.ExposureLayerSerializer
         return result
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        layer = get_object_or_404(Layer, pk=pk)
+        bbox_string = request.query_params.get("bbox")
+        if bbox_string is None:
+            taxonomic_counts = layer.hevedetails.details
+        else:
+            bbox = get_filter_bbox(bbox_string)
+            db_connection = connections["hev_e"]
+            with db_connection.cursor() as db_cursor:
+                taxonomic_counts = utils.calculate_taxonomic_counts(
+                    db_cursor,
+                    layer.name,
+                    layer.hevedetails.details["taxonomy_source"],
+                    bbox_ewkt=utils.get_ewkt_from_bbox(*bbox, srid=4326)
+                )
+        serializer = self.get_serializer_class()(
+            layer,
+            context={
+                "request": request,
+                "taxonomic_counts": taxonomic_counts,
+            }
+        )
+        return Response(serializer.data)
