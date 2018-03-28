@@ -9,12 +9,16 @@
 #
 #########################################################################
 
+from tempfile import mkdtemp
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis import geos
+from geonode.layers.models import Layer
 from rest_framework import serializers
 from rest_framework_gis import serializers as gis_serializers
+from pathlib2 import Path
 
-from geonode.layers.models import Layer
+from . import utils
 
 
 class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
@@ -85,3 +89,19 @@ class ExposureLayerSerializer(ExposureLayerListSerializer):
             "wms_url",
             "counts",
         )
+
+
+class ExposureLayerGeoPackageSerializer(serializers.BaseSerializer):
+
+    def to_representation(self, instance):
+        bbox = self.context.get("bbox")
+        bbox_ewkt = utils.get_ewkt_from_bbox(*bbox) if bbox else None
+        file_name = utils.generate_geopackage_download_name(
+            instance.name, bbox=bbox)
+        gpkg_path = Path(mkdtemp()) / file_name
+        qualified_layer_name = "exposures.{}".format(instance.name)
+        return_code, stdout, stderr = utils.prepare_layer_geopackage_download(
+            qualified_layer_name, gpkg_path, bbox_ewkt=bbox_ewkt)
+        if return_code != 0:
+            raise RuntimeError("Could not generate geopackage")
+        return {"path": gpkg_path}

@@ -19,6 +19,8 @@ from rest_framework import viewsets
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
+from rest_framework.renderers import BrowsableAPIRenderer
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework_gis.pagination import GeoJsonPagination
 from rest_framework_gis.filters import InBBoxFilter
@@ -26,6 +28,7 @@ from rest_framework_gis.filters import InBBoxFilter
 from . import serializers
 from . import utils
 from ..constants import DatasetType
+from . import renderers
 
 
 def get_filter_bbox(bbox_string):
@@ -114,6 +117,11 @@ class ExposureLayerViewSet(viewsets.ReadOnlyModelViewSet):
         "abstract",
         "name",
     )
+    renderer_classes = (
+        JSONRenderer,
+        BrowsableAPIRenderer,
+        renderers.GeoPackageRenderer,
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -125,10 +133,25 @@ class ExposureLayerViewSet(viewsets.ReadOnlyModelViewSet):
     def retrieve(self, request, pk=None, *args, **kwargs):
         layer = get_object_or_404(Layer, pk=pk)
         bbox_string = request.query_params.get("bbox")
-        if bbox_string is None:
-            taxonomic_counts = layer.hevedetails.details
+        bbox = get_filter_bbox(bbox_string) if bbox_string else None
+        serializer_context = {
+            "bbox": bbox,
+            "request": request,
+            "taxonomic_counts": layer.hevedetails.details[
+                "taxonomic_categories"]["counts"]
+        }
+        response_headers = None
+        if request.accepted_renderer.format == "gpkg":
+            serializer = serializers.ExposureLayerGeoPackageSerializer(
+                layer, context=serializer_context)
+            response_headers = {
+                "Content-Disposition": "attachment; filename={}".format(
+                    serializer.data["path"].name)
+            }
+        elif bbox_string is None:
+            serializer = self.get_serializer_class()(
+                layer, context=serializer_context)
         else:
-            bbox = get_filter_bbox(bbox_string)
             db_connection = connections["hev_e"]
             with db_connection.cursor() as db_cursor:
                 taxonomic_counts = utils.calculate_taxonomic_counts(
@@ -137,11 +160,7 @@ class ExposureLayerViewSet(viewsets.ReadOnlyModelViewSet):
                     layer.hevedetails.details["taxonomy_source"],
                     bbox_ewkt=utils.get_ewkt_from_bbox(*bbox, srid=4326)
                 )
-        serializer = self.get_serializer_class()(
-            layer,
-            context={
-                "request": request,
-                "taxonomic_counts": taxonomic_counts,
-            }
-        )
-        return Response(serializer.data)
+            serializer_context["taxonomic_counts"] = taxonomic_counts
+            serializer = self.get_serializer_class()(
+                layer, context=serializer_context)
+        return Response(serializer.data, headers=response_headers)
