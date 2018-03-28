@@ -11,8 +11,12 @@
 
 from collections import namedtuple
 import re
+from decimal import Decimal
 
 from django.conf import settings
+from django.db import connections
+import shlex
+import subprocess
 
 
 def get_ewkt_from_geonode_bbox(geonode_bbox):
@@ -32,7 +36,7 @@ def get_ewkt_from_geonode_bbox(geonode_bbox):
     )
 
 
-def get_ewkt_from_bbox(x0, y0, x1, y1, srid):
+def get_ewkt_from_bbox(x0, y0, x1, y1, srid=4326):
     return (
         "SRID={srid};"
         "POLYGON(("
@@ -42,6 +46,19 @@ def get_ewkt_from_bbox(x0, y0, x1, y1, srid):
         "{x1} {y0}, "
         "{x0} {y0}"
         "))".format(srid=srid, x0=x0, y0=y0, x1=x1, y1=y1))
+
+
+def get_geonode_bbox_from_ewkt(ewkt):
+    srid = ewkt.replace("SRID=", "").partition(";")[0]
+    coords = ewkt.partition(
+        "((")[-1].replace("))", "").replace(",", "").split()
+    return [
+        Decimal(coords[0]),  # x0
+        Decimal(coords[4]),  # x1
+        Decimal(coords[1]),  # y0
+        Decimal(coords[3]),  # y1
+        "EPSG:{}".format(srid)
+    ]
 
 
 def execute_taxonomic_counts_query(db_cursor, qualified_layer_name):
@@ -141,3 +158,57 @@ def calculate_taxonomic_counts(db_cursor, layer_name, taxonomy_source,
                 category_counts.setdefault(category, 0)
                 category_counts[category] += combination.count
     return result
+
+
+def get_bbox_for_filename(bbox, coord_separator="_"):
+    x0, x1, y0, y1 = bbox
+    coords = [
+        "{0}{1:3.4f}".format("E" if x0 < 0 else "W", abs(x0)),
+        "{0}{1:3.4f}".format("S" if y0 < 0 else "N", abs(y0)),
+        "{0}{1:3.4f}".format("E" if x1 < 0 else "W", abs(x1)),
+        "{0}{1:3.4f}".format("S" if y1 < 0 else "N", abs(y1)),
+    ]
+    return coord_separator.join(coords)
+
+
+def generate_geopackage_download_name(layer_name, bbox=None):
+    if bbox is None:
+        result = "{}.gpkg".format(layer_name)
+    else:
+        result = "{name}_{bbox}.gpkg".format(
+            name=layer_name,
+            bbox=get_bbox_for_filename(bbox)
+        )
+    return result
+
+
+def prepare_layer_geopackage_download(qualified_layer_name, target_path,
+                                      bbox_ewkt=None, geom_column="geom"):
+    """Generates a GeoPackage file from one of the database layers"""
+    if bbox_ewkt is None:
+        where_clause = ""
+    else:
+        where_clause = (
+            "-where \"ST_Intersects({geom}, "
+            "ST_GeomFromEWKT('{bbox}'))\"".format(geom=geom_column,
+                                                  bbox=bbox_ewkt)
+        )
+    connection_params = connections["hev_e"].get_connection_params()
+    db_connection_string = (
+        'PG:"dbname={database} host={host} port={port} user={user} '
+        'password={password}"'.format(**connection_params)
+    )
+    command_str = (
+        "ogr2ogr -gt unlimited -f GPKG {where} "
+        "{output} {db} {layer}".format(where=where_clause,
+                                       output=target_path,
+                                       db=db_connection_string,
+                                       layer=qualified_layer_name)
+    )
+    process = subprocess.Popen(
+        shlex.split(command_str),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout, stderr
