@@ -18,5 +18,6 @@ module.exports = {
     showRelatedDataSelector: state => state.dataexploration && state.dataexploration.showRelatedData,
     drawFeaturesSelector: state => state.draw && state.draw.features || null,
     bboxFilterStringSelector: state => state.dataexploration && state.dataexploration.bboxFilter && state.dataexploration.bboxFilter.join(',') || null,
-    bboxFilterSelector: state => state.dataexploration && state.dataexploration.bboxFilter || []
+    bboxFilterSelector: state => state.dataexploration && state.dataexploration.bboxFilter || [],
+    tmpDetailsBboxSelector: state => state.dataexploration && state.dataexploration.tmpDetailsBbox
 };

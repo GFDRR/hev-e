@@ -19,6 +19,7 @@ module.exports = {
         TOCButtonPlugin: require('./plugins/TOCButton'),
         SpatialFilterPlugin: require('./plugins/SpatialFilter'),
         MapLoadingPlugin: require('./plugins/MapLoading'),
+        DownloadPlugin: require('./plugins/Download'),
 
         ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
         ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),

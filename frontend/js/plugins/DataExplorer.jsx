@@ -12,8 +12,8 @@ const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
-const {showDatails, updateFilter, showFilter, setSortType, showRelatedData} = require('../actions/dataexploration');
-const {currentDetailsSelector/*, catalogURLSelector*/, sortSelector, showRelatedDataSelector, bboxFilterStringSelector} = require('../selectors/dataexploration');
+const {showDatails, updateFilter, showFilter, setSortType, showRelatedData, addDownload} = require('../actions/dataexploration');
+const {currentDetailsSelector/*, catalogURLSelector*/, sortSelector, showRelatedDataSelector, bboxFilterStringSelector, tmpDetailsBboxSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
 const ContainerDimensions = require('react-container-dimensions').default;
@@ -23,7 +23,6 @@ const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
-
 
 const getGroupInfo = filters => {
     return filters && filters.categories
@@ -87,15 +86,21 @@ const dataDetailsSelector = createSelector([
     showRelatedDataSelector,
     state => state.dataexploration && state.dataexploration.filter,
     state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
-    layersSelector
-], (currentDetails, sortBy, showData, filters, currentSection, layers) => {
+    layersSelector,
+    state => state.dataexploration && state.dataexploration.downloads,
+    tmpDetailsBboxSelector,
+    state => state.dataexploration && state.dataexploration.detailsLoading
+], (currentDetails, sortBy, showData, filters, currentSection, layers, downloads, bbox, loading) => {
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     return {
         currentDetails,
         showRelatedData: showData,
         layers: layers.filter(layer => layer.group === 'toc_layers'),
         currentTaxonomy: tmpLayer && tmpLayer.taxonomy || filters[currentSection] && filters[currentSection].taxonomy || {},
-        groupInfo: getGroupInfo(filters[currentSection])
+        groupInfo: getGroupInfo(filters[currentSection]),
+        downloads,
+        bbox: bbox || {},
+        loading
     };
 });
 
@@ -107,7 +112,8 @@ const DataDetails = connect(
         onZoomTo: zoomToExtent,
         onShowRelatedData: showRelatedData,
         onAddLayer: addLayer,
-        onRemove: removeLayer
+        onRemove: removeLayer,
+        onAddDownload: addDownload
     }
 )(require('../components/DataDetails'));
 

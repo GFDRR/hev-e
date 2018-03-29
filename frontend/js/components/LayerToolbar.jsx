@@ -7,9 +7,10 @@
 */
 
 const React = require('react');
-const {head} = require('lodash');
+const {head, isEqual} = require('lodash');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const {getTOCLayerObject} = require('../utils/LayerUtils');
+const uuid = require('uuid');
 
 module.exports = ({
     activeFilter = false,
@@ -23,7 +24,10 @@ module.exports = ({
     layers = [],
     onRemoveLayer = () => {},
     onAddLayer = () => {},
-    prefix = '__toc__'
+    prefix = '__toc__',
+    onAddDownload = () => {},
+    downloads = [],
+    mapBbox
 }) => (
     <Toolbar
         btnDefaultProps={
@@ -79,8 +83,22 @@ module.exports = ({
             },
             {
                 glyph: 'download',
-                tooltipId: 'heve.addDownload',
-                visible: showDownload
+                tooltipId: head(downloads.filter(({id}) => item.id === id)) ? 'heve.updateDownload' : 'heve.addDownload',
+                visible: showDownload,
+                style: head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))) ? {pointerEvents: 'none'} : {},
+                bsStyle: head(downloads.filter(({id}) => item.id === id)) ?
+                    head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))) ? 'success' : 'warning'
+                    : 'primary',
+                // disabled: head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))),
+                onClick: (e) => {
+                    e.stopPropagation();
+                    const downloadId = uuid.v1();
+                    onAddDownload({
+                        ...item,
+                        downloadId,
+                        bbox: mapBbox
+                    });
+                }
             }
         ]
     }/>

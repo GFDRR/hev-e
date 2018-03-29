@@ -34,7 +34,22 @@
             "removeSpatialFilter": "Remove spatial filter",
             "applySpatialFilter": "Apply spatial filter",
             "drawSpatialFilter": "Draw spatial filter on map as bounding box",
-            "style": "Styles"
+            "style": "Styles",
+            "downloadFormat": "format",
+            "downloadAll": "Download all data",
+            "removeAll": "Remove all",
+            "shapefile": "ESRI Shapefile",
+            "geopackage": "GeoPackage",
+            "download": "Download data",
+            "removeDownload": "Remove from download list",
+            "restoreLastChanges": "Restore last deleted data",
+            "collectedData": "Show download list",
+            "noCollectedData": "No data to download",
+            "noMatchedDownloads": "No download matched",
+            "appliedFilters": "Filters applied",
+            "noAppliedFilters": "No filters applied",
+            "updateDownload": "Updated layer in download list",
+            "bbox": "Area"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

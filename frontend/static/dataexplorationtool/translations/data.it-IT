@@ -34,7 +34,22 @@
             "removeSpatialFilter": "Rimuovi filtro spaziale",
             "applySpatialFilter": "Applica filtro spaziale",
             "drawSpatialFilter": "Disegna filtro spaziale come bounding box",
-            "style": "Stili"
+            "style": "Stili",
+            "downloadFormat": "formato",
+            "downloadAll": "Scarica tutto",
+            "removeAll": "Rimuovi tutti",
+            "shapefile": "ESRI Shapefile",
+            "geopackage": "GeoPackage",
+            "download": "Scarica dati",
+            "removeDownload": "Rimuovi dalla lista",
+            "restoreLastChanges": "Ripristina l'ultimo dato cancellato",
+            "collectedData": "Mostra la lista dei download",
+            "noCollectedData": "Nessun dato da scaricare",
+            "noMatchedDownloads": "No download matched",
+            "appliedFilters": "Filtri applicati",
+            "noAppliedFilters": "Nessun filtro applicato",
+            "updateDownload": "Aggiorna layer nella lista di download",
+            "bbox": "Area"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

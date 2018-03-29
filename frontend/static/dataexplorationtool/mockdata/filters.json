@@ -93,6 +93,7 @@
         "buildings": [
             {
                 "name": "Construction",
+                "code": "construction_material",
                 "style": "exposure_buildings_construction",
                 "filters": [
                     {
@@ -127,6 +128,7 @@
             },
             {
                 "name": "Occupancy",
+                "code": "occupancy",
                 "style": "exposure_buildings_occupancy",
                 "filters": [
                     {

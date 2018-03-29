@@ -17,7 +17,6 @@ const SimpleChart = sampleData(require('../../MapStore2/web/client/components/ch
 const FilterListComponent = require('./FilterList');
 const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
 const RelatedData = require('./RelatedData');
-const DefaultWidget = require('../../MapStore2/web/client/components/widgets/widget/DefaultWidget');
 const LayerToolbar = require('./LayerToolbar');
 const {truncate, isString, head} = require('lodash');
 
@@ -33,11 +32,6 @@ const CustomizedAxisTick = class DataDetails extends React.Component {
     }
 };
 
-const data = [
-    [5, 4, 1, 30, 10, 20, 30],
-    [50, 10, 4, 1, 1, 4, 30]
-];
-
 class DataDetails extends React.Component {
     static propTypes = {
         currentDetails: PropTypes.object,
@@ -52,7 +46,11 @@ class DataDetails extends React.Component {
         layers: PropTypes.array,
         groupInfo: PropTypes.object,
         filterList: PropTypes.node,
-        currentTaxonomy: PropTypes.object
+        currentTaxonomy: PropTypes.object,
+        onAddDownload: PropTypes.func,
+        downloads: PropTypes.array,
+        bbox: PropTypes.object,
+        loading: PropTypes.bool
     };
 
     static defaultProps = {
@@ -65,26 +63,26 @@ class DataDetails extends React.Component {
         onRemove: () => {},
         showRelatedData: false,
         layers: [],
-        layout: [
-            /*{
-                widgetType: 'text',
-                text: "<p>Tanzania (/ˌtænzəˈniːə/),[12] officially the United Republic of Tanzania (Swahili: Jamhuri ya Muungano wa Tanzania), is a sovereign state in eastern Africa within the African Great Lakes region. It borders Kenya and Uganda to the north; Rwanda, Burundi, and the Democratic Republic of the Congo to the west; Zambia, Malawi, and Mozambique to the south; and the Indian Ocean to the east. Mount Kilimanjaro, Africa's highest mountain, is in north-eastern Tanzania. The United Nations estimated Tanzania's 2016 population at 55.57 million.[6] The population is composed of several ethnic, linguistic, and religious groups. Tanzania is a presidential constitutional republic and since 1996 its official capital city has been Dodoma where the president's office, the National Assembly, and some government ministries are located.[13] Dar es Salaam, the former capital, retains most government offices and is the country's largest city, principal port, and leading commercial centre.[14][15][16] Tanzania is a one party dominant state with the socialist-progressive Chama Cha Mapinduzi party in power.</p>"
-            },
-            {
-                widgetType: 'chart'
-            }*/
-        ],
+        layout: {
+            buildings: [{
+                name: 'counts'
+            }]
+        },
         filterList: FilterListComponent,
-        currentTaxonomy: {}
+        currentTaxonomy: {},
+        onAddDownload: () => {},
+        downloads: [],
+        bbox: {},
+        loading: false
     };
 
     state = {};
 
-    getData(group, idx) {
+    getData(group, idx, data) {
         const hasFilter = this.hasFilter(group);
-        return group.filters && group.filters.filter(val => !hasFilter || (hasFilter && val.checked)).map((filter, j) => {
+        return group.filters && group.filters.filter(val => !hasFilter || (hasFilter && val.checked)).map(filter => {
             return {
-                [group.name]: data[idx][j],
+                [group.name]: data[filter.name.toLowerCase()] ? data[filter.name.toLowerCase()] : 0,
                 name: filter.name,
                 style: {
                     fill: group.style === group.styleChecked ? filter.color : '#21bab0'
@@ -97,6 +95,8 @@ class DataDetails extends React.Component {
         const FilterList = this.props.filterList;
         const category = this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.category;
         const taxonomy = this.props.currentTaxonomy[category];
+        const properties = this.props.currentDetails && this.props.currentDetails.properties;
+        const taxonomyObj = {taxonomy};
         return this.props.currentDetails ? (
             <ContainerDimensions>
             { ({width}) =>
@@ -113,13 +113,19 @@ class DataDetails extends React.Component {
                         onClose={this.props.onClose}
                         clickOutEnabled={false}>
                         <BorderLayout
+                            footer={
+                                <div style={{width: 24, height: 24, padding: 4, margin: 4}}>
+                                    {this.props.loading && <div className="mapstore-small-size-loader" />}
+                                </div>
+                            }
                             header={
                                 <Grid fluid style={{width: '100%'}}>
                                 <Row>
                                     <Col xs={12}>
                                         <LayerToolbar
-                                            item={{...this.props.currentDetails}}
+                                            item={{...this.props.currentDetails, ...taxonomyObj, icon: this.props.groupInfo[this.props.currentDetails.properties.category].icon}}
                                             layers={this.props.layers}
+                                            downloads={this.props.downloads}
                                             showDownload
                                             showFilter
                                             activeFilter={this.state.showFilter}
@@ -130,7 +136,9 @@ class DataDetails extends React.Component {
                                             }}
                                             onZoomTo={this.props.onZoomTo}
                                             onRemoveLayer={this.props.onRemove}
-                                            onAddLayer={this.props.onAddLayer}/>
+                                            onAddLayer={this.props.onAddLayer}
+                                            onAddDownload={this.props.onAddDownload}
+                                            mapBbox={this.props.bbox}/>
                                     </Col>
                                 </Row>
                             </Grid>
@@ -146,48 +154,41 @@ class DataDetails extends React.Component {
                             ]}>
 
                             <Grid fluid>
-                                {
-                                    this.props.layout.map((el, idx) => {
-                                        return (
-                                            <Row key={idx}>
-                                                <Col xs={12}>
-                                                    <DefaultWidget
-                                                        {...el}/>
-                                                </Col>
-                                            </Row>
-                                        );
-                                    })
-                                }
-                                <br/>
                                 <Row>
                                     <Col xs={12}>
                                         <p>{this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.description}</p>
                                     </Col>
                                 </Row>
                                 <br/>
-                                <Row>
-                                    <Col xs={12}>
-                                        <h3 className="text-center">Occupance %</h3>
-                                    </Col>
-                                    {taxonomy && taxonomy.map((group, idx) =>
-                                        <Col xs={12} style={{marginBottom: 40}}>
-                                            <h4 className="text-center" style={{textDecoration: 'underline'}}>{group.name}</h4>
-                                            <ContainerDimensions>
-                                                { ({width: wChart}) =>
-                                                    <SimpleChart
-                                                        data={this.getData(group, idx)}
-                                                        type="bar"
-                                                        legend={false}
-                                                        series={{dataKey: group.name, isAnimationActive: false}}
-                                                        xAxis={{dataKey: 'name', tick: <CustomizedAxisTick/>, interval: 0}}
-                                                        width={wChart - 40}
-                                                        colorGenerator={() => ['#21bab0']}/>
-                                                }
-                                            </ContainerDimensions>
-                                        </Col>
-                                    )}
-                                    <hr />
-                                </Row>
+                                {
+                                    this.props.layout && this.props.layout[category] && this.props.layout[category].map(section => {
+                                        return !(properties && properties[section.name]) ? null : (
+                                            <Row>
+                                                <Col xs={12}>
+                                                    <h3 className="text-center">{properties[section.name].name}</h3>
+                                                </Col>
+                                                {taxonomy && taxonomy.map((group, idx) =>
+                                                    <Col xs={12} style={{marginBottom: 40}}>
+                                                        <h4 className="text-center" style={{textDecoration: 'underline'}}>{group.name}</h4>
+                                                        <ContainerDimensions>
+                                                            { ({width: wChart}) =>
+                                                                <SimpleChart
+                                                                    data={this.getData(group, idx, properties[section.name].data[group.code])}
+                                                                    type="bar"
+                                                                    legend={false}
+                                                                    series={{dataKey: group.name, isAnimationActive: false}}
+                                                                    xAxis={{dataKey: 'name', tick: <CustomizedAxisTick/>, interval: 0}}
+                                                                    width={wChart - 40}
+                                                                    colorGenerator={() => ['#21bab0']}/>
+                                                            }
+                                                        </ContainerDimensions>
+                                                    </Col>
+                                                )}
+                                                <hr />
+                                            </Row>
+                                        );
+                                    })
+                                }
                             </Grid>
                         </BorderLayout>
                     </ResizableModal>

@@ -9,15 +9,17 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
-const { Navbar, Nav, NavItem /*, Glyphicon*/ } = require('react-bootstrap');
+const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
 const ContainerDimensions = require('react-container-dimensions').default;
 const toopltip = require('../../MapStore2/web/client/components/misc/enhancers/tooltip');
 const ImgT = toopltip(({getSrc, width, href, inverse, ...props}) => <a href={href} target="_blank"><img {...props} src={getSrc({width, inverse})}/></a>);
-// const NavItemT = toopltip(NavItem);
+const NavItemT = toopltip(NavItem);
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {SearchPlugin, epics, reducers} = require('../../MapStore2/web/client/plugins/Search');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
+const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
+const {isEqual} = require('lodash');
 
 class Search extends React.Component {
     static propTypes = {
@@ -49,7 +51,9 @@ const SearchBar = connect(searchSelector)(Search);
 class BrandNavbar extends React.Component {
     static propTypes = {
         brandImages: PropTypes.array,
-        inverse: PropTypes.bool
+        inverse: PropTypes.bool,
+        onShowDownload: PropTypes.func,
+        downloads: PropTypes.array
     };
 
     static defaultProps = {
@@ -73,8 +77,28 @@ class BrandNavbar extends React.Component {
                 alt: 'HEV-E'
             }
         ],
-        inverse: true
+        inverse: true,
+        onToggleDownload: () => {},
+        downloads: []
     };
+
+    state = {
+        className: ''
+    };
+
+    componentWillUpdate(newProps) {
+        if (newProps.downloads && this.props.downloads && newProps.downloads.length > 0
+            && (newProps.downloads.length > this.props.downloads.length || !isEqual(newProps.downloads, this.props.downloads))) {
+            this.setState({
+                className: ' et-animation'
+            });
+            setTimeout(() => {
+                this.setState({
+                    className: ' et-no-animation'
+                });
+            }, 500);
+        }
+    }
 
     render() {
         const inverseStr = this.props.inverse ? '-inverse' : '';
@@ -95,20 +119,33 @@ class BrandNavbar extends React.Component {
                             <SearchBar />
                         </Navbar.Form>}
                         <Nav pullRight>
+                            <NavItemT
+                                tooltipId={this.props.downloads.length > 0 ? 'heve.collectedData' : 'heve.noCollectedData'}
+                                tooltipPosition="bottom"
+                                onClick={() => this.props.downloads.length > 0 ? this.props.onShowDownload() : null}>
+                                    {this.state.className !== ' et-animation' && this.props.downloads.length > 0 && <div style={{
+                                        position: 'absolute',
+                                        right: 4,
+                                        top: 24,
+                                        padding: '0 4px',
+                                        fontSize: 10,
+                                        color: '#fff',
+                                        height: 14,
+                                        display: 'flex',
+                                        zIndex: 1
+                                    }}>
+                                        <span style={{margin: 'auto'}}>{this.props.downloads.length}</span>
+                                    </div>}
+                                <Glyphicon
+                                    className={this.props.downloads.length > 0 ? 'text-hev-e-primary text-hev-e-primary-hover' + this.state.className : 'text-disabled'}
+                                    glyph="download"/>
+                            </NavItemT>
                             <NavItem href="#/about">
                                 <Message msgId="heve.about"/>
                             </NavItem>
                             <NavItem href="#/support">
                                 <Message msgId="heve.support"/>
                             </NavItem>
-                            {/*<NavItem>
-                                <SearchBar />
-                            </NavItem>*/}
-                            {/*<NavItemT
-                                tooltip="Download collected data"
-                                tooltipPosition="bottom">
-                                <Glyphicon glyph="download"/>
-                            </NavItemT>*/}
                         </Nav>
                         {width < 767 && <Navbar.Form pullRight>
                             <SearchBar />
@@ -121,8 +158,21 @@ class BrandNavbar extends React.Component {
     }
 }
 
+const brandNavbarSelector = createSelector([
+    state => state.dataexploration && state.dataexploration.downloads
+], (downloads) => ({
+    downloads
+}));
+
+const BrandNavbarPlugin = connect(
+    brandNavbarSelector,
+    {
+        onShowDownload: setControlProperty.bind(null, 'downloadData', 'enabled', true)
+    }
+)(BrandNavbar);
+
 module.exports = {
-    BrandNavbarPlugin: BrandNavbar,
+    BrandNavbarPlugin,
     reducers,
     epics
 };

@@ -5,6 +5,67 @@
 
 .text-hev-e-primary {
     color: @ms2-et-color-primary;
+    
+}
+.text-hev-e-primary-hover {
+    &:hover {
+        color: @ms2-et-color-bg;
+    }
+}
+.text-disabled {
+    color: #444;
+}
+.modal-header {
+    background-color: @ms2-color-background;
+    color: @ms2-color-primary;
+}
+.et-download-head {
+    .row {
+        margin-bottom: 10px;
+    }
+    border-bottom: 1px solid @ms2-color-shade-lighter;
+}
+.et-download-modal {
+    
+    .modal-fixed {
+        z-index: 3100;
+    }
+    .modal-footer {
+        border-top: 1px solid @ms2-color-shade-lighter !important;
+    }
+
+    .et-filter {
+        #et-bbox-preview {
+            margin: auto;
+            width: 189px;
+            height: 189px;
+            background-color: @ms2-color-shade-lighter;
+            pointer-events: none !important;
+        }
+    }
+    .ms2-border-layout-body {
+        overflow-y: hidden;
+        .ms2-border-layout-content {
+            overflow-y: auto;
+        }
+    }
+    
+}
+
+.ms-keyboard-focus {
+    outline-color: lighten(@btn-primary-bg, 5%);
+}
+
+.et-animation {
+    transition: all 0.3s;
+    transform: scale(2.0);
+    color: @ms2-et-color-bg;
+    display: inline-block;
+}
+
+.et-no-animation {
+    transition: all 0.3s;
+    display: inline-block;
 }
 
 .btn-primary {
@@ -26,32 +87,6 @@
     box-sizing: border-box;
     border-radius: 0;
     border: 2px dashed rgba(0, 0, 0, 0.5);
-    /*&::before {
-        position: absolute;
-        box-sizing: border-box;
-        content: "";
-        display: block;
-        left: -6px;
-        top: -6px;
-        width: 12px;
-        height: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        background-color: transparent;
-    }
-    &::after {
-        position: absolute;
-        box-sizing: border-box;
-        content: "";
-        display: block;
-        left: ~"calc(100% - 6px)";
-        top: ~"calc(100% - 6px)";
-        width: 12px;
-        height: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        background-color: transparent;
-    }*/
 }
 
 .leaflet-control-scale {
@@ -590,7 +625,8 @@ div.ol-scale-line.ol-unselectable {
 }
 
 .et-catalog,
-.et-details .ms2-border-layout-body {
+.et-details .ms2-border-layout-body,
+.et-download-modal {
     .et-filter {
         width: 220px;
         height: 100%;
@@ -612,7 +648,8 @@ div.ol-scale-line.ol-unselectable {
 
 @media screen and (max-width: 1366px) {
     .et-catalog,
-    .et-details .ms2-border-layout-body {
+    .et-details .ms2-border-layout-body,
+    .et-download-modal .ms2-border-layout-body {
         flex-direction: column;
         .et-filter {
             width: 100%;
@@ -630,6 +667,11 @@ div.ol-scale-line.ol-unselectable {
         .search-result-list {
             width: 300px !important;
         }
+    }
+
+    .ms-resizable-modal .modal-content.ms-lg {
+        height: ~"calc(100% - 6px)";
+        top: 3px;
     }
     
 }
@@ -745,7 +787,9 @@ hr {
 
 
 .et-details {
-
+    .modal-footer {
+        display: none;
+    }
     .recharts-wrapper {
         > svg {
             overflow: visible;
@@ -835,11 +879,11 @@ hr {
         }
         
     }
-    .mapstore-side-card {
-        transform: none;
-    }
+    
 }
-
+.mapstore-side-card {
+    transform: none !important;
+}
 .modal-header {
     .modal-title {
         .ms-title {
