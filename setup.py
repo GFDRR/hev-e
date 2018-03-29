@@ -50,6 +50,7 @@ setup(
         'drf-openapi==1.0.0',
         'enum34==1.1.6',
         'inflection==0.3.1',
+        'pathlib2==2.3.0',
         'proj==0.1.0',
         'pygdal==2.2.1.3',
         'pyproj==1.9.5.1',
