@@ -387,7 +387,7 @@ class OpenlayersMap extends React.Component {
             }
         }
 
-        if (newProps.bbox && newProps.bbox.rotation !== undefined && newProps.bbox.rotation !== this.props.bbox.rotation) {
+        if (newProps.bbox && this.props.bbox && newProps.bbox.rotation !== undefined && newProps.bbox.rotation !== this.props.bbox.rotation) {
             view.setRotation(newProps.bbox.rotation);
         }
     };

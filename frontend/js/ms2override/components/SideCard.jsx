@@ -8,14 +8,18 @@
 
 
 const React = require('react');
+const keyboardAccessibility = require('../../enhancers/keyboardAccessibility');
+const AccessibleDiv = keyboardAccessibility(({children, ...props}) => <div {...props}>{children}</div>);
 
 module.exports = ({body, className = '', style = {}, onMouseEnter = () => {}, onMouseLeave = () => {}, onClick=() => {}, size, title, preview, description, caption, tools, selected, ...more} = {}) =>
 <div className={`mapstore-side-card${selected ? ' selected' : ''}${size ? ' ms-' + size : ''} ${className}`}
-    onClick={() => onClick({title, preview, description, caption, tools, ...more})}
-    onMouseEnter={() => onMouseEnter()}
-    onMouseLeave={() => onMouseLeave()}
     style={style}>
-    <div className="ms-head">
+    <AccessibleDiv
+        className="ms-head"
+        onClick={() => onClick({title, preview, description, caption, tools, ...more})}
+        onKeyDown={() => onClick({title, preview, description, caption, tools, ...more})}
+        onMouseEnter={() => onMouseEnter()}
+        onMouseLeave={() => onMouseLeave()}>
         {preview && <div className="mapstore-side-preview">
             {preview}
         </div>}
@@ -33,7 +37,7 @@ module.exports = ({body, className = '', style = {}, onMouseEnter = () => {}, on
         <div className="mapstore-side-card-tool text-center">
             {tools}
         </div>
-    </div>
+    </AccessibleDiv>
     {body && <div className="ms-body">
         {body}
     </div>}
