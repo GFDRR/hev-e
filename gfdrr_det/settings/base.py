@@ -130,6 +130,8 @@ INSTALLED_APPS += (
     "django_filters",
     "rest_framework",
     "rest_framework_gis",
+    "mailqueue",
+    "oseoserver",
     "gfdrr_det.apps.GfdrrdetConfig",
     "{}.exposures".format(PROJECT_NAME),
 )
@@ -454,17 +456,6 @@ PINAX_NOTIFICATIONS_LOCK_WAIT_TIMEOUT = -1
 # or notification
 NOTIFICATIONS_MODULE = 'pinax.notifications'
 
-# Use kombu broker by default
-# REDIS_URL = 'redis://localhost:6379/1'
-# BROKER_URL = REDIS_URL
-# CELERY_RESULT_BACKEND = REDIS_URL
-CELERYD_HIJACK_ROOT_LOGGER = True
-CELERYD_CONCURENCY = 1
-# Set this to False to run real async tasks
-CELERY_ALWAYS_EAGER = True
-CELERYD_LOG_FILE = None
-CELERY_REDIRECT_STDOUTS = True
-CELERYD_LOG_LEVEL = 1
 
 # Haystack Search Backend Configuration. To enable,
 # first install the following:
@@ -590,6 +581,8 @@ LOGGING = {
             "handlers": ["console"], "level": "INFO", },
         "pycsw": {
             "handlers": ["console"], "level": "INFO", },
+        "oseoserver": {
+            "handlers": ["console"], "level": "INFO", },
         "gfdrr_det": {
             "handlers": ["console"], "level": "INFO", },
     },
@@ -614,9 +607,97 @@ REST_FRAMEWORK = {
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
 }
 
+CELERY_BROKER_URL = "amqp://{user}:{password}@{host}:{port}//".format(
+    user=get_environment_variable("RABBITMQ_USER", "guest"),
+    password=get_environment_variable("RABBITMQ_PASSWORD", "guest"),
+    host=get_environment_variable("RABBITMQ_HOST", "localhost"),
+    port=get_environment_variable("RABBITMQ_PORT", "5672"),
+)
+CELERY_TASK_IGNORE_RESULT = False
+CELERY_RESULT_BACKEND = "redis://{password}@{host}:{port}/{db}".format(
+    password=get_environment_variable("REDIS_PASSWORD", ""),
+    host=get_environment_variable("REDIS_HOST", "localhost"),
+    port=get_environment_variable("REDIS_PORT", "6379"),
+    db=get_environment_variable("REDIS_DB", "0"),
+)
+CELERY_TASK_RESULT_EXPIRES = 180000  # 5 hours
+CELERY_ACCEPT_CONTENT = ["json",]
+CELERY_WORKER_REDIRECT_STDOUTS = True
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+MAILQUEUE_CELERY = True
+SENDFILE_BACKEND = "sendfile.backends.simple"
+
+OSEOSERVER_PRODUCT_ORDER = {
+    "enabled": True,
+    "automatic_approval": True,
+    "item_processor": "gfdrr_det.orderprocessors.HeveOrderProcessor",
+    "item_availability_days": 5,
+    "notifications": {
+        "moderation": False,
+        "item_availability": False,
+        "batch_availability": "immediate",
+
+    }
+}
+
+OSEOSERVER_PROCESSING_OPTIONS = [
+    {
+        "name": "bbox",
+        "description": "Specify a region of interest for cropping the order "
+                       "item",
+    },
+    {
+        "name": "format",
+        "description": "Output format for the ordered item",
+        "choices": [
+            "shapefile",
+            "geopackage",
+        ],
+    },
+    {
+        "name": "exposureTaxonomicCategory",
+        "description": "Taxonomic categories for subsetting exposure layers",
+        "multiple_entries": True,
+    },
+]
+
+OSEOSERVER_ONLINE_DATA_ACCESS_OPTIONS = [
+    {
+        "protocol": "http",
+        "fee": 0,
+    }
+]
+
+OSEOSERVER_COLLECTIONS = [
+    {
+        "name": "exposure",
+        "catalogue_endpoint": None,  # FIXME - add a sensible value
+        "collection_identifier": "exposure",
+        "generation_frequency": "on-demand",
+        "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
+        "product_order": {
+            "enabled": True,
+            "options": [
+                "bbox",
+                "format",
+                "exposureTaxonomicCategory",
+            ],
+            "online_data_access_options": [
+                "http",
+            ],
+        }
+    }
+]
+
+
 # TODO: confirm category names as more data becomes available
 # TODO: Confirm mapping of exposure categories to ISO19115 topic categories
 HEV_E = {
+    "general": {
+        "downloads_dir": "/tmp/hev_e",
+        "downloads_name_pattern": "hev_e_{hash}.{format}"
+    },
     "EXPOSURES": {
         "category_mappings": {
             "buildings": {
