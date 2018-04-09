@@ -18,7 +18,7 @@ const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
 const {getMainViewStyle, getSearchLayerStyle, getBBOXStyle} = require('../utils/StyleUtils');
 const set = require('lodash/fp/set');
-const {get, head} = require('lodash');
+const {get, head, isEmpty} = require('lodash');
 const chroma = require('chroma-js');
 const {changeDrawingStatus, drawSupportReset} = require('../../MapStore2/web/client/actions/draw');
 const {CHANGE_MAP_VIEW} = require('../../MapStore2/web/client/actions/map');
@@ -512,7 +512,7 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
         }
-        if (!currentDetails && tmpDetailsBbox) {
+        if (!currentDetails && tmpDetailsBbox && !isEmpty(tmpDetailsBbox)) {
             return Rx.Observable.of(updateTmpDetailsBbox(null));
         }
 

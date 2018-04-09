@@ -10,24 +10,22 @@ const React = require('react');
 const PropTypes = require('prop-types');
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
-const {Grid, Row, Col, Form, FormGroup, FormControl} = require('react-bootstrap');
-
-// const {toggleControl} = require('../../MapStore2/web/client/actions/controls');
-// const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
-// const {head} = require('lodash');
-
-// const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
+const {Grid, Row, Col, Form, FormGroup, FormControl: FormControlB, InputGroup} = require('react-bootstrap');
 const ResizableModal = require('../../MapStore2/web/client/components/misc/ResizableModal');
 const localizeProps = require('../../MapStore2/web/client/components/misc/enhancers/localizedProps');
 const Filter = localizeProps('filterPlaceholder')(require('../../MapStore2/web/client/components/misc/Filter'));
+const FormControl = localizeProps('placeholder')(FormControlB);
 const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const emptyState = require('../../MapStore2/web/client/components/misc/enhancers/emptyState');
 const SideGrid = emptyState(({items=[]}) => items.length === 0, {glyph: 'download', title: <Message msgId="heve.noMatchedDownloads"/>})(require('../../MapStore2/web/client/components/misc/cardgrids/SideGrid'));
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
-const {removeDownload} = require('../actions/dataexploration');
+const {removeDownload, updateDownloadEmail} = require('../actions/dataexploration');
 const FilterPreview = require('../components/FilterPreview');
+const {downloadEmailSelector} = require('../selectors/dataexploration');
+
+const validateEmail = email => email && /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/.test(String(email).toLowerCase());
 
 class Download extends React.Component {
     static propTypes = {
@@ -36,7 +34,9 @@ class Download extends React.Component {
         downloads: PropTypes.array,
         onClose: PropTypes.func,
         onRemoveDownload: PropTypes.func,
-        restoreDownloads: PropTypes.array
+        restoreDownloads: PropTypes.array,
+        onUpdateEmail: PropTypes.func,
+        email: PropTypes.string
     };
 
     static defaultProps = {
@@ -49,7 +49,9 @@ class Download extends React.Component {
             label: 'geopackage'
         }],
         onClose: () => {},
-        onRemoveDownload: () => {}
+        onRemoveDownload: () => {},
+        onUpdateEmail: () => {},
+        email: ''
     };
 
     state = {};
@@ -92,6 +94,28 @@ class Download extends React.Component {
                                                     filterText
                                                 });
                                             }}/>
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col xs={12}>
+                                        <Form inline>
+                                            <FormGroup
+                                                validationState={validateEmail(this.props.email) ? 'success' : ''}
+                                                className="mapstore-filter"
+                                                style={{width: '100%'}}>
+                                                <InputGroup>
+                                                    <FormControl
+                                                        disabled={!this.props.downloads || this.props.downloads.length === 0}
+                                                        placeholder="heve.email"
+                                                        value={this.props.email}
+                                                        type="text"
+                                                        onChange={e => {
+                                                            this.props.onUpdateEmail(e.target.value);
+                                                        }}/>
+                                                    <InputGroup.Addon>@</InputGroup.Addon>
+                                                </InputGroup>
+                                            </FormGroup>
+                                        </Form>
                                     </Col>
                                 </Row>
                                 <Row>
@@ -224,18 +248,21 @@ class Download extends React.Component {
 const downloadSelector = createSelector([
     state => state.controls && state.controls.downloadData && state.controls.downloadData.enabled,
     state => state.dataexploration && state.dataexploration.downloads,
-    state => state.dataexploration && state.dataexploration.restoreDownloads
-], (enabled, downloads, restoreDownloads) => ({
+    state => state.dataexploration && state.dataexploration.restoreDownloads,
+    downloadEmailSelector
+], (enabled, downloads, restoreDownloads, email) => ({
     enabled,
     downloads,
-    restoreDownloads
+    restoreDownloads,
+    email
 }));
 
 const DownloadPlugin = connect(
     downloadSelector,
     {
         onClose: setControlProperty.bind(null, 'downloadData', 'enabled', false),
-        onRemoveDownload: removeDownload
+        onRemoveDownload: removeDownload,
+        onUpdateEmail: updateDownloadEmail
     }
 )(Download);
 
