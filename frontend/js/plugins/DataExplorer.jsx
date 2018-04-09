@@ -25,8 +25,8 @@ const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
 
 const getGroupInfo = filters => {
-    return filters && filters.categories
-    && filters.categories.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name, icon: group.icon}}), {})}), {}) || {};
+    return filters && filters.category
+    && filters.category.reduce((info, group) => ({...info, ...group.filters.reduce((sub, filt) => ({...sub, [filt.code.toLowerCase()]: {...filt, group: group.name, icon: group.icon}}), {})}), {}) || {};
 };
 
 const filterListSelector = createSelector([

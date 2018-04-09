@@ -27,8 +27,8 @@ class FilterList extends React.Component {
         enabled: false,
         onChange: () => {},
         filter: {},
-        type: 'categories',
-        typeOfAction: 'categories',
+        type: 'category',
+        typeOfAction: 'category',
         hasStyle: false
     };
 
