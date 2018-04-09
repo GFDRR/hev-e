@@ -108,7 +108,7 @@ class FilterPreview extends React.Component {
     }
 
     componentWillUpdate(newProps) {
-        if (newProps.download && !isEqual(this.props.download, newProps.download)) {
+        if (newProps.download && !isEqual(this.props.download, newProps.download) && newProps.download.bbox && newProps.download.bbox.type === 'filter') {
             this.setState({
                 bbox: {...newProps.download.bbox, _et_forceUpdate: true}
             });
@@ -174,13 +174,13 @@ class FilterPreview extends React.Component {
                     </Row>
                 </Grid>
                 <Grid fluid>
-                    {hasFilter && <Row>
+                    {hasFilter && this.state.bbox && <Row>
                         <br/>
                         <Col xs={12}>
                             <small><strong><Message msgId="heve.bbox"/></strong></small>
                         </Col>
                     </Row>}
-                    {hasFilter && <Row>
+                    {hasFilter && this.state.bbox && <Row>
                         <OlMap
                             {...this.props.mapProps}
                             bbox={this.state.bbox}>

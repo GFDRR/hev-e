@@ -24,7 +24,7 @@ const {changeDrawingStatus, drawSupportReset} = require('../../MapStore2/web/cli
 const {CHANGE_MAP_VIEW} = require('../../MapStore2/web/client/actions/map');
 const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUtils');
 const {CHANGE_DRAWING_STATUS} = require('../../MapStore2/web/client/actions/draw');
-
+const FilterUtils = require('../../MapStore2/web/client/utils/FilterUtils');
 const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
 
 const createBaseVectorLayer = name => ({
@@ -102,25 +102,56 @@ const selectAreaEpic = (action$, store) =>
                 );
             }
             // console.log(chroma.scale(['#89ff32', '#ff7132']).mode('lch').colors(7));
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/filters.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/filters.json').then(response => response.data))
                 .switchMap(responseData => {
-                    const category = [...responseData.category];
-                    const data = category.map(group => {
-                        if (group.colors) {
-                            const colors = chroma.scale([...group.colors]).mode('lch').colors(group.filters.length);
-                            return {...group, filters: group.filters.map((layer, idx) => {
-                                return {...layer, color: colors[idx]};
-                            }) };
-                        }
-                        return {...group};
-                    });
 
-                    const newTaxonomy = {...responseData.taxonomy, buildings: responseData.taxonomy.buildings.map(tax => ({...tax, styleChecked: responseData.taxonomy.buildings[0].style}))};
+                    const list = Object.keys(responseData.list).reduce((newList, key) => {
+                        return {
+                            ...newList,
+                            [key]: responseData.list[key].category && {
+                                category: responseData.list[key].category.map(group => {
+                                    if (group.colors_range) {
+                                        const colors = chroma.scale([...group.colors_range]).mode('lch').colors(group.filters.length);
+                                        return {...group, filters: group.filters.map((layer, idx) => {
+                                            return {...layer, color: colors[idx]};
+                                        }) };
+                                    }
+                                    return {...group};
+                                })
+                            } || {}
+                        };
+                    }, {});
+
+                    const detail = Object.keys(responseData.detail).reduce((newDetail, key) => {
+                        return {
+                            ...newDetail,
+                            [key]: {
+                                taxonomy: Object.keys(responseData.detail[key]).reduce((nowTaxonomy, type) => {
+                                    return {
+                                        ...nowTaxonomy,
+                                        [type]: responseData.detail[key][type].map(taxonomy => ({...taxonomy, styleChecked: responseData.detail[key][type][0] && responseData.detail[key][type][0].style || ''}))
+                                    };
+                                }, {})
+                            }
+                        };
+                    }, {});
+
+                    const filters = Object.keys(list).reduce((newFilters, key) => {
+                        const newList = {...list[key]};
+                        const newDetail = {...detail[key]};
+                        return {
+                            ...newFilters,
+                            [key]: {
+                                ...newList,
+                                ...newDetail
+                            }
+                        };
+                    }, {});
 
                     return Rx.Observable.concat(
                         Rx.Observable.of(
                             searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
-                            setFilter({exposures: {categories: [...data], taxonomy: {...newTaxonomy}}}),
+                            setFilter({...filters}),
                             updateNode('datasets_layer', 'layers', {visibility: false}),
                             updateNode('search_layer', 'layers', {
                                 visibility: true,
@@ -176,9 +207,9 @@ const updateFilterEpic = (action$, store) =>
         const filter = filterSelector(store.getState());
         const currentSection = currentSectionSelector(store.getState());
         const updatingFilter = {...filter} || {};
-        if (action.options.type === 'categories') {
+        if (action.options.type === 'category') {
             if (action.options.clear) {
-                const template = `${currentSection}.categories`;
+                const template = `${currentSection}.category`;
                 const currentUpdate = get(updatingFilter, template);
                 const clearedFilter = currentUpdate.map(group => ({...group, filters: group.filters.map(layer => ({...layer, checked: false}))}));
                 const newFilter = set(template, clearedFilter, updatingFilter);
@@ -186,7 +217,7 @@ const updateFilterEpic = (action$, store) =>
                     setFilter(newFilter)
                 );
             }
-            const template = `${currentSection}.categories[${action.options.categoryId}].filters[${action.options.datasetId}]`;
+            const template = `${currentSection}.category[${action.options.categoryId}].filters[${action.options.datasetId}]`;
             const currentUpdate = get(updatingFilter, template);
             const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
             return Rx.Observable.of(
@@ -221,11 +252,39 @@ const updateFilterEpic = (action$, store) =>
                 ...(styleObj.style ? {tmpStyle: action.options.clear ? '' : styleObj.style} : {})
             })) : Rx.Observable.empty();
 
+            // update type buildings based on selection
+            const filterFields = newTaxonomy.buildings.reduce((plainGroup, group) => {
+                return [...plainGroup, ...group.filters.filter(filt => filt.checked).map(filt => ({
+                    groupId: 1,
+                    attribute: 'parsed_taxonomy',
+                    operator: 'LIKE',
+                    type: 'string',
+                    value: group.code + ':' + filt.code
+                }))];
+            }, []);
+
+            const filterObj = {
+                filterFields,
+                groupFields: [
+                    {
+                        id: 1,
+                        index: 0,
+                        logic: 'OR'
+                    }
+                ]
+            };
+
+            const CQL_FILTER = FilterUtils.isFilterValid(filterObj) && FilterUtils.toCQLFilter(filterObj);
+            const cqlFilterObj = CQL_FILTER ? {CQL_FILTER} : {};
+
             return newTaxonomy ? Rx.Observable.concat(
                 Rx.Observable.of(
                     updateNode('heve_tmp_layer', 'layers', {
                         ...styleObj,
-                        taxonomy: newTaxonomy
+                        taxonomy: newTaxonomy,
+                        params: {
+                            ...cqlFilterObj
+                        }
                     })
                 ),
                 updateTocLayer
@@ -267,17 +326,32 @@ const defaultDetailsLayerParams = ({
     }
 });
 
-const closeDetailsStream = state => Rx.Observable.concat(
-    Rx.Observable.of(
-        updateNode('datasets_layer', 'layers', {visibility: false}),
-        setControlProperty('dataExplorer', 'enabled', true),
-        setControlProperty('compacttoc', 'hide', false),
-        removeLayer('heve_tmp_layer'),
-        updateDatails(),
-        detailsLoading(false)
-    ),
-    Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300)
-);
+const closeDetailsStream = (state, details) => {
+
+    const layers = layersSelector(state);
+    const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+    const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+    || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+
+    return Rx.Observable.concat(
+        // restore last visibility of toc layer
+        tocTmpLayer ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+            visibility: tocTmpLayer.lastVisibility,
+            lastVisibility: undefined
+        })) : Rx.Observable.empty(),
+
+        Rx.Observable.of(
+            updateNode('datasets_layer', 'layers', {visibility: false}),
+            setControlProperty('dataExplorer', 'enabled', true),
+            setControlProperty('compacttoc', 'hide', false),
+            removeLayer('heve_tmp_layer'),
+            updateDatails(),
+            detailsLoading(false)
+        ),
+        Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300)
+    );
+};
+
 
 const updateDetailsStream = (state, item, actionBbox) =>
         Rx.Observable.concat(
@@ -296,9 +370,15 @@ const updateDetailsStream = (state, item, actionBbox) =>
                 const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
 
                 const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
-                const styleObj = tocTmpLayer && tocTmpLayer.tmpStyle ? {style: tocTmpLayer.tmpStyle} : taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
+                const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
 
                 return Rx.Observable.concat(
+                    // hide toc layer
+                    tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                        lastVisibility: tocTmpLayer.visibility,
+                        visibility: false
+                    })) : Rx.Observable.empty(),
+
                     Rx.Observable.of(
                         updateNode('datasets_layer', 'layers', {visibility: false}),
                         setControlProperty('dataExplorer', 'enabled', true),
@@ -413,12 +493,17 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         if (currentDetails) {
 
             const drawFaetures = drawFeaturesSelector(store.getState());
-            const faeturesBbox = drawFaetures && drawFaetures[0] && { bounds: {
-                minx: drawFaetures[0].extent[0],
-                miny: drawFaetures[0].extent[1],
-                maxx: drawFaetures[0].extent[2],
-                maxy: drawFaetures[0].extent[3]
-            }, crs: drawFaetures[0].projection} || action.bbox || null;
+            const faeturesBbox = drawFaetures && drawFaetures[0] && {
+                type: 'filter',
+                bounds: {
+                    minx: drawFaetures[0].extent[0],
+                    miny: drawFaetures[0].extent[1],
+                    maxx: drawFaetures[0].extent[2],
+                    maxy: drawFaetures[0].extent[3]
+                },
+                crs: drawFaetures[0].projection
+            } || {...action.bbox, type: 'view'} || null;
+
             const bbox = faeturesBbox && faeturesBbox.bounds && CoordinatesUtils.reprojectBbox(faeturesBbox.bounds, faeturesBbox.crs, 'EPSG:4326');
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
