@@ -49,7 +49,8 @@
             "appliedFilters": "Filters applied",
             "noAppliedFilters": "No filters applied",
             "updateDownload": "Updated layer in download list",
-            "bbox": "Area"
+            "bbox": "Area",
+            "email": "Email to get a notification when download are ready"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

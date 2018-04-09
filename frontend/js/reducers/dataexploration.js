@@ -18,7 +18,8 @@ const {
     ADD_DOWNLOAD,
     REMOVE_DOWNLOAD,
     DETAILS_LOADING,
-    UPDATE_TMP_DETAILS_BBOX
+    UPDATE_TMP_DETAILS_BBOX,
+    UPDATE_DOWNLOAD_EMAIL
 } = require('../actions/dataexploration');
 
 const url = require('url');
@@ -69,6 +70,8 @@ function dataexploration(state = {
                 return {...state, restoreDownloads: null, downloads: [...state.restoreDownloads]};
             }
             return {...state, restoreDownloads: state.downloads ? [...state.downloads] : null, downloads: !state.downloads || action.downloadId === 'all' ? [] : state.downloads.filter(download => download.downloadId !== action.downloadId)};
+        case UPDATE_DOWNLOAD_EMAIL:
+            return {...state, downloadEmail: action.email};
         default:
             return state;
     }

@@ -20,7 +20,6 @@ const parseUrl = url => {
 const Api = {
     textSearch: function(url, page, startPosition, maxRecords, text, sortBy, groupInfo, bboxFilter) {
         return new Promise((resolve) => {
-
             const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
             const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
             const categoryObj = hasFilter.length > 0 ? hasFilter.map((cat) => 'category=' + cat).join('&') : '';

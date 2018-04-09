@@ -85,7 +85,7 @@ class DataDetails extends React.Component {
                 [group.name]: data[filter.name.toLowerCase()] ? data[filter.name.toLowerCase()] : 0,
                 name: filter.name,
                 style: {
-                    fill: group.style === group.styleChecked ? filter.color : '#21bab0'
+                    fill: group.style === group.styleChecked ? filter.color : '#333333' // '#21bab0'
                 }
             };
         }) || [];
@@ -179,7 +179,7 @@ class DataDetails extends React.Component {
                                                                     series={{dataKey: group.name, isAnimationActive: false}}
                                                                     xAxis={{dataKey: 'name', tick: <CustomizedAxisTick/>, interval: 0}}
                                                                     width={wChart - 40}
-                                                                    colorGenerator={() => ['#21bab0']}/>
+                                                                    colorGenerator={() => ['#333333']}/>
                                                             }
                                                         </ContainerDimensions>
                                                     </Col>

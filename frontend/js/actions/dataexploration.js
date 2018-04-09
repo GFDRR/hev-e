@@ -22,6 +22,7 @@ const ADD_DOWNLOAD = 'DATAEXPLORATION:ADD_DOWNLOAD';
 const REMOVE_DOWNLOAD = 'DATAEXPLORATION:REMOVE_DOWNLOAD';
 const DETAILS_LOADING = 'DATAEXPLORATION:DETAILS_LOADING';
 const UPDATE_TMP_DETAILS_BBOX = 'DATAEXPLORATION:UPDATE_TMP_DETAILS_BBOX';
+const UPDATE_DOWNLOAD_EMAIL = 'DATAEXPLORATION:UPDATE_DOWNLOAD_EMAIL';
 
 function setFilter(filter) {
     return {
@@ -136,6 +137,13 @@ function updateTmpDetailsBbox(bbox) {
     };
 }
 
+function updateDownloadEmail(email) {
+    return {
+        type: UPDATE_DOWNLOAD_EMAIL,
+        email
+    };
+}
+
 
 module.exports = {
     UPDATE_FILTER,
@@ -151,6 +159,7 @@ module.exports = {
     TOGGLE_SPATIAL_FILTER,
     UPDATE_BBOX_FILTER,
     UPDATE_TMP_DETAILS_BBOX,
+    UPDATE_DOWNLOAD_EMAIL,
     ADD_DOWNLOAD,
     REMOVE_DOWNLOAD,
     DETAILS_LOADING,
@@ -169,5 +178,6 @@ module.exports = {
     addDownload,
     removeDownload,
     detailsLoading,
-    updateTmpDetailsBbox
+    updateTmpDetailsBbox,
+    updateDownloadEmail
 };
