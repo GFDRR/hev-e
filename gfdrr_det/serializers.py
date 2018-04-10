@@ -197,6 +197,7 @@ class OrderSerializer(serializers.BaseSerializer):
             ),
             "status": instance.status,
             "additional_status_info": instance.additional_status_info,
+            "created_on": instance.created_on,
             "order_items": serialized_items,
         }
 
@@ -220,7 +221,11 @@ class OrderSerializer(serializers.BaseSerializer):
             template_order_items.append(template_item)
         request_template = get_template("gfdrr_det/download_request.xml")
         request_xml = request_template.render(
-            context={"order_items": template_order_items})
+            context={
+                "notification_email": validated_data.get("notification_email"),
+                "order_items": template_order_items
+            }
+        )
         oseo_request = oseo.CreateFromDocument(request_xml)
         user = validated_data.get("user")
         oseo_response, order = submit(oseo_request, user)
@@ -267,7 +272,9 @@ class OrderSerializer(serializers.BaseSerializer):
                     }
             else:
                 parsed_bbox = None
-            taxonomic_categories = item.get("taxonomic_categories")
+            cats = item.get("taxonomic_categories")
+            taxonomic_categories = [
+                c.lower() for c in cats.split(",")] if cats else cats
             order_item = {
                 "layer": layer,
                 "format": format_,
@@ -275,9 +282,13 @@ class OrderSerializer(serializers.BaseSerializer):
                 "taxonomic_categories": taxonomic_categories
             }
             order_items.append(order_item)
-        return {
+        notification_email = data.get("notification_email")
+        result = {
             "order_items": order_items
         }
+        if notification_email is not None:
+            result["notification_email"] = notification_email
+        return result
 
 
 def parse_bbox(bbox_str):

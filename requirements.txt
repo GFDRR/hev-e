@@ -23,5 +23,5 @@ SQLAlchemy==1.1.14
 Shapely>=1.5.13,<1.6.dev0
 six==1.10.0
 --editable git://github.com/geosolutions-it/geonode.git@gfdrr-det#egg=geonode
---editable git://github.com/pyoseo/django-oseoserver@v2.0.0-rc5#egg=oseoserver
+--editable git://github.com/pyoseo/django-oseoserver@master#egg=oseoserver
 

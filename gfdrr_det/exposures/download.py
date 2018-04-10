@@ -87,7 +87,12 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
     if bbox_wkt is not None:
         cql_conditions.append("INTERSECTS(geom, {})".format(bbox_wkt))
     if taxonomic_categories is not None:
-        cql_conditions.append("")
+        taxonomy_conditions = []
+        for cat in taxonomic_categories:
+            taxonomy_conditions.append(
+                "parsed_taxonomy ILIKE '%{}%'".format(cat))
+        taxonomy_condition = "({})".format(" OR ".join(taxonomy_conditions))
+        cql_conditions.append(taxonomy_condition)
     if len(cql_conditions) > 0:
         params["cql_filter"] = " AND ".join(cql_conditions)
     logger.debug("request params: {}".format(params))
@@ -96,7 +101,6 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
         params=params,
         stream=True
     )
-    logger.debug("response headers: {}".format(response.headers))
     response.raise_for_status()
     if "xml" in response.headers.get("Content-Type"):  # there was an error
         raise RuntimeError("Could not get shapefile from "
