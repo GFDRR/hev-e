@@ -240,6 +240,14 @@ LOGGING = {
         "pycsw": {
             "handlers": ["console"], "level": "ERROR", },
         "gfdrr_det": {
-            "handlers": ["console"], "level": "INFO", },
+            "handlers": ["console"], "level": "DEBUG", },
+        "celery": {
+            "handlers": ["console"], "level": "WARNING", },
+        "oseoserver": {
+            "handlers": ["console"], "level": "DEBUG", },
+        "oseoserver.tasks": {
+            "handlers": ["console"], "level": "DEBUG", },
+        "mailqueue": {
+            "handlers": ["console"], "level": "DEBUG", },
     },
 }

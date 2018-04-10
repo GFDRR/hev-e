@@ -1,0 +1,46 @@
+<Submit
+        xmlns="http://www.opengis.net/oseo/1.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:sps="http://www.opengis.net/sps/2.0"
+        xmlns:swe="http://www.opengis.net/swe/2.0"
+        xmlns:gml="http://www.opengis.net/gml"
+        xsi:schemaLocation="http://www.opengis.net/oseo/1.0 http://schemas.opengis.net/oseo/1.0/oseo.xsd"
+        service="OS"
+        version="1.0.0"
+>
+    <orderSpecification>
+        <deliveryOptions>
+            <onlineDataAccess><protocol>http</protocol></onlineDataAccess>
+        </deliveryOptions>
+        <orderType>PRODUCT_ORDER</orderType>
+        {% for item in order_items %}
+            <orderItem>
+                <itemId>{{ item.id }}</itemId>
+                <option>
+                    <ParameterData>
+                        <encoding>XMLEncoding</encoding>
+                        <values>
+                            <format>{{ item.options.format }}</format>
+                            {% if item.options.bbox %}
+                                <bbox>
+                                    <gml:boundingBox srsName="urn:x-ogc:def:crs:EPSG:6.11:4326">
+                                        <gml:lowerCorner>{{ item.options.bbox.y0 }} {{ item.options.bbox.x0 }}</gml:lowerCorner>
+                                        <gml:upperCorner>{{ item.options.bbox.y1 }} {{ item.options.bbox.x1 }}</gml:upperCorner>
+                                    </gml:boundingBox>
+                                </bbox>
+                            {% endif %}
+                            {% for category in item.options.taxonomic_categories %}
+                                <exposureTaxonomicCategory>{{ category }}</exposureTaxonomicCategory>
+                            {% endfor %}
+                        </values>
+                    </ParameterData>
+                </option>
+                <productId>
+                    <identifier>{{ item.product_id }}</identifier>
+                    <collectionId>{{ item.collection }}</collectionId>
+                </productId>
+            </orderItem>
+        {% endfor %}
+    </orderSpecification>
+    <statusNotification>None</statusNotification>
+</Submit>

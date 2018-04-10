@@ -9,13 +9,10 @@
 #
 #########################################################################
 
-import os
+from __future__ import absolute_import
+
 from celery import Celery
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gfdrr_det.settings')
-
 app = Celery('gfdrr_det')
-
-# Using a string here means the worker will not have to
-# pickle the object when using Windows.
-app.config_from_object('django.conf:settings')
+app.config_from_object('django.conf:settings', namespace="CELERY")
+app.autodiscover_tasks()

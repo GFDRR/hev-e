@@ -46,6 +46,16 @@ router.register(
     exposure_views.ExposureLayerViewSet,
     base_name="exposures"
 )
+router.register(
+    r"order",
+    views.OrderViewSet,
+    base_name="order"
+)
+router.register(
+    r"orderitems",
+    views.OrderItemViewSet,
+    base_name="orderitem"
+)
 schema_view = get_schema_view("HEV-E API")
 
 API_PREFIX = r"^gfdrr_det/api/v(?P<version>\d+)/"
@@ -59,5 +69,10 @@ urlpatterns = [
         name='home'
     ),
     url(API_PREFIX, include(router.urls)),
+    url(
+        "{}download/".format(API_PREFIX) + "(?P<file_hash>.{32})/$",
+        "gfdrr_det.views.retrieve_download",
+        name="retrieve_download"
+    ),
     url("{}schema/$".format(API_PREFIX), schema_view),
 ] + urlpatterns

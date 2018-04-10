@@ -22,11 +22,11 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework_gis.pagination import GeoJsonPagination
 
+from .. import utils as general_utils
+from ..constants import DatasetType
 from . import filters
 from . import serializers
 from . import utils
-from ..constants import DatasetType
-from . import renderers
 
 
 # TODO: Add permissions
@@ -54,7 +54,6 @@ class ExposureLayerViewSet(FilterMixin, viewsets.ReadOnlyModelViewSet):
     renderer_classes = (
         JSONRenderer,
         BrowsableAPIRenderer,
-        renderers.GeoPackageRenderer,
     )
 
     def get_serializer_class(self):
@@ -75,14 +74,7 @@ class ExposureLayerViewSet(FilterMixin, viewsets.ReadOnlyModelViewSet):
                 "taxonomic_categories"]["counts"]
         }
         response_headers = None
-        if request.accepted_renderer.format == "gpkg":
-            serializer = serializers.ExposureLayerGeoPackageSerializer(
-                layer, context=serializer_context)
-            response_headers = {
-                "Content-Disposition": "attachment; filename={}".format(
-                    serializer.data["path"].name)
-            }
-        elif bbox_string is None:
+        if bbox_string is None:
             serializer = self.get_serializer_class()(
                 layer, context=serializer_context)
         else:
@@ -92,7 +84,8 @@ class ExposureLayerViewSet(FilterMixin, viewsets.ReadOnlyModelViewSet):
                     db_cursor,
                     layer.name,
                     layer.hevedetails.details["taxonomy_source"],
-                    bbox_ewkt=utils.get_ewkt_from_bbox(*bbox, srid=4326)
+                    bbox_ewkt=general_utils.get_ewkt_from_bbox(
+                        *bbox, srid=4326)
                 )
             serializer_context["taxonomic_counts"] = taxonomic_counts
             serializer = self.get_serializer_class()(

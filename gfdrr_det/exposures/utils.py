@@ -11,54 +11,11 @@
 
 from collections import namedtuple
 import re
-from decimal import Decimal
 
 from django.conf import settings
 from django.db import connections
 import shlex
 import subprocess
-
-
-def get_ewkt_from_geonode_bbox(geonode_bbox):
-    """Return an EWKT representation from a geonode layer bbox
-
-    This function is suitable for translating between geonode layer's ``bbox``
-    attribute and EWKT.
-
-    """
-
-    return get_ewkt_from_bbox(
-        x0=geonode_bbox[0],
-        y0=geonode_bbox[2],
-        x1=geonode_bbox[1],
-        y1=geonode_bbox[3],
-        srid=geonode_bbox[4].split(":")[-1]
-    )
-
-
-def get_ewkt_from_bbox(x0, y0, x1, y1, srid=4326):
-    return (
-        "SRID={srid};"
-        "POLYGON(("
-        "{x0} {y0}, "
-        "{x0} {y1}, "
-        "{x1} {y1}, "
-        "{x1} {y0}, "
-        "{x0} {y0}"
-        "))".format(srid=srid, x0=x0, y0=y0, x1=x1, y1=y1))
-
-
-def get_geonode_bbox_from_ewkt(ewkt):
-    srid = ewkt.replace("SRID=", "").partition(";")[0]
-    coords = ewkt.partition(
-        "((")[-1].replace("))", "").replace(",", "").split()
-    return [
-        Decimal(coords[0]),  # x0
-        Decimal(coords[4]),  # x1
-        Decimal(coords[1]),  # y0
-        Decimal(coords[3]),  # y1
-        "EPSG:{}".format(srid)
-    ]
 
 
 def execute_taxonomic_counts_query(db_cursor, qualified_layer_name):
@@ -160,28 +117,6 @@ def calculate_taxonomic_counts(db_cursor, layer_name, taxonomy_source,
     return result
 
 
-def get_bbox_for_filename(bbox, coord_separator="_"):
-    x0, x1, y0, y1 = bbox
-    coords = [
-        "{0}{1:3.4f}".format("E" if x0 < 0 else "W", abs(x0)),
-        "{0}{1:3.4f}".format("S" if y0 < 0 else "N", abs(y0)),
-        "{0}{1:3.4f}".format("E" if x1 < 0 else "W", abs(x1)),
-        "{0}{1:3.4f}".format("S" if y1 < 0 else "N", abs(y1)),
-    ]
-    return coord_separator.join(coords)
-
-
-def generate_geopackage_download_name(layer_name, bbox=None):
-    if bbox is None:
-        result = "{}.gpkg".format(layer_name)
-    else:
-        result = "{name}_{bbox}.gpkg".format(
-            name=layer_name,
-            bbox=get_bbox_for_filename(bbox)
-        )
-    return result
-
-
 def prepare_layer_geopackage_download(qualified_layer_name, target_path,
                                       bbox_ewkt=None, geom_column="geom"):
     """Generates a GeoPackage file from one of the database layers"""
@@ -212,3 +147,4 @@ def prepare_layer_geopackage_download(qualified_layer_name, target_path,
     )
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
+

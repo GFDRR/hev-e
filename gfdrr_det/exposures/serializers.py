@@ -90,18 +90,3 @@ class ExposureLayerSerializer(ExposureLayerListSerializer):
             "counts",
         )
 
-
-class ExposureLayerGeoPackageSerializer(serializers.BaseSerializer):
-
-    def to_representation(self, instance):
-        bbox = self.context.get("bbox")
-        bbox_ewkt = utils.get_ewkt_from_bbox(*bbox) if bbox else None
-        file_name = utils.generate_geopackage_download_name(
-            instance.name, bbox=bbox)
-        gpkg_path = Path(mkdtemp()) / file_name
-        qualified_layer_name = "exposures.{}".format(instance.name)
-        return_code, stdout, stderr = utils.prepare_layer_geopackage_download(
-            qualified_layer_name, gpkg_path, bbox_ewkt=bbox_ewkt)
-        if return_code != 0:
-            raise RuntimeError("Could not generate geopackage")
-        return {"path": gpkg_path}
