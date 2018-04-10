@@ -76,11 +76,10 @@ class HeveOrderProcessor(object):
         """Perform some batch-related operations"""
         hash_contents = []
         for item_info in sequential_items:
-            if item_info["options"].get("format") == "geopackage":
-                hash_contents += [
-                    item_info["identifier"],
-                    utils.get_dict_str(item_info["options"])
-                ]
+            hash_contents += [
+                item_info["identifier"],
+                utils.get_dict_str(item_info["options"])
+            ]
         name_hash = hashlib.md5("".join(sorted(hash_contents))).hexdigest()
         target_dir = Path(settings.HEV_E["general"]["downloads_dir"])
         if not target_dir.is_dir():

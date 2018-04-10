@@ -9,6 +9,9 @@
         version="1.0.0"
 >
     <orderSpecification>
+        {% if notification_email %}
+            <orderRemark>notification_email:{{ notification_email }}</orderRemark>
+        {% endif %}
         <deliveryOptions>
             <onlineDataAccess><protocol>http</protocol></onlineDataAccess>
         </deliveryOptions>
