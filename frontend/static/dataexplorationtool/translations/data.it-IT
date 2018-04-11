@@ -40,7 +40,8 @@
             "removeAll": "Rimuovi tutti",
             "shapefile": "ESRI Shapefile",
             "geopackage": "GeoPackage",
-            "download": "Scarica dati",
+            "download": "Downloads",
+            "order": "Ordini",
             "removeDownload": "Rimuovi dalla lista",
             "restoreLastChanges": "Ripristina l'ultimo dato cancellato",
             "collectedData": "Mostra la lista dei download",
@@ -50,7 +51,24 @@
             "noAppliedFilters": "Nessun filtro applicato",
             "updateDownload": "Aggiorna layer nella lista di download",
             "bbox": "Area",
-            "email": "Email per ricevere notifica di download"
+            "email": "Email per ricevere notifica di download",
+            "single": "File file",
+            "package": "Package file",
+            "bRemove": "Rimuovi",
+            "bDownload": "Download",
+            "textOrderPlaceholder": "Filtra status, nome o formato",
+            "failedOrder": "Link di download non disponibile",
+            "invalidEmailA": "Il formato della email sembra invalido",
+            "invalidEmailB": "Puoi chiudere e aggiornare la email o cliccare su Download per iniziare il processo di download con la seguente email:",
+
+            "orederCreate": "Ordine creato il",
+            "emailNotification": "Email",
+            "fileName": "file",
+            "format": "formato",
+            "createdOn": "creato il",
+            "expiresOn": "scade il",
+            "bboxOrder": "bbox",
+            "filterOrder": "filtri"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

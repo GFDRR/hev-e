@@ -25,7 +25,33 @@
     }
     border-bottom: 1px solid @ms2-color-shade-lighter;
 }
+
 .et-download-modal {
+
+    .loader-container {
+        display: flex;
+        height: 100%;
+        > div:first-child {
+            width: 128px !important;
+            height: 128px !important;
+            padding: 0 !important;
+            margin: auto !important;
+        }
+    }
+    
+    .modal-header {
+        margin-bottom: 0;
+        background-color: @ms2-et-color-bg;
+        
+    }
+    
+
+    .nav  {
+        background-color: @ms2-et-color-bg;
+        li.disabled {
+            opacity: 0.5;
+        }
+    }
     
     .modal-fixed {
         z-index: 3100;
@@ -49,7 +75,25 @@
             overflow-y: auto;
         }
     }
-    
+
+    .et-list-item {
+        display: flex;
+        align-items: center;
+        > div:first-child {
+            flex: 1;
+        }
+        > div:last-child {
+            padding: 0 8px;
+        }
+    }
+}
+
+.et-download-modal-alert {
+    .modal-header {
+        margin-bottom: 0;
+        background-color: @ms2-color-background;
+        
+    }
 }
 
 .ms-keyboard-focus {

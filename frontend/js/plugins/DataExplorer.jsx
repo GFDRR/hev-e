@@ -12,8 +12,8 @@ const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
-const {showDatails, updateFilter, showFilter, setSortType, showRelatedData, addDownload} = require('../actions/dataexploration');
-const {currentDetailsSelector/*, catalogURLSelector*/, sortSelector, showRelatedDataSelector, bboxFilterStringSelector, tmpDetailsBboxSelector} = require('../selectors/dataexploration');
+const {showDatails, updateFilter, showFilter, setSortType, showRelatedData, addDownload, updateCurrentDataset} = require('../actions/dataexploration');
+const {datasetSelector, currentDatasetSelector, currentDetailsSelector, sortSelector, showRelatedDataSelector, bboxFilterStringSelector, tmpDetailsBboxSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const DataCatalog = require('../components/DataCatalog');
 const ContainerDimensions = require('react-container-dimensions').default;
@@ -31,10 +31,10 @@ const getGroupInfo = filters => {
 
 const filterListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
-    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    state => state.dataexploration && state.dataexploration.currentDataset || 'exposures',
     state => state.dataexploration && state.dataexploration.filter && state.dataexploration.filter.show || false
-], (filter, currentSection, enabled) => ({
-    filter: filter[currentSection] || {},
+], (filter, dataset, enabled) => ({
+    filter: filter[dataset] || {},
     enabled
 }));
 
@@ -48,12 +48,12 @@ const FilterList = connect(
 
 const filterTaxonomyListSelector = createSelector([
     state => state.dataexploration && state.dataexploration.filter,
-    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    state => state.dataexploration && state.dataexploration.currentDataset || 'exposures',
     layersSelector
-], (filter, currentSection, layers) => {
+], (filter, dataset, layers) => {
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     return {
-        filter: tmpLayer && tmpLayer.taxonomy || filter[currentSection] && filter[currentSection].taxonomy || {}
+        filter: tmpLayer && tmpLayer.taxonomy || filter[dataset] && filter[dataset].taxonomy || {}
     };
 });
 
@@ -85,22 +85,24 @@ const dataDetailsSelector = createSelector([
     sortSelector,
     showRelatedDataSelector,
     state => state.dataexploration && state.dataexploration.filter,
-    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    currentDatasetSelector,
     layersSelector,
     state => state.dataexploration && state.dataexploration.downloads,
     tmpDetailsBboxSelector,
     state => state.dataexploration && state.dataexploration.detailsLoading
-], (currentDetails, sortBy, showData, filters, currentSection, layers, downloads, bbox, loading) => {
+], (currentDetails, sortBy, showData, filters, currentDataset, layers, downloads, bbox, loading) => {
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     return {
         currentDetails,
         showRelatedData: showData,
         layers: layers.filter(layer => layer.group === 'toc_layers'),
-        currentTaxonomy: tmpLayer && tmpLayer.taxonomy || filters[currentSection] && filters[currentSection].taxonomy || {},
-        groupInfo: getGroupInfo(filters[currentSection]),
+        currentTaxonomy: tmpLayer && tmpLayer.taxonomy || filters[currentDataset] && filters[currentDataset].taxonomy || {},
+        groupInfo: getGroupInfo(filters[currentDataset]),
         downloads,
         bbox: bbox || {},
-        loading
+        loading,
+        currentDataset,
+        availableFormats: filters[currentDataset] && filters[currentDataset].format || {}
     };
 });
 
@@ -134,7 +136,10 @@ class DataExplorerComponent extends React.Component {
         onAddLayer: PropTypes.func,
         layers: PropTypes.array,
         bboxFilter: PropTypes.string,
-        onRemove: PropTypes.func
+        onRemove: PropTypes.func,
+        dataset: PropTypes.array,
+        onSelectDataset: PropTypes.func,
+        currentDataset: PropTypes.string
     };
 
     static defaultProps = {
@@ -151,7 +156,10 @@ class DataExplorerComponent extends React.Component {
         groupInfo: {},
         onAddLayer: () => {},
         layers: [],
-        onRemove: () => {}
+        onRemove: () => {},
+        dataset: [],
+        onSelectDataset: () => {},
+        currentDataset: ''
     };
 
     render() {
@@ -175,10 +183,13 @@ class DataExplorerComponent extends React.Component {
                         header={
                             <Row>
                                 <Col xs={12}>
-                                    <Nav bsStyle="tabs" activeKey="exposures" justified>
-                                        <NavItem eventKey="hazards" ><Message msgId="heve.hazards"/></NavItem>
-                                        <NavItem eventKey="exposures" ><Message msgId="heve.exposures"/></NavItem>
-                                        <NavItem eventKey="vulnerabilities" ><Message msgId="heve.vulnerabilities"/></NavItem>
+                                    <Nav bsStyle="tabs" activeKey={this.props.currentDataset} justified>
+                                        {this.props.dataset.map(item => (
+                                        <NavItem
+                                            eventKey={item}
+                                            onClick={() => this.props.onSelectDataset('exposures' /*item*/)}>
+                                            <Message msgId={'heve.' + item}/>
+                                        </NavItem>))}
                                     </Nav>
                                 </Col>
                             </Row>
@@ -208,22 +219,23 @@ class DataExplorerComponent extends React.Component {
 const dataExplorerSelector = createSelector([
     state => state.controls && state.controls.dataExplorer.enabled,
     currentDetailsSelector,
-    // catalogURLSelector,
     sortSelector,
     showRelatedDataSelector,
     state => state.dataexploration && state.dataexploration.filter,
-    state => state.dataexploration && state.dataexploration.currentSection || 'exposures',
+    currentDatasetSelector,
     layersSelector,
-    bboxFilterStringSelector
-], (open, currentDetails, /*catalogURL,*/ sortBy, showData, filters, currentSection, layers, bboxFilter) => ({
+    bboxFilterStringSelector,
+    datasetSelector
+], (open, currentDetails, sortBy, showData, filters, currentDataset, layers, bboxFilter, dataset) => ({
         open,
         currentDetails,
-        // catalogURL,
         sortBy,
         showRelatedData: showData,
         layers: layers.filter(layer => layer.group === 'toc_layers'),
         bboxFilter,
-        groupInfo: getGroupInfo(filters[currentSection])
+        groupInfo: getGroupInfo(filters[currentDataset]),
+        dataset,
+        currentDataset
 }));
 
 const DataExplorer = connect(
@@ -235,7 +247,8 @@ const DataExplorer = connect(
         onZoomTo: zoomToExtent,
         onShowRelatedData: showRelatedData,
         onAddLayer: addLayer,
-        onRemove: removeLayer
+        onRemove: removeLayer,
+        onSelectDataset: updateCurrentDataset
     }
 )(DataExplorerComponent);
 

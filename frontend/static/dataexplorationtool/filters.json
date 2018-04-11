@@ -1,6 +1,25 @@
 {
+    "dataset": [
+        "hazards",
+        "exposures",
+        "vulnerabilities"
+    ],
     "list": {
         "exposures": {
+            "format": {
+                "single": [
+                    {
+                        "name": "ESRI Shapefile",
+                        "code": "shapefile"
+                    }
+                ],
+                "package": [
+                    {
+                        "name": "GeoPackage",
+                        "code": "geopackage"
+                    }
+                ]
+            },
             "category": [
                 {
                     "name": "Buildings",

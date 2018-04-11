@@ -18,7 +18,8 @@ const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {SearchPlugin, epics, reducers} = require('../../MapStore2/web/client/plugins/Search');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
-const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
+const {openDownloads} = require('../actions/dataexploration');
+const {ordersSelector} = require('../selectors/dataexploration');
 const {isEqual} = require('lodash');
 
 class Search extends React.Component {
@@ -53,7 +54,8 @@ class BrandNavbar extends React.Component {
         brandImages: PropTypes.array,
         inverse: PropTypes.bool,
         onShowDownload: PropTypes.func,
-        downloads: PropTypes.array
+        downloads: PropTypes.array,
+        orders: PropTypes.array
     };
 
     static defaultProps = {
@@ -79,7 +81,8 @@ class BrandNavbar extends React.Component {
         ],
         inverse: true,
         onToggleDownload: () => {},
-        downloads: []
+        downloads: [],
+        orders: []
     };
 
     state = {
@@ -102,6 +105,7 @@ class BrandNavbar extends React.Component {
 
     render() {
         const inverseStr = this.props.inverse ? '-inverse' : '';
+        const downloadEnabled = this.props.downloads.length > 0 || this.props.orders.length > 0;
         return (
             <ContainerDimensions>
             {({width}) => (
@@ -120,9 +124,9 @@ class BrandNavbar extends React.Component {
                         </Navbar.Form>}
                         <Nav pullRight>
                             <NavItemT
-                                tooltipId={this.props.downloads.length > 0 ? 'heve.collectedData' : 'heve.noCollectedData'}
+                                tooltipId={downloadEnabled ? 'heve.collectedData' : 'heve.noCollectedData'}
                                 tooltipPosition="bottom"
-                                onClick={() => this.props.downloads.length > 0 ? this.props.onShowDownload() : null}>
+                                onClick={() => downloadEnabled ? this.props.onShowDownload() : null}>
                                     {this.state.className !== ' et-animation' && this.props.downloads.length > 0 && <div style={{
                                         position: 'absolute',
                                         right: 4,
@@ -137,7 +141,7 @@ class BrandNavbar extends React.Component {
                                         <span style={{margin: 'auto'}}>{this.props.downloads.length}</span>
                                     </div>}
                                 <Glyphicon
-                                    className={this.props.downloads.length > 0 ? 'text-hev-e-primary text-hev-e-primary-hover' + this.state.className : 'text-disabled'}
+                                    className={downloadEnabled ? 'text-hev-e-primary text-hev-e-primary-hover' + this.state.className : 'text-disabled'}
                                     glyph="download"/>
                             </NavItemT>
                             <NavItem href="#/about">
@@ -159,15 +163,17 @@ class BrandNavbar extends React.Component {
 }
 
 const brandNavbarSelector = createSelector([
-    state => state.dataexploration && state.dataexploration.downloads
-], (downloads) => ({
-    downloads
+    state => state.dataexploration && state.dataexploration.downloads,
+    ordersSelector
+], (downloads, orders) => ({
+    downloads,
+    orders
 }));
 
 const BrandNavbarPlugin = connect(
     brandNavbarSelector,
     {
-        onShowDownload: setControlProperty.bind(null, 'downloadData', 'enabled', true)
+        onShowDownload: openDownloads
     }
 )(BrandNavbar);
 
