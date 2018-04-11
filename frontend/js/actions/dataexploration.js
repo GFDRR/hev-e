@@ -12,7 +12,6 @@ const SELECT_AREA = 'DATAEXPLORATION:SELECT_AREA';
 const SHOW_DETAILS = 'DATAEXPLORATION:SHOW_DETAILS';
 const UPDATE_DETAILS = 'DATAEXPLORATION:UPDATE_DETAILS';
 const SHOW_FILTER = 'DATAEXPLORATION:SHOW_FILTER';
-const UPDATE_DATA_URL = 'DATAEXPLORATION:UPDATE_DATA_URL';
 const SET_SORT_TYPE = 'DATAEXPLORATION:SET_SORT_TYPE';
 const SHOW_RELATED_DATA = 'DATAEXPLORATION:SHOW_RELATED_DATA';
 const SORT_TOC_LAYERS = 'DATAEXPLORATION:SORT_TOC_LAYERS';
@@ -23,6 +22,17 @@ const REMOVE_DOWNLOAD = 'DATAEXPLORATION:REMOVE_DOWNLOAD';
 const DETAILS_LOADING = 'DATAEXPLORATION:DETAILS_LOADING';
 const UPDATE_TMP_DETAILS_BBOX = 'DATAEXPLORATION:UPDATE_TMP_DETAILS_BBOX';
 const UPDATE_DOWNLOAD_EMAIL = 'DATAEXPLORATION:UPDATE_DOWNLOAD_EMAIL';
+const SELECT_DOWNLOAD_FORMAT = 'DATAEXPLORATION:SELECT_DOWNLOAD_FORMAT';
+const SELECT_DOWNLOAD_TAB = 'DATAEXPLORATION:SELECT_DOWNLOAD_TAB';
+const DOWNLOAD_DATA = 'DATAEXPLORATION:DOWNLOAD_DATA';
+const ADD_ORDER = 'DATAEXPLORATION:ADD_ORDER';
+const OPEN_DOWNLOADS = 'DATAEXPLORATION:OPEN_DOWNLOADS';
+const CLOSE_DOWNLOADS = 'DATAEXPLORATION:CLOSE_DOWNLOADS';
+const UPDATE_ORDER = 'DATAEXPLORATION:UPDATE_ORDER';
+const ADD_DATASET_KEYS = 'DATAEXPLORATION:ADD_DATASET_KEYS';
+const UPDATE_CURRENT_DATASET = 'DATAEXPLORATION:UPDATE_CURRENT_DATASET';
+const REMOVE_ORDER = 'DATAEXPLORATION:REMOVE_ORDER';
+const ORDER_LOADING = 'DATAEXPLORATION:ORDER_LOADING';
 
 function setFilter(filter) {
     return {
@@ -42,13 +52,6 @@ function updateFilter(options) {
     return {
         type: UPDATE_FILTER,
         options
-    };
-}
-
-function updateDataURL(params) {
-    return {
-        type: UPDATE_DATA_URL,
-        params
     };
 }
 
@@ -144,6 +147,80 @@ function updateDownloadEmail(email) {
     };
 }
 
+function selectDownloadFormat(format) {
+    return {
+        type: SELECT_DOWNLOAD_FORMAT,
+        format
+    };
+}
+
+function selectDownloadTab(tab) {
+    return {
+        type: SELECT_DOWNLOAD_TAB,
+        tab
+    };
+}
+
+function downloadData(data) {
+    return {
+        type: DOWNLOAD_DATA,
+        data
+    };
+}
+
+function addOrder(order) {
+    return {
+        type: ADD_ORDER,
+        order
+    };
+}
+
+function removeOrder(orderId) {
+    return {
+        type: REMOVE_ORDER,
+        orderId
+    };
+}
+
+function updateOrder(order) {
+    return {
+        type: UPDATE_ORDER,
+        order
+    };
+}
+
+function openDownloads() {
+    return {
+        type: OPEN_DOWNLOADS
+    };
+}
+
+function closeDownloads() {
+    return {
+        type: CLOSE_DOWNLOADS
+    };
+}
+
+function addDatasetKeys(dataset) {
+    return {
+        type: ADD_DATASET_KEYS,
+        dataset
+    };
+}
+
+function updateCurrentDataset(currentDataset) {
+    return {
+        type: UPDATE_CURRENT_DATASET,
+        currentDataset
+    };
+}
+
+function orderLoading(loading) {
+    return {
+        type: ORDER_LOADING,
+        loading
+    };
+}
 
 module.exports = {
     UPDATE_FILTER,
@@ -152,7 +229,6 @@ module.exports = {
     UPDATE_DETAILS,
     SET_FILTER,
     SHOW_FILTER,
-    UPDATE_DATA_URL,
     SET_SORT_TYPE,
     SHOW_RELATED_DATA,
     SORT_TOC_LAYERS,
@@ -163,13 +239,23 @@ module.exports = {
     ADD_DOWNLOAD,
     REMOVE_DOWNLOAD,
     DETAILS_LOADING,
+    SELECT_DOWNLOAD_FORMAT,
+    SELECT_DOWNLOAD_TAB,
+    DOWNLOAD_DATA,
+    ADD_ORDER,
+    OPEN_DOWNLOADS,
+    CLOSE_DOWNLOADS,
+    UPDATE_ORDER,
+    ADD_DATASET_KEYS,
+    UPDATE_CURRENT_DATASET,
+    REMOVE_ORDER,
+    ORDER_LOADING,
     updateFilter,
     selectArea,
     showDatails,
     updateDatails,
     setFilter,
     showFilter,
-    updateDataURL,
     setSortType,
     showRelatedData,
     sortTocLayers,
@@ -179,5 +265,16 @@ module.exports = {
     removeDownload,
     detailsLoading,
     updateTmpDetailsBbox,
-    updateDownloadEmail
+    updateDownloadEmail,
+    selectDownloadFormat,
+    selectDownloadTab,
+    downloadData,
+    addOrder,
+    openDownloads,
+    closeDownloads,
+    updateOrder,
+    addDatasetKeys,
+    updateCurrentDataset,
+    removeOrder,
+    orderLoading
 };

@@ -50,7 +50,9 @@ class DataDetails extends React.Component {
         onAddDownload: PropTypes.func,
         downloads: PropTypes.array,
         bbox: PropTypes.object,
-        loading: PropTypes.bool
+        loading: PropTypes.bool,
+        currentDataset: PropTypes.string,
+        availableFormats: PropTypes.object
     };
 
     static defaultProps = {
@@ -73,10 +75,14 @@ class DataDetails extends React.Component {
         onAddDownload: () => {},
         downloads: [],
         bbox: {},
-        loading: false
+        loading: false,
+        currentDataset: 'exposures',
+        availableFormats: {}
     };
 
-    state = {};
+    state = {
+        showFilter: true
+    };
 
     getData(group, idx, data) {
         const hasFilter = this.hasFilter(group);
@@ -126,6 +132,7 @@ class DataDetails extends React.Component {
                                             item={{...this.props.currentDetails, ...taxonomyObj, icon: this.props.groupInfo[this.props.currentDetails.properties.category].icon}}
                                             layers={this.props.layers}
                                             downloads={this.props.downloads}
+                                            dataset={this.props.currentDataset}
                                             showDownload
                                             showFilter
                                             activeFilter={this.state.showFilter}
@@ -138,7 +145,8 @@ class DataDetails extends React.Component {
                                             onRemoveLayer={this.props.onRemove}
                                             onAddLayer={this.props.onAddLayer}
                                             onAddDownload={this.props.onAddDownload}
-                                            mapBbox={this.props.bbox}/>
+                                            mapBbox={this.props.bbox}
+                                            availableFormats={this.props.availableFormats}/>
                                     </Col>
                                 </Row>
                             </Grid>

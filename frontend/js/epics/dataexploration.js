@@ -9,8 +9,32 @@
 const Rx = require('rxjs');
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const {MAP_CONFIG_LOADED} = require('../../MapStore2/web/client/actions/config');
-const {SORT_TOC_LAYERS, SELECT_AREA, UPDATE_FILTER, SHOW_DETAILS, TOGGLE_SPATIAL_FILTER, selectArea, setFilter, updateBBOXFilter, updateDatails, updateTmpDetailsBbox, detailsLoading /*, updateDataURL*/} = require('../actions/dataexploration');
-const {filterSelector, currentSectionSelector, drawFeaturesSelector, currentDetailsSelector, bboxFilterSelector, tmpDetailsBboxSelector} = require('../selectors/dataexploration');
+
+const {
+    CLOSE_DOWNLOADS,
+    OPEN_DOWNLOADS,
+    DOWNLOAD_DATA,
+    SORT_TOC_LAYERS,
+    SELECT_AREA,
+    UPDATE_FILTER,
+    SHOW_DETAILS,
+    TOGGLE_SPATIAL_FILTER,
+    updateOrder,
+    addOrder,
+    selectArea,
+    setFilter,
+    updateBBOXFilter,
+    updateDatails,
+    updateTmpDetailsBbox,
+    detailsLoading,
+    addDatasetKeys,
+    updateCurrentDataset,
+    removeDownload,
+    selectDownloadTab,
+    orderLoading
+} = require('../actions/dataexploration');
+
+const {downloadFormatSelector, filterSelector, currentDatasetSelector, drawFeaturesSelector, currentDetailsSelector, bboxFilterSelector, tmpDetailsBboxSelector, downloadEmailSelector, ordersSelector} = require('../selectors/dataexploration');
 const {ADD_LAYER, addLayer, updateNode, sortNode, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require("../../MapStore2/web/client/selectors/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
@@ -18,7 +42,7 @@ const {zoomToExtent} = require('../../MapStore2/web/client/actions/map');
 const {TEXT_SEARCH_ITEM_SELECTED, TEXT_SEARCH_RESET, searchTextChanged} = require('../../MapStore2/web/client/actions/search');
 const {getMainViewStyle, getSearchLayerStyle, getBBOXStyle} = require('../utils/StyleUtils');
 const set = require('lodash/fp/set');
-const {get, head, isEmpty} = require('lodash');
+const {get, head, isEmpty, join} = require('lodash');
 const chroma = require('chroma-js');
 const {changeDrawingStatus, drawSupportReset} = require('../../MapStore2/web/client/actions/draw');
 const {CHANGE_MAP_VIEW} = require('../../MapStore2/web/client/actions/map');
@@ -105,7 +129,9 @@ const selectAreaEpic = (action$, store) =>
             return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/filters.json').then(response => response.data))
                 .switchMap(responseData => {
 
-                    const list = Object.keys(responseData.list).reduce((newList, key) => {
+                    const datasetKeys = responseData.dataset;
+
+                    const list = datasetKeys.reduce((newList, key) => {
                         return {
                             ...newList,
                             [key]: responseData.list[key].category && {
@@ -117,12 +143,13 @@ const selectAreaEpic = (action$, store) =>
                                         }) };
                                     }
                                     return {...group};
-                                })
+                                }),
+                                ...(responseData.list[key].format ? {format: {...responseData.list[key].format}} : {})
                             } || {}
                         };
                     }, {});
 
-                    const detail = Object.keys(responseData.detail).reduce((newDetail, key) => {
+                    const detail = datasetKeys.reduce((newDetail, key) => {
                         return {
                             ...newDetail,
                             [key]: {
@@ -136,7 +163,7 @@ const selectAreaEpic = (action$, store) =>
                         };
                     }, {});
 
-                    const filters = Object.keys(list).reduce((newFilters, key) => {
+                    const filters = datasetKeys.reduce((newFilters, key) => {
                         const newList = {...list[key]};
                         const newDetail = {...detail[key]};
                         return {
@@ -151,13 +178,15 @@ const selectAreaEpic = (action$, store) =>
                     return Rx.Observable.concat(
                         Rx.Observable.of(
                             searchTextChanged(action.area.properties && (action.area.properties.name || action.area.properties.label || action.area.properties.display_name)),
-                            setFilter({...filters}),
+                            setFilter({...filters, show: true}),
                             updateNode('datasets_layer', 'layers', {visibility: false}),
                             updateNode('search_layer', 'layers', {
                                 visibility: true,
                                 features: action.area.geometry && [{...action.area}] || []
                             }),
-                            setControlProperty('dataExplorer', 'enabled', true)
+                            setControlProperty('dataExplorer', 'enabled', true),
+                            addDatasetKeys([...datasetKeys]),
+                            updateCurrentDataset(datasetKeys[1])
                         ),
                         // delay needed for bounds fit
                         Rx.Observable.of(
@@ -205,11 +234,11 @@ const updateFilterEpic = (action$, store) =>
     action$.ofType(UPDATE_FILTER)
     .switchMap(action => {
         const filter = filterSelector(store.getState());
-        const currentSection = currentSectionSelector(store.getState());
+        const currentDataset = currentDatasetSelector(store.getState());
         const updatingFilter = {...filter} || {};
         if (action.options.type === 'category') {
             if (action.options.clear) {
-                const template = `${currentSection}.category`;
+                const template = `${currentDataset}.category`;
                 const currentUpdate = get(updatingFilter, template);
                 const clearedFilter = currentUpdate.map(group => ({...group, filters: group.filters.map(layer => ({...layer, checked: false}))}));
                 const newFilter = set(template, clearedFilter, updatingFilter);
@@ -217,7 +246,7 @@ const updateFilterEpic = (action$, store) =>
                     setFilter(newFilter)
                 );
             }
-            const template = `${currentSection}.category[${action.options.categoryId}].filters[${action.options.datasetId}]`;
+            const template = `${currentDataset}.category[${action.options.categoryId}].filters[${action.options.datasetId}]`;
             const currentUpdate = get(updatingFilter, template);
             const newFilter = set(template, {...currentUpdate, checked: action.options.checked}, updatingFilter);
             return Rx.Observable.of(
@@ -525,6 +554,97 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         return reprojectBbox(bbox, state);
     });
 
+/*
+- Submitted
+- Accepted
+- InProduction
+- Suspended
+- Cancelled
+- Completed
+- Failed
+- Terminated
+- Downloaded
+*/
+
+const updateOrdersEpic = (action$, store) =>
+    action$.ofType(OPEN_DOWNLOADS)
+    .switchMap(() =>
+        Rx.Observable.timer(0, 1000)
+        .switchMap(() => {
+            const orders = ordersSelector(store.getState()).filter(order => !(order.status === 'Completed' || order.status === 'Failed'));
+            return orders.length === 0 ? Rx.Observable.empty()
+            : Rx.Observable.from(orders)
+            .switchMap(order => {
+                return Rx.Observable.fromPromise(axios.get(order.id).then(response => response.data))
+                .switchMap(updatedOrder => {
+                    return Rx.Observable.of(updateOrder({...updatedOrder}));
+                })
+                .catch(() => {
+                    return Rx.Observable.empty();
+                });
+            });
+        })
+        .takeUntil(action$.ofType(CLOSE_DOWNLOADS))
+    );
+
+const getBBOXFromDownload = (download, taxonomicCategories) => {
+    const bbox = !isEmpty(taxonomicCategories) && download.bbox && download.bbox.type === 'filter' && download.bbox.extent && join(download.bbox.extent, ',');
+    return bbox ? {bbox} : {};
+};
+
+const getTaxonomicCategoriesFromDownload = download => {
+    const taxonomicCategories = download.taxonomy && download.taxonomy.reduce((txnm, group) => {
+        const checked = group.filters.filter(filt => filt.checked).map(filt => group.code + ':' + filt.code);
+        return [...txnm, ...checked];
+    }, []);
+    return taxonomicCategories && taxonomicCategories.length > 0 ? {taxonomic_categories: join(taxonomicCategories, ',')} : {};
+};
+
+/* convert dataset name for request */
+const datasetName = {
+    exposures: 'exposure'
+};
+
+const downloadDataEpic = (action$, store) =>
+    action$.ofType(DOWNLOAD_DATA)
+    .switchMap(action => {
+        const state = store.getState();
+        const notificationEmail = downloadEmailSelector(state);
+        const downloadFormat = downloadFormatSelector(state);
+
+        const orderItems = action.data.map((download) => {
+            const taxonomicCategoriesObj = getTaxonomicCategoriesFromDownload(download);
+            const bboxObj = getBBOXFromDownload(download, taxonomicCategoriesObj);
+            return {
+                layer: datasetName[download.dataset] + ':' + download.properties.name,
+                format: download.availableFormats[downloadFormat][download.formatId].code,
+                ...bboxObj,
+                ...taxonomicCategoriesObj
+            };
+        });
+
+        return Rx.Observable.concat(
+            Rx.Observable.of(orderLoading(true)),
+            Rx.Observable.fromPromise(
+                axios.post('/gfdrr_det/api/v1/order/', {
+                    notification_email: notificationEmail,
+                    order_items: [...orderItems]
+                }).then(response => response.data)
+            )
+            .switchMap(order => {
+                return Rx.Observable.of(
+                    addOrder({...order, email: notificationEmail}),
+                    removeDownload('clear'),
+                    selectDownloadTab('order'),
+                    orderLoading(false)
+                );
+            })
+            .catch(() => {
+                return Rx.Observable.of(orderLoading(false));
+            })
+        );
+    });
+
 module.exports = {
     initDataLayerEpic,
     selectAreaEpic,
@@ -536,5 +656,7 @@ module.exports = {
     showDetailsEpic,
     sortTocLayersEpic,
     spatialFilterEpic,
-    updateBBOXFilterUpdateEpic
+    updateBBOXFilterUpdateEpic,
+    downloadDataEpic,
+    updateOrdersEpic
 };

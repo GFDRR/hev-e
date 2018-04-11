@@ -7,7 +7,7 @@
 */
 
 const React = require('react');
-const {head, isEqual} = require('lodash');
+const {head, isEqual, isNil} = require('lodash');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 const {getTOCLayerObject} = require('../utils/LayerUtils');
 const uuid = require('uuid');
@@ -27,7 +27,9 @@ module.exports = ({
     prefix = '__toc__',
     onAddDownload = () => {},
     downloads = [],
-    mapBbox
+    mapBbox,
+    dataset,
+    availableFormats
 }) => (
     <Toolbar
         btnDefaultProps={
@@ -85,17 +87,19 @@ module.exports = ({
                 glyph: 'download',
                 tooltipId: head(downloads.filter(({id}) => item.id === id)) ? 'heve.updateDownload' : 'heve.addDownload',
                 visible: showDownload,
-                style: head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))) ? {pointerEvents: 'none'} : {},
+                style: head(downloads.filter(({formatId, downloadId, ...download}) => !isNil(formatId) && downloadId && isEqual(download, {...item, dataset, availableFormats, bbox: mapBbox}))) ? {pointerEvents: 'none'} : {},
                 bsStyle: head(downloads.filter(({id}) => item.id === id)) ?
-                    head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))) ? 'success' : 'warning'
+                    head(downloads.filter(({formatId, downloadId, ...download}) => !isNil(formatId) && downloadId && isEqual(download, {...item, dataset, availableFormats, bbox: mapBbox}))) ? 'success' : 'warning'
                     : 'primary',
-                // disabled: head(downloads.filter(({downloadId, ...download}) => downloadId && isEqual(download, {...item, bbox: mapBbox}))),
                 onClick: (e) => {
                     e.stopPropagation();
                     const downloadId = uuid.v1();
                     onAddDownload({
                         ...item,
+                        formatId: 0,
+                        dataset,
                         downloadId,
+                        availableFormats,
                         bbox: mapBbox
                     });
                 }

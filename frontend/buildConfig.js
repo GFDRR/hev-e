@@ -56,7 +56,6 @@ module.exports = (bundles, themeEntries, paths, extractThemesPlugin, prod, publi
         new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideCard.jsx")),
         new NormalModuleReplacementPlugin(/SideGrid.jsx/, path.join(__dirname, "js", "ms2override", "components", "SideGrid.jsx")),
         new NormalModuleReplacementPlugin(/ToggleButton.jsx/, path.join(__dirname, "js", "ms2override", "components", "ToggleButton.jsx")),
-        new NormalModuleReplacementPlugin(/misc\/Filter.jsx/, path.join(__dirname, "js", "ms2override", "components", "Filter.jsx")),
         // new NormalModuleReplacementPlugin(/proj4$/, path.join(paths.framework, "libs", "proj4")),
         new NoEmitOnErrorsPlugin(),
         extractThemesPlugin
