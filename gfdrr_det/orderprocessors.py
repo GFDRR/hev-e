@@ -16,6 +16,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from pathlib2 import Path
+from oseoserver.models import OrderItem
 
 from .constants import DatasetType
 from .exposures import download as exposure_download
@@ -36,8 +37,28 @@ class HeveOrderProcessor(object):
 
     def clean_item(self, url):
         """Clean an item that was previously available via 'onlinedataaccess'
+
+        This method is called by oseoserver as soon as an item's expiry date is
+        reached.
+
+        If all order items that use the URL are marked as not available we
+        may safely delete it. Otherwise, we keep the file around.
+
         """
-        raise NotImplementedError
+
+        url_still_needed = OrderItem.objects.filter(url=url).filter(
+            available=True).exists()
+        if url_still_needed:
+            logger.debug("URL {} is still being used in available order "
+                         "items, will not delete the file".format(url))
+        else:
+            logger.debug("URL {} is not being used in any available order "
+                         "item, it is safe to delete the file".format(url))
+            path = utils.get_downloadable_file_path(url)
+            try:
+                path.unlink()
+            except OSError:
+                logger.exception(msg="Could not remove {}".format(path))
 
     def deliver_item(self, item_url, *args, **kwargs):
         """Deliver a single order item.
@@ -87,7 +108,7 @@ class HeveOrderProcessor(object):
         target_path = target_dir / "{}.gpkg".format(name_hash)
         return {
             "name_hash": name_hash,
-            "target_dir": target_dir,
+            "target_dir": str(target_dir),
             "geopackage_target_path": str(target_path),
             "geopackage_exists": target_path.is_file()
         }

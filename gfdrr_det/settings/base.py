@@ -12,6 +12,7 @@
 # Django settings for the GeoNode project.
 import os
 
+from celery.schedules import crontab
 from django.core.exceptions import ImproperlyConfigured
 
 # Load more settings from a file called local_settings.py if it exists
@@ -621,9 +622,18 @@ CELERY_RESULT_BACKEND = "redis://{password}@{host}:{port}/{db}".format(
     db=get_environment_variable("REDIS_DB", "0"),
 )
 CELERY_TASK_RESULT_EXPIRES = 180000  # 5 hours
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ACKS_LATE = True
 CELERY_ACCEPT_CONTENT = ["json",]
 CELERY_WORKER_REDIRECT_STDOUTS = True
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # appropriate for long-running tasks
+CELERY_BEAT_SCHEDULE = {
+    "expire-items": {
+        "task": "oseoserver.tasks.clean_expired_items",
+        "schedule": crontab(minute="0", hour="1"),  # execute daily at 01:00
+    }
+}
 
 MAILQUEUE_CELERY = True
 SENDFILE_BACKEND = "sendfile.backends.simple"
@@ -632,7 +642,7 @@ OSEOSERVER_PRODUCT_ORDER = {
     "enabled": True,
     "automatic_approval": True,
     "item_processor": "gfdrr_det.orderprocessors.HeveOrderProcessor",
-    "item_availability_days": 5,
+    "item_availability_days": 2,
     "notifications": {
         "moderation": False,
         "item_availability": False,
