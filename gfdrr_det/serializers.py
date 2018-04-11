@@ -257,7 +257,11 @@ class OrderSerializer(serializers.BaseSerializer):
                 raise serializers.ValidationError({"format": "invalid value"})
             bbox_str = item.get("bbox")
             if bbox_str is not None:
-                x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
+                try:
+                    x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
+                except ValueError:
+                    raise serializers.ValidationError(
+                        {"bbox": "Invalid numeric values"})
                 valid_x = -180 <= x0 <= 180 and -180 <= x1 <= 180
                 valid_y = -90 <= y0 <= 90 and -90 <= y1 <= 90
                 if not (valid_x and valid_y):
