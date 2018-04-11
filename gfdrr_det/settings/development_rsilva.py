@@ -74,3 +74,5 @@ if EMAIL_ENABLE:
         "DJANGO_EMAIL_HOST_PASSWORD")
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = 'gfdrr-det <no-reply@localhost>'
+
+CELERY_WORKER_CONCURRENCY = 2

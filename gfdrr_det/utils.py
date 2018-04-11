@@ -11,7 +11,16 @@
 from decimal import Decimal
 import logging
 
+from django.conf import settings
+from pathlib2 import Path
+
 logger = logging.getLogger(__name__)
+
+
+def get_downloadable_file_path(url):
+    file_hash = [i for i in url.split("/") if i != ""][-1]
+    downloads_dir = Path(settings.HEV_E["general"]["downloads_dir"])
+    return list(downloads_dir.glob("*{}*".format(file_hash)))[0]
 
 
 def get_bbox_for_filename(bbox, coord_separator="_"):
