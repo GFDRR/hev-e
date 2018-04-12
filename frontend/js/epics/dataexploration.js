@@ -19,6 +19,7 @@ const {
     UPDATE_FILTER,
     SHOW_DETAILS,
     TOGGLE_SPATIAL_FILTER,
+    RELOAD_ORDER,
     updateOrder,
     addOrder,
     selectArea,
@@ -268,8 +269,7 @@ const updateFilterEpic = (action$, store) =>
                 newTaxonomy = {...taxonomy, buildings: taxonomy.buildings.map(tax => ({...tax, styleChecked: styleName}))};
                 styleObj = {style: styleName};
             } else if (action.options.clear) {
-                newTaxonomy = {...taxonomy, buildings: taxonomy.buildings.map(tax => ({...tax, styleChecked: '', filters: tax.filters.map(layer => ({...layer, checked: false}))}))};
-                styleObj = {style: ''};
+                newTaxonomy = {...taxonomy, buildings: taxonomy.buildings.map(tax => ({...tax, filters: tax.filters.map(layer => ({...layer, checked: false}))}))};
             } else {
                 const template = `buildings[${action.options.categoryId}].filters[${action.options.datasetId}]`;
                 const currentUpdate = get(taxonomy, template);
@@ -383,65 +383,65 @@ const closeDetailsStream = (state, details) => {
 
 
 const updateDetailsStream = (state, item, actionBbox) =>
-        Rx.Observable.concat(
-            Rx.Observable.of(updateDatails(item), detailsLoading(true)),
-            Rx.Observable.fromPromise(axios.get(`/gfdrr_det/api/v1/exposures/${item.id}/?format=json${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
-            .switchMap(details => {
-                const layers = layersSelector(state);
-                const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
-                const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
-                || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+    Rx.Observable.concat(
+        Rx.Observable.of(updateDatails(item), detailsLoading(true)),
+        Rx.Observable.fromPromise(axios.get(`/gfdrr_det/api/v1/exposures/${item.id}/?format=json${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
+        .switchMap(details => {
+            const layers = layersSelector(state);
+            const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+            const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+            || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
-                const coordinates = details && details.geometry && details.geometry.coordinates;
-                const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
+            const coordinates = details && details.geometry && details.geometry.coordinates;
+            const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
 
-                const filters = filterSelector(state);
-                const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
+            const filters = filterSelector(state);
+            const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
 
-                const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
-                const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
+            const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
+            const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
 
-                return Rx.Observable.concat(
-                    // hide toc layer
-                    tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
-                        lastVisibility: tocTmpLayer.visibility,
-                        visibility: false
-                    })) : Rx.Observable.empty(),
+            return Rx.Observable.concat(
+                // hide toc layer
+                tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                    lastVisibility: tocTmpLayer.visibility,
+                    visibility: false
+                })) : Rx.Observable.empty(),
 
-                    Rx.Observable.of(
-                        updateNode('datasets_layer', 'layers', {visibility: false}),
-                        setControlProperty('dataExplorer', 'enabled', true),
-                        setControlProperty('compacttoc', 'hide', true),
-                        updateDatails(details),
-                        detailsLoading(false),
-                        tmpLayer ?
-                            updateNode('heve_tmp_layer', 'layers', {
-                                visibility: true,
-                                ...defaultDetailsLayerParams({
-                                    details,
-                                    taxonomyObj,
-                                    styleObj,
-                                    bbox
-                                })
+                Rx.Observable.of(
+                    updateNode('datasets_layer', 'layers', {visibility: false}),
+                    setControlProperty('dataExplorer', 'enabled', true),
+                    setControlProperty('compacttoc', 'hide', true),
+                    updateDatails(details),
+                    detailsLoading(false),
+                    tmpLayer ?
+                        updateNode('heve_tmp_layer', 'layers', {
+                            visibility: true,
+                            ...defaultDetailsLayerParams({
+                                details,
+                                taxonomyObj,
+                                styleObj,
+                                bbox
                             })
-                            :
-                            addLayer({
-                                type: 'wms',
-                                group: 'heve_tmp_group',
-                                id: 'heve_tmp_layer',
-                                visibility: true,
-                                ...defaultDetailsLayerParams({
-                                    details,
-                                    taxonomyObj,
-                                    styleObj,
-                                    bbox
-                                })
+                        })
+                        :
+                        addLayer({
+                            type: 'wms',
+                            group: 'heve_tmp_group',
+                            id: 'heve_tmp_layer',
+                            visibility: true,
+                            ...defaultDetailsLayerParams({
+                                details,
+                                taxonomyObj,
+                                styleObj,
+                                bbox
                             })
-                    ),
-                    actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
-                );
-            })
-            .catch(() => closeDetailsStream(state))
+                        })
+                ),
+                actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+            );
+        })
+        .catch(() => closeDetailsStream(state))
     );
 
 const showDetailsEpic = (action$, store) =>
@@ -537,9 +537,10 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
             return bbox && tmpDetailsBboxStr !== bbox.join(',') ? Rx.Observable.concat(
-                updateDetailsStream(state, currentDetails, bbox.join(',')),
+                !isEmpty(tmpDetailsBbox) ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
+
         }
         if (!currentDetails && tmpDetailsBbox && !isEmpty(tmpDetailsBbox)) {
             return Rx.Observable.of(updateTmpDetailsBbox(null));
@@ -587,8 +588,14 @@ const updateOrdersEpic = (action$, store) =>
         .takeUntil(action$.ofType(CLOSE_DOWNLOADS))
     );
 
-const getBBOXFromDownload = (download, taxonomicCategories) => {
-    const bbox = !isEmpty(taxonomicCategories) && download.bbox && download.bbox.type === 'filter' && download.bbox.extent && join(download.bbox.extent, ',');
+const reloadOrderEpic = action$ =>
+    action$.ofType(RELOAD_ORDER)
+    .switchMap(() => {
+        return Rx.Observable.empty();
+    });
+
+const getBBOXFromDownload = download => {
+    const bbox = download.bbox && download.bbox.type === 'filter' && download.bbox.extent && join(download.bbox.extent, ',');
     return bbox ? {bbox} : {};
 };
 
@@ -614,7 +621,7 @@ const downloadDataEpic = (action$, store) =>
 
         const orderItems = action.data.map((download) => {
             const taxonomicCategoriesObj = getTaxonomicCategoriesFromDownload(download);
-            const bboxObj = getBBOXFromDownload(download, taxonomicCategoriesObj);
+            const bboxObj = getBBOXFromDownload(download);
             return {
                 layer: datasetName[download.dataset] + ':' + download.properties.name,
                 format: download.availableFormats[downloadFormat][download.formatId].code,
@@ -629,6 +636,12 @@ const downloadDataEpic = (action$, store) =>
                 axios.post('/gfdrr_det/api/v1/order/', {
                     notification_email: notificationEmail,
                     order_items: [...orderItems]
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Language': null
+                    }
                 }).then(response => response.data)
             )
             .switchMap(order => {
@@ -658,5 +671,6 @@ module.exports = {
     spatialFilterEpic,
     updateBBOXFilterUpdateEpic,
     downloadDataEpic,
-    updateOrdersEpic
+    updateOrdersEpic,
+    reloadOrderEpic
 };

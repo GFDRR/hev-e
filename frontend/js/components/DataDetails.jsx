@@ -9,7 +9,7 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
-const {/*Glyphicon,*/ Grid, Row, Col} = require('react-bootstrap');
+const {Grid, Row, Col} = require('react-bootstrap');
 const ResizableModal = require('../../MapStore2/web/client/components/misc/ResizableModal');
 const ContainerDimensions = require('react-container-dimensions').default;
 const sampleData = require('../../MapStore2/web/client/components/widgets/enhancers/sampleChartData');
@@ -117,13 +117,10 @@ class DataDetails extends React.Component {
                         show
                         title={<span><i className={'fa fa-' + this.props.groupInfo[this.props.currentDetails.properties.category].icon}/>&nbsp;<strong>{this.props.currentDetails.properties.name}</strong></span>}
                         onClose={this.props.onClose}
-                        clickOutEnabled={false}>
+                        clickOutEnabled={false}
+                        showClose={!this.props.loading}
+                        showLoading={this.props.loading}>
                         <BorderLayout
-                            footer={
-                                <div style={{width: 24, height: 24, padding: 4, margin: 4}}>
-                                    {this.props.loading && <div className="mapstore-small-size-loader" />}
-                                </div>
-                            }
                             header={
                                 <Grid fluid style={{width: '100%'}}>
                                 <Row>

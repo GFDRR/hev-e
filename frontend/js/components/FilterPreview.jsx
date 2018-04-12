@@ -108,13 +108,14 @@ class FilterPreview extends React.Component {
     }
 
     componentWillUpdate(newProps) {
-        if (newProps.download && !isEqual(this.props.download, newProps.download) && newProps.download.bbox && newProps.download.bbox.type === 'filter') {
+        if (newProps.download && !isEqual(this.props.download, newProps.download)) {
+            const isFilterBBOX = newProps.download.bbox && newProps.download.bbox.type === 'filter';
             this.setState({
-                bbox: {...newProps.download.bbox, _et_forceUpdate: true}
+                bbox: isFilterBBOX ? {...newProps.download.bbox, _et_forceUpdate: true} : null
             });
             setTimeout(() => {
                 this.setState({
-                    bbox: newProps.download.bbox
+                    bbox: isFilterBBOX ? newProps.download.bbox : null
                 });
             }, 100);
         }
@@ -174,13 +175,13 @@ class FilterPreview extends React.Component {
                     </Row>
                 </Grid>
                 <Grid fluid>
-                    {hasFilter && this.state.bbox && <Row>
+                    {this.state.bbox && <Row>
                         <br/>
                         <Col xs={12}>
                             <small><strong><Message msgId="heve.bbox"/></strong></small>
                         </Col>
                     </Row>}
-                    {hasFilter && this.state.bbox && <Row>
+                    {this.state.bbox && <Row>
                         <OlMap
                             {...this.props.mapProps}
                             bbox={this.state.bbox}>

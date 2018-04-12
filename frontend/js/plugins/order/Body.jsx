@@ -12,10 +12,11 @@ const Message = require('../../../MapStore2/web/client/components/I18N/Message')
 const moment = require('moment');
 const tooltip = require('../../../MapStore2/web/client/components/misc/enhancers/tooltip');
 const FailedIcon = tooltip(props => (<div className="fa fa-ban fa-2x text-danger" {...props}/>));
-const {join} = require('lodash');
+const {join /*, head*/} = require('lodash');
 
 module.exports = ({
     orders = [],
+    // onReload = () => {},
     onRemove = () => {}
 }) => (
     <Grid fluid>
@@ -30,7 +31,7 @@ module.exports = ({
                         <div>
                             <div>
                                 {(order.status === 'InProduction' || order.status === 'Suspended') &&
-                                    <div style={{width: 24, height: 24}}><div className="mapstore-small-size-loader" /></div>
+                                    <div style={{width: 24, height: 24}}><div className="mapstore-medium-size-loader" /></div>
                                 }
                                 {(order.status === 'Completed' || order.status === 'Failed') &&
                                     <ButtonToolbar>
@@ -50,6 +51,12 @@ module.exports = ({
                                             }}>
                                             <Message msgId="heve.bDownload"/>
                                         </Button>}
+                                        {/*order.order_items && head(order.order_items.filter(itm => itm.status === 'Failed')) && <Button
+                                            bsStyle="danger"
+                                            bsSize="sm"
+                                            onClick={() => onReload(order)}>
+                                            <Message msgId="heve.hReload"/>
+                                        </Button>*/}
                                     </ButtonToolbar>
                                 }
                             </div>
@@ -71,7 +78,7 @@ module.exports = ({
                             </div>
                             <div>
                                 <div>
-                                    {(item.status === 'InProduction' || item.status === 'Suspended') && <div style={{width: 24, height: 24}}><div className="mapstore-small-size-loader" /></div>}
+                                    {(item.status === 'InProduction' || item.status === 'Suspended') && <div style={{width: 24, height: 24}}><div className="mapstore-medium-size-loader" /></div>}
                                     {item.status === 'Failed' && <FailedIcon tooltipId="heve.failedOrder"/>}
                                     {item.download_url && item.format !== 'geopackage' && item.status === 'Completed' && <Button
                                         bsStyle="success"

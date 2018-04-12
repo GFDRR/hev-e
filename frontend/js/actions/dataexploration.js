@@ -26,6 +26,7 @@ const SELECT_DOWNLOAD_FORMAT = 'DATAEXPLORATION:SELECT_DOWNLOAD_FORMAT';
 const SELECT_DOWNLOAD_TAB = 'DATAEXPLORATION:SELECT_DOWNLOAD_TAB';
 const DOWNLOAD_DATA = 'DATAEXPLORATION:DOWNLOAD_DATA';
 const ADD_ORDER = 'DATAEXPLORATION:ADD_ORDER';
+const RELOAD_ORDER = 'DATAEXPLORATION:RELOAD_ORDER';
 const OPEN_DOWNLOADS = 'DATAEXPLORATION:OPEN_DOWNLOADS';
 const CLOSE_DOWNLOADS = 'DATAEXPLORATION:CLOSE_DOWNLOADS';
 const UPDATE_ORDER = 'DATAEXPLORATION:UPDATE_ORDER';
@@ -222,6 +223,13 @@ function orderLoading(loading) {
     };
 }
 
+function reloadOrder(order) {
+    return {
+        type: RELOAD_ORDER,
+        order
+    };
+}
+
 module.exports = {
     UPDATE_FILTER,
     SELECT_AREA,
@@ -250,6 +258,7 @@ module.exports = {
     UPDATE_CURRENT_DATASET,
     REMOVE_ORDER,
     ORDER_LOADING,
+    RELOAD_ORDER,
     updateFilter,
     selectArea,
     showDatails,
@@ -276,5 +285,6 @@ module.exports = {
     addDatasetKeys,
     updateCurrentDataset,
     removeOrder,
-    orderLoading
+    orderLoading,
+    reloadOrder
 };
