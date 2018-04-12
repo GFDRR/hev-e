@@ -73,8 +73,7 @@ def get_mapped_area_type(model_area_type):
 
 def get_mapped_taxonomy_source(model_source):
     """Map the taxonomy source of a model"""
-    mapping = settings.HEV_E["EXPOSURES"]["taxonomy_mappings"][
-        "taxonomy_sources"]
+    mapping = settings.HEV_E["EXPOSURES"]["taxonomy_mappings"]["sources"]
     for hev_e_taxonomy_type, aliases in mapping.items():
         if model_source.lower() in aliases:
             result = hev_e_taxonomy_type
@@ -85,8 +84,8 @@ def get_mapped_taxonomy_source(model_source):
     return result
 
 
-def calculate_taxonomic_counts(db_cursor, layer_name, taxonomy_source,
-                               bbox_ewkt=None, schema_name="exposures",
+def calculate_taxonomic_counts(db_cursor, layer_name, bbox_ewkt=None,
+                               schema_name="exposures",
                                geometry_column="geom"):
     qualified_name = "{}.{}".format(schema_name, layer_name)
     if bbox_ewkt is None:
@@ -98,12 +97,8 @@ def calculate_taxonomic_counts(db_cursor, layer_name, taxonomy_source,
         )
     ResTuple = namedtuple("ResTuple", [c[0] for c in db_cursor.description])
     counts = [ResTuple(*row) for row in db_cursor.fetchall()]
-    try:
-        mapped_source = get_mapped_taxonomy_source(taxonomy_source)
-    except (RuntimeError, AttributeError):
-        mapped_source = "GEM"
     categories = settings.HEV_E["EXPOSURES"]["taxonomy_mappings"][
-        mapped_source].keys()
+        "mapping"].keys()
     result = {}
     for category in categories:
         regex_pattern = re.compile(r"{}:(\w+)#".format(category))

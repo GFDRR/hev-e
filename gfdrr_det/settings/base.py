@@ -772,7 +772,7 @@ HEV_E = {
             "per_asset": ["per_asset"],
         },
         "taxonomy_mappings": {
-            "taxonomy_sources": {
+            "sources": {
                 "GEM": [
                     "gem_building_taxonomy_2.0",
                     "gem taxonomy",
@@ -782,29 +782,58 @@ HEV_E = {
                     "ged4all taxonomy"
                 ]
             },
-            "GEM": {
+            "mapping": {
                 "construction_material": {
-                    "composite": ["MIX"],
-                    "concrete": ["C99", "CR", "CU", "SRC"],
-                    "earth": ["E99", "ER", "EU"],
-                    "masonry": ["M99", "MUR", "MCF", "MR"],
-                    "metal": ["ME"],
-                    "steelframe": ["S"],
-                    "unknown": ["MAT99", "MATO"],
-                    "wood": ["W"],
+                    "composite": {
+                        "GEM": ["MIX"]
+                    },
+                    "concrete": {
+                        "GEM": ["C99", "CR", "CU", "SRC"]
+                    },
+                    "earth": {
+                        "GEM": ["E99", "ER", "EU"]
+                    },
+                    "masonry": {
+                        "GEM": ["M99", "MUR", "MCF", "MR"]
+                    },
+                    "metal": {
+                        "GEM": ["ME"]
+                    },
+                    "steelframe": {
+                        "GEM": ["S"]
+                    },
+                    "unknown": {
+                        "GEM":["MAT99", "MATO"]
+                    },
+                    "wood": {
+                        "GEM": ["W"]
+                    },
                 },
                 "occupancy": {
-                    "commercial": ["COM"],
-                    "education": ["EDU"],
-                    "government": ["GOV"],
-                    "healthcare": [],  # there is no GEM category for this
-                    "industrial": ["IND"],
-                    "residential": ["RES"],
-                    "unknown": ["OC99", "MIX", "OCO"],
+                    "commercial": {
+                        "GEM": ["COM"]
+                    },
+                    "education": {
+                        "GEM": ["EDU"]
+                    },
+                    "government": {
+                        "GEM": ["GOV"]
+                    },
+                    "healthcare": {
+                        "GEM": []
+                    },
+                    "industrial": {
+                        "GEM": ["IND"]
+                    },
+                    "residential": {
+                        "GEM": ["RES"]
+                    },
+                    "unknown": {
+                        "GEM": ["OC99", "MIX", "OCO"]
+                    },
                 },
-                "construction_date": [],
+                "construction_date": {},
             },
-            "GED4ALL": {}
         }
     },
 }
