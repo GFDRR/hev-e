@@ -9,16 +9,11 @@
 #
 #########################################################################
 
-from tempfile import mkdtemp
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis import geos
 from geonode.layers.models import Layer
 from rest_framework import serializers
 from rest_framework_gis import serializers as gis_serializers
-from pathlib2 import Path
-
-from . import utils
 
 
 class ExposureLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):

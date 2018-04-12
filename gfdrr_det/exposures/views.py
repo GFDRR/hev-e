@@ -83,7 +83,6 @@ class ExposureLayerViewSet(FilterMixin, viewsets.ReadOnlyModelViewSet):
                 taxonomic_counts = utils.calculate_taxonomic_counts(
                     db_cursor,
                     layer.name,
-                    layer.hevedetails.details["taxonomy_source"],
                     bbox_ewkt=general_utils.get_ewkt_from_bbox(
                         *bbox, srid=4326)
                 )

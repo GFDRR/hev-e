@@ -15,7 +15,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from collections import namedtuple
 import json
-import re
 import subprocess
 
 from django.db import connections
@@ -155,7 +154,7 @@ class Command(BaseCommand):
                         "Gathering details for view {!r}...".format(view_name))
                     taxonomy_details[view_name] = {
                         "counts": utils.calculate_taxonomic_counts(
-                            db_cursor, view_name, model.taxonomy_source,
+                            db_cursor, view_name,
                             schema_name=options["database_schema"]
                         )
                     }
@@ -205,15 +204,14 @@ def import_layers_to_geonode(workspace_name, store_name, user_name,
     )
 
 
+# TODO: Generalize this and the SQL function to handle other taxonomies
 def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
                                             dry_run=False, logger=print):
     """Installs PL/pgSQL function in the database for normalizing taxonomies"""
     function_name = "{}.normalize_taxonomy".format(schema_name)
     query_template = get_template("exposures/normalize_taxonomy_function.sql")
-    occupancy_map = settings.HEV_E[
-        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["occupancy"]
-    material_map = settings.HEV_E[
-        "EXPOSURES"]["taxonomy_mappings"]["GEM"]["construction_material"]
+    occupancy_map = _get_gem_pairs("occupancy")
+    material_map = _get_gem_pairs("construction_material")
     unfolded_material_map = _unfold_mapping(material_map)
     unfolded_occupancy_map = _unfold_mapping(occupancy_map)
     query = query_template.render(context={
@@ -699,6 +697,12 @@ def get_materialized_views(db_cursor, view_name_pattern):
     """
     db_cursor.execute(query, {"pattern": view_name_pattern})
     return [row[0] for row in db_cursor.fetchall()]
+
+
+def _get_gem_pairs(taxonomic_category):
+    config = settings.HEV_E[
+        "EXPOSURES"]["taxonomy_mappings"]["mapping"][taxonomic_category]
+    return {k: v.get("GEM") for k, v in config.items() if v.get("GEM")}
 
 
 def _load_sql_file(path, host, name, user, search_path=None):

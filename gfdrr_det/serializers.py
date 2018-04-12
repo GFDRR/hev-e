@@ -11,14 +11,11 @@
 """Django REST framework serializers for GFDRR-DET"""
 
 import logging
-import re
-from urlparse import urlparse
 
 from django.conf import settings
 from django.template.loader import get_template
 from oseoserver import models as oseoserver_models
 from oseoserver.operations.submit import submit
-from pathlib2 import Path
 from pyxb.bundles.opengis import oseo_1_0 as oseo
 from rest_framework.reverse import reverse
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
@@ -242,48 +239,20 @@ class OrderSerializer(serializers.BaseSerializer):
             if not layer:
                 raise serializers.ValidationError(
                     {"layer": "this field is required"})
-            collection, layer_name = layer.partition(":")[::2]
-            if collection not in DatasetType.__members__:
-                raise serializers.ValidationError(
-                    {"layer": "invalid collection"})
+            collection, layer_name = _validate_layer(layer)
             format_ = item.get("format", "").lower()
             if not format_:
                 raise serializers.ValidationError(
                     {"format": "this field is required"})
-            options_conf = settings.OSEOSERVER_PROCESSING_OPTIONS
-            format_choices = [
-                i["choices"] for i in options_conf if i["name"] == "format"][0]
-            if format_ not in format_choices:
-                raise serializers.ValidationError({"format": "invalid value"})
+            _validate_format(format_)
             bbox_str = item.get("bbox")
-            if bbox_str is not None:
-                try:
-                    x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
-                except ValueError:
-                    raise serializers.ValidationError(
-                        {"bbox": "Invalid numeric values"})
-                valid_x = -180 <= x0 <= 180 and -180 <= x1 <= 180
-                valid_y = -90 <= y0 <= 90 and -90 <= y1 <= 90
-                if not (valid_x and valid_y):
-                    raise serializers.ValidationError(
-                        {"bbox": "Invalid values. Expecting x0,y0,x1,y1"})
-                else:
-                    parsed_bbox = {
-                        "x0": x0,
-                        "y0": y0,
-                        "x1": x1,
-                        "y1": y1,
-                    }
-            else:
-                parsed_bbox = None
             cats = item.get("taxonomic_categories")
-            taxonomic_categories = [
-                c.lower() for c in cats.split(",")] if cats else cats
             order_item = {
                 "layer": layer,
                 "format": format_,
-                "bbox": parsed_bbox,
-                "taxonomic_categories": taxonomic_categories
+                "bbox": _parse_bbox(bbox_str) if bbox_str else bbox_str,
+                "taxonomic_categories": _parse_categories(
+                    cats, collection) if cats else cats
             }
             order_items.append(order_item)
         notification_email = data.get("notification_email")
@@ -295,14 +264,73 @@ class OrderSerializer(serializers.BaseSerializer):
         return result
 
 
-def parse_bbox(bbox_str):
-    x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
-    valid_x0 = -180 < x0 < 180
-    valid_x1 = -180 < x1 < 180
-    valid_y0 = -90 < x0 < 90
-    valid_y1 = -90 < x1 < 90
-    if not (valid_x0 and valid_x1 and valid_y0 and valid_y1):
-        raise serializers.ValidationError()
+def _validate_layer(layer_str):
+    collection, layer_name = layer_str.partition(":")[::2]
+    if collection not in DatasetType.__members__:
+        raise serializers.ValidationError(
+            {"layer": "invalid collection"})
+    return collection, layer_name
+
+
+def _validate_format(format_str):
+    options_conf = settings.OSEOSERVER_PROCESSING_OPTIONS
+    format_choices = [
+        i["choices"] for i in options_conf if i["name"] == "format"][0]
+    if format_str not in format_choices:
+        raise serializers.ValidationError({"format": "invalid value"})
+
+
+def _parse_categories(taxonomic_categories_str, collection_name):
+    main_cat = {
+        DatasetType.exposure.name: "EXPOSURES",
+    }[collection_name]
+    categories = []
+    config = settings.HEV_E[main_cat]["taxonomy_mappings"]["mapping"]
+    allowed_categories = config.keys()
+    for cat_info in taxonomic_categories_str.split(","):
+        info = cat_info.lower()
+        try:
+            cat_type, cat_value = info.split(":")
+        except ValueError:
+            raise serializers.ValidationError(
+                {
+                    "taxonomic_categories": "Invalid category {!r}. Please "
+                                            "provide a value of the form "
+                                            "category_type:"
+                                            "category_name".format(
+                                                info.encode("utf-8"))
+                }
+            )
+        if cat_type not in allowed_categories:
+            raise serializers.ValidationError(
+                {
+                    "taxonomic_categories": "Invalid category "
+                                            "type: {}".format(cat_type)
+                }
+            )
+        allowed_values = config.get(cat_type, {})
+        if cat_value not in allowed_values.keys():
+            raise serializers.ValidationError(
+                {
+                    "taxonomic_categories": "Invalid category "
+                                            "value: {}".format(cat_value)
+                }
+            )
+        categories.append(info)
+    return categories
+
+
+def _parse_bbox(bbox_str):
+    try:
+        x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
+    except ValueError:
+        raise serializers.ValidationError(
+            {"bbox": "Invalid numeric values"})
+    valid_x = -180 <= x0 <= 180 and -180 <= x1 <= 180
+    valid_y = -90 <= y0 <= 90 and -90 <= y1 <= 90
+    if not (valid_x and valid_y):
+        raise serializers.ValidationError(
+            {"bbox": "Invalid values. Expecting x0,y0,x1,y1"})
     else:
         return {
             "x0": x0,
