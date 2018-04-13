@@ -8,6 +8,8 @@
 #
 #########################################################################
 
+"""Utilities for the preparation of downloadable files from exposures"""
+
 import hashlib
 import logging
 import shlex
@@ -22,12 +24,12 @@ import requests
 
 from .. import utils as general_utils
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 def prepare_exposure_item(layer_name, batch_data=None,
                           bbox=None, format_=None,
-                          exposureTaxonomicCategory=None, **kwargs):
+                          exposureTaxonomicCategory=None,
+                          **kwargs):  # pylint: disable=invalid-name,unused-argument
     if bbox is not None:
         parsed_bbox = general_utils.serialize_bbox_option(bbox)
         bbox_ewkt = general_utils.get_ewkt_from_bbox(srid=4326, **parsed_bbox)
@@ -54,7 +56,7 @@ def get_layer_hash(name, bbox_ewkt=None, taxonomic_categories=None):
     return hashlib.md5("".join(sorted(hash_contents))).hexdigest()
 
 
-def get_exposure_shapefile_item(layer_name, batch_data=None,
+def get_exposure_shapefile_item(layer_name, batch_data=None,  # pylint: disable=unused-argument
                                 bbox_ewkt=None, taxonomic_categories=None):
     """Use geonode's API to get a shapefile from the input layer"""
     file_hash = get_layer_hash(layer_name, bbox_ewkt=bbox_ewkt,
@@ -93,9 +95,9 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
                 "parsed_taxonomy ILIKE '%{}%'".format(cat))
         taxonomy_condition = "({})".format(" OR ".join(taxonomy_conditions))
         cql_conditions.append(taxonomy_condition)
-    if len(cql_conditions) > 0:
+    if cql_conditions:
         params["cql_filter"] = " AND ".join(cql_conditions)
-    logger.debug("request params: {}".format(params))
+    logger.debug("request params: %s", params)
     response = requests.get(
         "{}wfs".format(settings.OGC_SERVER["default"]["PUBLIC_LOCATION"]),
         params=params,
@@ -105,9 +107,9 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
     if "xml" in response.headers.get("Content-Type"):  # there was an error
         raise RuntimeError("Could not get shapefile from "
                            "geoserver: {}".format(response.content))
-    with open(target_path, "wb") as fh:
+    with open(target_path, "wb") as file_handler:
         response.raw.decode_content = True
-        shutil.copyfileobj(response.raw, fh)
+        shutil.copyfileobj(response.raw, file_handler)
 
 
 def get_exposure_geopackage_item(layer_name, batch_data=None, bbox_ewkt=None,
@@ -129,118 +131,116 @@ def get_exposure_geopackage_item(layer_name, batch_data=None, bbox_ewkt=None,
 def generate_geopackage(layer_name, target_path,
                         bbox_ewkt=None, taxonomic_categories=None):
     """Use ogr2ogr to generate a geopackage with the original data"""
-    connection_params = connections["hev_e"].get_connection_params()
     kwargs = {
-        "target_path": target_path,
-        "model_id": layer_name.split("_")[-1],
-        "command_pattern": "ogr2ogr -gt unlimited -f GPKG -append "
-                           "-sql \"{query}\" {target_path} {db} -nln {name}",
-        "db_connection_string": 'PG:"dbname={database} host={host} '
-                                'port={port} user={user} '
-                                'password={password}"'.format(
-            **connection_params),
+        "layer_name": layer_name,
         "bbox_ewkt": bbox_ewkt,
-        "taxonomic_categories": taxonomic_categories,
+        "categories": taxonomic_categories,
     }
-    table_handlers = {
-        "exposure_model": _prepare_exposure_model,
-        "asset": _prepare_asset,
-        "contribution": _prepare_contribution,
-        "model_cost_type": _prepare_model_cost_type,
-        "cost": _prepare_cost,
-        "occupancy": _prepare_occupancy,
-        "tags": _prepare_tags,
+    query_handlers = {
+        "exposure_model": _prepare_exposure_model_query,
+        "asset": _prepare_asset_query,
+        "contribution": _prepare_contribution_query,
+        "model_cost_type": _prepare_model_cost_type_query,
+        "cost": _prepare_cost_query,
+        "occupancy": _prepare_occupancy_query,
+        "tags": _prepare_tags_query,
     }
-    for table_name, table_handler in table_handlers.items():
-        logger.debug("Preparing table {}...".format(table_name))
-        return_code, stdout, stderr = table_handler(**kwargs)
+    for table_name, query_handler in query_handlers.items():
+        query = query_handler(**kwargs)
+        command_str = _prepare_ogr2ogr_command(query, target_path, table_name)
+        return_code, stderr = _run_process(command_str)[::2]
         if return_code != 0:
             raise RuntimeError(
                 "Could not generate GeoPackage file: {}".format(stderr))
 
 
-def _prepare_exposure_model(target_path, model_id, command_pattern,
-                            db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT * FROM exposures.exposure_model "
-                      "WHERE id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="exposure_model"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def _prepare_exposure_model_query(layer_name, **kwargs):  # pylint: disable=unused-argument
+    return (
+        "SELECT * "
+        "FROM exposures.exposure_model "
+        "WHERE id = {}".format(layer_name.split("_")[-1])
+
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
 
 
-def _prepare_contribution(target_path, model_id, command_pattern,
-                          db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT * FROM exposures.contribution "
-                      "WHERE exposure_model_id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="contribution"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def _prepare_contribution_query(layer_name, **kwargs):  # pylint: disable=unused-argument
+    return (
+        "SELECT * "
+        "FROM exposures.contribution "
+        "WHERE exposure_model_id = {}".format(layer_name.split("_")[-1])
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
 
 
-def _prepare_model_cost_type(target_path, model_id, command_pattern,
-                             db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT * FROM exposures.model_cost_type "
-                      "WHERE exposure_model_id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="model_cost_type"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def _prepare_model_cost_type_query(layer_name, **kwargs):  # pylint: disable=unused-argument
+    return (
+        "SELECT * "
+        "FROM exposures.model_cost_type "
+        "WHERE exposure_model_id = {}".format(layer_name.split("_")[-1])
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
 
 
-# TODO: Integrate the taxonomic_categories parameter
-def _prepare_asset(target_path, model_id, command_pattern,
-                   db_connection_string, bbox_ewkt=None,
-                   taxonomic_categories=None):
-    if bbox_ewkt is None:
-        intersection_clause = ""
-    else:
-        intersection_clause = (
-            " AND ST_Intersects("
-            "the_geom, ST_GeomFromEWKT('{}'))".format(bbox_ewkt)
+def _prepare_asset_query(layer_name, bbox_ewkt=None, categories=None):
+    return (
+        "SELECT a.* "
+        "FROM exposures.asset AS a "
+        "INNER JOIN exposures.{view_layer} AS v ON (a.id = v.id) "
+        "WHERE a.id = v.id{intersection}{categories}".format(
+            view_layer=layer_name,
+            intersection=_get_intersection_clause(
+                bbox_ewkt) if bbox_ewkt else "",
+            categories=_get_categories_clause(categories) if categories else ""
         )
+    )
 
+
+def _prepare_cost_query(layer_name, bbox_ewkt=None, categories=None):
+    return (
+        "SELECT c.* "
+        "FROM exposures.cost AS c "
+        "INNER JOIN exposures.asset AS a ON (c.asset_id = a.id) "
+        "INNER JOIN exposures.{view_layer} AS v ON a.id = v.id "
+        "WHERE c.asset_id = v.id{intersection}{categories}".format(
+            view_layer=layer_name,
+            intersection=_get_intersection_clause(
+                bbox_ewkt) if bbox_ewkt else "",
+            categories=_get_categories_clause(categories) if categories else ""
+        )
+    )
+
+
+def _prepare_occupancy_query(layer_name, bbox_ewkt=None, categories=None):
+    return (
+        "SELECT occ.* "
+        "FROM exposures.occupancy AS occ "
+        "INNER JOIN exposures.asset AS a ON (occ.asset_id = a.id) "
+        "INNER JOIN exposures.{view_layer} AS v ON (a.id = v.id) "
+        "WHERE occ.asset_id = v.id{intersection}{categories}".format(
+            view_layer=layer_name,
+            intersection=_get_intersection_clause(
+                bbox_ewkt) if bbox_ewkt else "",
+            categories=_get_categories_clause(categories) if categories else ""
+        )
+    )
+
+
+def _prepare_tags_query(layer_name, bbox_ewkt=None, categories=None):
+    return (
+        "SELECT t.* "
+        "FROM exposures.tags AS t "
+        "JOIN exposures.asset AS a ON (t.asset_id = a.id) "
+        "INNER JOIN exposures.{view_layer} AS v ON (a.id = v.id) "
+        "WHERE t.asset_id = v.id{intersection}{categories}".format(
+            view_layer=layer_name,
+            intersection=_get_intersection_clause(
+                bbox_ewkt) if bbox_ewkt else "",
+            categories=_get_categories_clause(categories) if categories else ""
+        )
+    )
+
+
+def _run_process(command_str):
     process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT * FROM exposures.asset "
-                      "WHERE exposure_model_id = {id}{intersection}".format(
-                    id=model_id,
-                    intersection=intersection_clause
-                ),
-                target_path=target_path,
-                db=db_connection_string,
-                name="asset"
-            )
-        ),
+        args=shlex.split(command_str),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
@@ -248,72 +248,31 @@ def _prepare_asset(target_path, model_id, command_pattern,
     return process.returncode, stdout, stderr
 
 
-# TODO: Integrate the bbox parameter
-# TODO: Integrate the taxonomic_categories parameter
-def _prepare_cost(target_path, model_id, command_pattern,
-                  db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT c.* FROM exposures.cost AS c "
-                      "JOIN exposures.asset AS a ON (c.asset_id = a.id) "
-                      "JOIN exposures.exposure_model AS m ON (a.exposure_model_id = m.id) "
-                      "WHERE m.id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="cost"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def _get_intersection_clause(bbox_ewkt):
+    return (
+        " AND ST_Intersects("
+        "a.the_geom, ST_GeomFromEWKT('{}'))".format(bbox_ewkt)
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
+
+def _get_categories_clause(categories):
+    parts = ["v.parsed_taxonomy LIKE '%{}%'".format(c) for c in categories]
+    categories_clause = " OR ".join(parts)
+    return " AND ({})".format(categories_clause)
 
 
-# TODO: Integrate the bbox parameter
-# TODO: Integrate the taxonomic_categories parameter
-def _prepare_occupancy(target_path, model_id, command_pattern,
-                       db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT occ.* FROM exposures.occupancy AS occ "
-                      "JOIN exposures.asset AS a ON (occ.asset_id = a.id) "
-                      "JOIN exposures.exposure_model AS m ON (a.exposure_model_id = m.id) "
-                      "WHERE m.id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="occupancy"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def _prepare_ogr2ogr_command(query, target_path, name):
+    connection_params = connections["hev_e"].get_connection_params()
+    db_connection_string = (
+        'PG:"dbname={database} host={host} port={port} user={user} '
+        'password={password}"'.format(**connection_params)
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
-
-
-# TODO: Integrate the bbox parameter
-# TODO: Integrate the taxonomic_categories parameter
-def _prepare_tags(target_path, model_id, command_pattern,
-                  db_connection_string, **kwargs):
-    process = subprocess.Popen(
-        shlex.split(
-            command_pattern.format(
-                query="SELECT t.* FROM exposures.tags AS t "
-                      "JOIN exposures.asset AS a ON (t.asset_id = a.id) "
-                      "JOIN exposures.exposure_model AS m ON (a.exposure_model_id = m.id) "
-                      "WHERE m.id = {}".format(model_id),
-                target_path=target_path,
-                db=db_connection_string,
-                name="tags"
-            )
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+    command_str = (
+        "ogr2ogr -gt unlimited -f GPKG -append "
+        "-sql \"{query}\" {target_path} {db} -nln {name}".format(
+            query=query,
+            target_path=target_path,
+            db=db_connection_string,
+            name=name
+        )
     )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
-
-
+    return command_str
