@@ -9,6 +9,7 @@
 const axios = require('../../MapStore2/web/client/libs/ajax');
 const urlUtil = require('url');
 const assign = require('object-assign');
+const {join} = require('lodash');
 
 const parseUrl = url => {
     const parsed = urlUtil.parse(url, true);
@@ -20,21 +21,22 @@ const parseUrl = url => {
 const Api = {
     textSearch: function(url, page, startPosition, maxRecords, text, sortBy, groupInfo, bboxFilter) {
         return new Promise((resolve) => {
+
             const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
             const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
-            const categoryObj = hasFilter.length > 0 ? hasFilter.map((cat) => 'category=' + cat).join('&') : '';
+            const categoryObj = hasFilter.length > 0 ? {category: join(hasFilter, ',')} : {};
             const searchObj = text ? {search: text} : {};
             const sortByObj = sortBy ? {ordering: sortBy} : {};
 
-            resolve(axios.get(parseUrl(url + '?' + categoryObj), {
+            resolve(axios.get(parseUrl(url), {
                 params: {
                     page: page + 1,
                     page_size: maxRecords,
-                    search: text,
                     format: 'json',
                     ...sortByObj,
                     ...searchObj,
-                    ...bboxObj
+                    ...bboxObj,
+                    ...categoryObj
                 }
             }).then((response) => {
                 const records = response.data && response.data.features || null;
