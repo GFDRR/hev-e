@@ -76,6 +76,9 @@ package-lock.json
 # GeoIP stuff
 GeoLiteCity.dat
 
+# local dev settings
+gfdrr_det/settings/development_*.py
+
 /node_modules/.bin/acorn
 /node_modules/.bin/closure-util
 /node_modules/.bin/decompress-zip
