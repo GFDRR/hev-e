@@ -99,7 +99,7 @@ DATABASES = {
     'hev_e': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=exposures,public'
+            'options': '-c search_path=exposures,vulnerabilities,public'
         },
         'NAME': get_environment_variable("HEV_E_DB_NAME", default_value="hev-e"),
         'USER': get_environment_variable("HEV_E_DB_USER", default_value='geonode'),
