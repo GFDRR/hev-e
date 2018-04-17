@@ -1,0 +1,95 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Downstream Project
+downloaded/
+geoserver/
+uploaded/
+static_root/
+development.db
+development.db-journal
+local_settings.py
+
+# custom geonode
+src/
+
+# pycharm IDE stuff
+.idea/
+
+package-lock.json
+
+# GeoIP stuff
+GeoLiteCity.dat
+
+# local dev settings
+gfdrr_det/settings/development_*.py
+
+/node_modules/.bin/acorn
+/node_modules/.bin/closure-util
+/node_modules/.bin/decompress-zip
+/node_modules/.bin/handlebars
+/node_modules/.bin/mime
+/node_modules/.bin/mkdirp
+/node_modules/.bin/nopt
+/node_modules/.bin/rimraf
+/node_modules/.bin/sshpk-conv
+/node_modules/.bin/sshpk-sign
+/node_modules/.bin/sshpk-verify
+/node_modules/.bin/strip-ansi
+/node_modules/.bin/uglifyjs
+/node_modules/.bin/uuid

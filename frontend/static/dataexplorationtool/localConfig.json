@@ -1,0 +1,82 @@
+{
+    "proxyUrl": "/proxy/?url=",
+    "geoStoreUrl": "/rest/geostore",
+    "printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
+    "themePrefix": "dataexplorationtool",
+    "translationsPath": [
+        "/static/dataexplorationtool/MapStore2/web/client/translations",
+        "/static/dataexplorationtool/translations"
+    ],
+    "initialState": {
+        "defaultState": {
+            "maptype": {
+                "mapType": "openlayers"
+            }
+        }
+    },
+    "plugins": {
+        "dataexplorationtool": [
+            "TOC",
+            {
+                "name": "Map",
+                "cfg": {
+                    "mapType": "openlayers",
+                    "mapOptions": {
+                        "openlayers": {
+                            "view": {
+                                "minZoom": 3
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "name": "BrandNavbar",
+                "cfg": {
+                    "containerPosition": "header"
+                }
+            },
+            {
+                "name": "DataExplorer",
+                "cfg": {
+                    "containerPosition": "columns"
+                }
+            },
+            "MapLoading",
+            "TOCButton",
+            "Toolbar",
+            "Expander",
+            "Undo",
+            "Redo",
+            "ZoomAll",
+            "SpatialFilter",
+            "ZoomToSearch",
+            {
+                "name": "FullScreen",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": false
+                    }
+                }
+            },
+            {
+                "name": "ZoomIn",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": true
+                    }
+                }
+            },
+            {
+                "name": "ZoomOut",
+                "override": {
+                    "Toolbar": {
+                        "alwaysVisible": true
+                    }
+                }
+            },
+            "DataExplorerButton",
+            "Download"
+        ]
+    }
+}

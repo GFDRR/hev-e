@@ -1,0 +1,27 @@
+celery==4.1.0
+Django==1.9.13
+django-apptemplates==1.4
+django-celery-beat==1.0.1
+django-celery-results==1.0.1
+django-crispy-forms==1.7.0
+django-cuser==2017.3.16
+django-filter==1.1.0
+django-model-utils==3.0.0
+django-simple-history==1.9.0
+djangorestframework==3.6.4
+djangorestframework-gis==0.11.2
+drf-nested-routers==0.90.0
+drf-openapi==1.0.0
+enum34==1.1.6
+inflection==0.3.1
+pathlib2==2.3.0
+proj==0.1.0
+pyshp==1.2.12
+pyproj==1.9.5.1
+pygdal==2.2.1.3
+SQLAlchemy==1.1.14
+Shapely>=1.5.13,<1.6.dev0
+six==1.10.0
+--editable git://github.com/geosolutions-it/geonode.git@gfdrr-det#egg=geonode
+--editable git://github.com/pyoseo/django-oseoserver@master#egg=oseoserver
+

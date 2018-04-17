@@ -1,0 +1,209 @@
+{
+    "dataset": [
+        "hazards",
+        "exposures",
+        "vulnerabilities"
+    ],
+    "list": {
+        "exposures": {
+            "format": {
+                "single": [
+                    {
+                        "name": "ESRI Shapefile",
+                        "code": "shapefile"
+                    }
+                ],
+                "package": [
+                    {
+                        "name": "GeoPackage",
+                        "code": "geopackage"
+                    }
+                ]
+            },
+            "category": [
+                {
+                    "name": "Buildings",
+                    "colors_range": [
+                        "#ff42d0",
+                        "#fb4168"
+                    ],
+                    "icon": "home",
+                    "filters": [
+                        {
+                            "name": "Buildings",
+                            "code": "buildings"
+                        }
+                    ]
+                },
+                {
+                    "name": "Infrastructure",
+                    "colors_range": [
+                        "#423aed",
+                        "#41fbf0"
+                    ],
+                    "icon": "road",
+                    "filters": [
+                        {
+                            "name": "Roads",
+                            "code": "road_network"
+                        },
+                        {
+                            "name": "Rail",
+                            "code": "rail"
+                        },
+                        {
+                            "name": "Pipelines",
+                            "code": "pipelines"
+                        },
+                        {
+                            "name": "Storage Tanks",
+                            "code": "storage_tanks"
+                        },
+                        {
+                            "name": "Power Grid",
+                            "code": "power_grid"
+                        },
+                        {
+                            "name": "Bridges",
+                            "code": "bridges"
+                        },
+                        {
+                            "name": "Energy",
+                            "code": "energy"
+                        }
+                    ]
+                },
+                {
+                    "name": "Agriculture",
+                    "colors_range": [
+                        "#aaff33",
+                        "#d9c80e"
+                    ],
+                    "icon": "leaf",
+                    "filters": [
+                        {
+                            "name": "Crops",
+                            "code": "crops"
+                        },
+                        {
+                            "name": "Livestock",
+                            "code": "livestock"
+                        },
+                        {
+                            "name": "Forestry",
+                            "code": "forestry"
+                        }
+                    ]
+                },
+                {
+                    "name": "Social",
+                    "colors_range": [
+                        "#333333",
+                        "#dddddd"
+                    ],
+                    "icon": "users",
+                    "filters": [
+                        {
+                            "name": "People",
+                            "code": "people"
+                        }
+                    ]
+                }
+            ]
+        },
+        "hazards": {},
+        "vulnerabilities": {}
+    },
+    "detail": {
+        "exposures": {
+            "buildings": [
+                {
+                    "name": "Construction",
+                    "code": "construction_material",
+                    "style": "exposure_buildings_construction",
+                    "filters": [
+                        {
+                            "name": "Masonry",
+                            "color": "#9e0142",
+                            "code": "masonry"
+                        },
+                        {
+                            "name": "Concrete",
+                            "color": "#ea5d47",
+                            "code": "concrete"
+                        },
+                        {
+                            "name": "Steel Frame",
+                            "color": "#fdbf6f",
+                            "code": "steelframe"
+                        },
+                        {
+                            "name": "Composite",
+                            "color": "#ffffbf",
+                            "code": "composite"
+                        },
+                        {
+                            "name": "Wood",
+                            "color": "#bfe5a0",
+                            "code": "wood"
+                        },
+                        {
+                            "name": "Earth",
+                            "color": "#55afad",
+                            "code": "earth"
+                        },
+                        {
+                            "name": "Unknown",
+                            "color": "#5e4fa2",
+                            "code": "unknown"
+                        }
+                    ]
+                },
+                {
+                    "name": "Occupancy",
+                    "code": "occupancy",
+                    "style": "exposure_buildings_occupancy",
+					"filters": [
+                        {
+                            "name": "Residential",
+                            "color": "#9e0142",
+                            "code": "residential"
+                        },
+                        {
+                            "name": "Commercial",
+                            "color": "#ea5d47",
+                            "code": "commercial"
+                        },
+                        {
+                            "name": "Industrial",
+                            "color": "#fdbf6f",
+                            "code": "industrial"
+                        },
+                        {
+                            "name": "Healthcare",
+                            "color": "#ffffbf",
+                            "code": "healthcare"
+                        },
+                        {
+                            "name": "Education",
+                            "color": "#bfe5a0",
+                            "code": "education"
+                        },
+                        {
+                            "name": "Government",
+                            "color": "#55afad",
+                            "code": "government"
+                        },
+                        {
+                            "name": "Unknown",
+                            "color": "#5e4fa2",
+                            "code": "unknown"
+                        }
+                    ]
+                }
+            ]
+        },
+        "hazards": {},
+        "vulnerabilities": {}
+    }
+}

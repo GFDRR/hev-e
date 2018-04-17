@@ -1,0 +1,1145 @@
+
+@ms2-et-color-bg: #f0f0f0;
+@ms2-et-color-primary: #21bab0;
+@ms2-et-color-red: #dbaf00;
+
+.text-hev-e-primary {
+    color: @ms2-et-color-primary;
+    
+}
+.text-hev-e-primary-hover {
+    &:hover {
+        color: @ms2-et-color-bg;
+    }
+}
+.text-disabled {
+    color: #444;
+}
+.modal-header {
+    background-color: @ms2-color-background;
+    color: @ms2-color-primary;
+}
+.et-download-head {
+    .row {
+        margin-bottom: 10px;
+    }
+    border-bottom: 1px solid @ms2-color-shade-lighter;
+}
+
+.et-download-modal {
+
+    .loader-container {
+        display: flex;
+        height: 100%;
+        > div:first-child {
+            width: 128px !important;
+            height: 128px !important;
+            padding: 0 !important;
+            margin: auto !important;
+        }
+    }
+    
+    .modal-header {
+        margin-bottom: 0;
+        background-color: @ms2-et-color-bg;
+        
+    }
+    
+
+    .nav  {
+        background-color: @ms2-et-color-bg;
+        li.disabled {
+            opacity: 0.5;
+        }
+    }
+    
+    .modal-fixed {
+        z-index: 3100;
+    }
+    .modal-footer {
+        border-top: 1px solid @ms2-color-shade-lighter !important;
+    }
+
+    .et-filter {
+        #et-bbox-preview {
+            margin: auto;
+            width: 189px;
+            height: 189px;
+            background-color: @ms2-color-shade-lighter;
+            pointer-events: none !important;
+        }
+    }
+    .ms2-border-layout-body {
+        overflow-y: hidden;
+        .ms2-border-layout-content {
+            overflow-y: auto;
+        }
+    }
+
+    .et-list-item {
+        display: flex;
+        align-items: center;
+        > div:first-child {
+            flex: 1;
+        }
+        > div:last-child {
+            padding: 0 8px;
+        }
+    }
+}
+
+.et-download-modal-alert {
+    .modal-header {
+        margin-bottom: 0;
+        background-color: @ms2-color-background;
+        
+    }
+}
+
+.ms-keyboard-focus {
+    outline-color: lighten(@btn-primary-bg, 5%);
+}
+
+.et-animation {
+    transition: all 0.3s;
+    transform: scale(2.0);
+    color: @ms2-et-color-bg;
+    display: inline-block;
+}
+
+.et-no-animation {
+    transition: all 0.3s;
+    display: inline-block;
+}
+
+.btn-primary {
+    .button-variant(@ms2-color-primary; @ms2-et-color-bg; darken(@ms2-et-color-bg, 7%));
+    &[disabled] {
+        opacity: 0.9;
+        background-color: @ms2-color-disabled;
+        color: @ms2-color-text-disabled;
+    }
+    &:active,
+    &.active {
+        color: @ms2-et-color-primary;
+        background-color: #222;
+    }
+}
+
+.ol-box.ol-dragbox {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+    border-radius: 0;
+    border: 2px dashed rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-control-scale {
+    top: auto;
+    right: auto;
+    clear: none;
+    z-index: 1000;
+}
+
+div.ol-scale-line.ol-unselectable {
+    border: 1px solid #ffffff;
+    border-top: none;
+    line-height: auto;
+    border-radius: 0;
+    right: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    font-family: "Bariol", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    top: auto;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    color: #333333 !important;
+    bottom: 8px;
+    left: 8px;
+    padding: 0;
+    position: absolute;
+
+    div.ol-scale-line-inner {
+        color: #333333 !important;
+        font-weight: bold;
+        border: 2px solid #333333;
+        border-top: none;
+        padding: 2px 2px 4px 2px;
+    }
+}
+
+.ol-attribution.ol-uncollapsible {
+    box-sizing: unset;
+}
+
+#dataexplorationtool-view-container {
+    .et-brand-navbar {
+
+        .shadow-soft;
+        margin-bottom: 0;
+        z-index: 500;
+       
+        margin-bottom: 0;
+        border-color: transparent;
+        .navbar-nav > li > a {
+            font-size: 18px;
+        }
+        .container {
+            
+            width: auto;
+            .navbar-header {
+                margin: 0;
+                .navbar-brand {
+                    display: flex;
+                    padding: 28px 15px;
+                    a {
+                        height: 100%;
+                        padding-right: 10px;
+                        margin-right: 10px;
+                        border-right: 1px solid @ms2-et-color-bg;
+                        img {
+                            height: 100%;
+                            width: auto;
+                        }
+                    }
+                }
+                
+            }
+            .navbar-form {
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+        }
+
+        &.navbar-inverse {
+            .navbar-header {
+                .navbar-brand {
+                    a {
+                        border-right: 1px solid #555;
+                    }
+                }
+                
+            }
+        }
+        
+        .et-search-bar {
+            #map-search-bar {
+                top: 0;
+                transition: 0.4s all;
+                .form-group {
+                    display: flex;
+                    width: 100%;
+                    height: 100%;
+                    .input-group {
+                        flex: 1;
+                        display: flex;
+                        input {
+                            flex: 1;
+                            color: @ms2-color-primary;
+                        }
+                        .input-group-addon {
+                            display: flex;
+                            position: relative !important;
+                            padding: 0;
+                            width: auto;
+                            .sk-spinner {
+                                right: auto !important;
+                                top: 2px !important;
+                                left: 7px;
+                                width: 27px;
+                                height: 100%;
+                                display: flex;
+                                & > .sk-pulse {
+                                    margin: auto;
+                                }
+                            }
+                            & > * {
+                                margin: auto;
+                                font-size: 20px;
+                            }
+                            .searcherror {
+                                margin-right: 10px;
+                            }
+                            .searchclear {
+                                margin: auto 10px;
+                                &:before {
+                                    content: "U";
+                                }
+                                &:hover {
+                                    cursor: pointer;
+                                }
+                            }
+                            .glyphicon-search {
+                                margin: auto 10px;
+                            }
+                        }
+                    }
+                }
+                
+            }
+
+            .search-result-list {
+                .shadow-far;
+                border-radius: 0;
+                max-height: 30vh !important;
+                .search-result {
+                    border-radius: 0;
+                    &:hover {
+                        background-color: @ms2-et-color-bg;
+                        color: @ms2-color-primary;
+                    }
+                }
+            }
+
+            &.et-center {
+                #map-search-bar {
+                    position: fixed !important;
+                    top: 200px;
+                    right: auto;
+                    left: auto;
+                    margin: auto;
+                    z-index: 5000;
+                    .input-group {
+                        width: 500px;
+                        .shadow-far;
+                        input {
+                            height: 62px !important;
+                            box-shadow: none;
+                        }
+                        .input-group-addon {
+                            height: 62px !important;
+                        }
+                    }
+                    right: 50%;
+                    margin-right: -250px;
+                }
+
+                .search-result-list {
+                    position: fixed !important;
+                    top: 277px;
+                    right: auto;
+                    left: auto;
+                    margin: auto;
+                    z-index: 5000;
+                    left: 50%;
+                    margin-left: -250px;
+                }
+            }
+
+            &.et-top-left {
+
+                #map-search-bar {
+                    position: relative !important;
+                    /*top: 5px;
+                    right: 16px;
+                    
+                    z-index: 5000;*/
+                    left: 0;
+                    right: 0;
+                    .input-group {
+                        width: 500px;
+                        .shadow-soft;
+                        input {
+                            height: 42px !important;
+                            box-shadow: none;
+                        }
+                        .input-group-addon {
+                            height: 42px !important;
+                        }
+                    }
+                }
+
+                .search-result-list {
+                    position: absolute !important;
+                    margin-top: 20px;
+                    /*top: 10px;
+                    right: 0;*/
+                    left: auto;
+                    z-index: 5000;
+                    background-color: @ms2-color-background;
+                }
+
+                /*> *:last-child {
+                    display: block;
+                    overflow: hidden;
+                    margin-left: auto;
+                }
+        
+                #map-search-bar {
+                    position: static !important;
+                    width: 500px;
+                    margin-top: 5px;
+                    margin-right: 16px;
+                    .input-group {
+                        width: 500px;
+                        input {
+                            height: 42px !important;
+                        }
+                        .input-group-addon {
+                            height: 42px !important;
+                            width: 42px !important;
+                        }
+                    }
+                }*/
+            }
+
+            
+            
+        }
+
+        
+
+        
+    }
+    > .ms2-border-layout-body {
+        > .ms2-border-layout-content {
+            display: flex;
+            flex-direction: column;
+            > #map {
+                flex: 1;
+                position: relative !important;
+            }
+            #mapstore-toolbar {
+                
+                #mapstore-toolbar-container {
+                    .shadow-far;
+                    
+                    .btn-success,
+                    .btn-primary
+                     {
+                        .button-variant(@ms2-color-primary; @ms2-et-color-bg; darken(@ms2-et-color-bg, 7%));
+                        &[disabled] {
+                            opacity: 0.9;
+                            background-color: @ms2-color-disabled;
+                            color: @ms2-color-text-disabled;
+                        }
+                        &:active,
+                        &.active {
+                            color: @ms2-et-color-primary;
+                            background-color: #222;
+                        }
+                    }
+
+                    .square-button {
+                        height: 42px;
+                        width: 42px;
+                        display: flex;
+                        padding: 0;
+                        span {
+                            margin: auto;
+                            font-size: 20px;
+                        }
+                    }
+                }
+            }
+            
+        }
+    }
+
+    // DATA EXPLORER PANEL
+    .et-data-explorer {
+        .mapstore-side-card-title {
+            font-size: 16px;
+        }
+        display: flex;
+        flex-direction: column;
+        transition: width 0.2s ease-in;
+        .shadow-far;
+        .modal-fixed {
+            position: relative;
+            flex: 1;
+            .modal-dialog-container {
+                width: ~"calc(100% - 20px)";
+                height: ~"calc(100% - 20px)";
+                left: 10px;
+                top: 10px;
+            }
+            .modal-header {
+                background-color: @ms2-color-background;
+                color: @ms2-color-primary;
+            }
+        }
+        .ms-header {
+            box-shadow: none;
+            background-color: @ms2-et-color-bg;
+            .row {
+                background-color: @ms2-et-color-bg;
+                .btn-default {
+                    .button-variant(@ms2-color-primary; @ms2-et-color-bg; @ms2-et-color-bg);
+                }
+                &:last-child {
+                    margin-bottom: 0; 
+                }
+                + .row {
+                    margin-top: 0;
+                }
+            }
+
+            .breadcrumb {
+                margin-bottom: 0;
+                border-bottom: 1px solid @ms2-color-shade-light;
+                margin: 15px;
+                margin-top: 0;
+            }
+        }
+        .compat-catalog {
+            flex: 1;
+            .catalog-form {
+                width: 100%;
+                padding-bottom: 10px;
+                border-bottom: 1px solid @ms2-et-color-bg;
+            }
+            .msSideGrid {
+                width: ~"calc(100% - 60px)";
+                position: absolute;
+            }
+            main {
+                position: relative;
+            }
+            .items-list {
+                > .col-xs-12:hover {
+                    z-index: 5;
+                }
+                .mapstore-side-card {
+                    transform: none;
+                }
+
+            }
+            .loader-container {
+                display: flex;
+                height: 100%;
+                width: 100%;
+                > div {
+                    width: 128px !important;
+                    height: 128px !important;
+                    padding: 0 !important;
+                }
+
+                .erd_scroll_detection_container {
+                    display: none !important;
+                }
+            }
+
+            
+        }
+
+        .et-related-head {
+            position: relative;
+            z-index: 501;
+            background-color: @ms2-color-background;
+            padding: 15px;
+            margin: 0;
+            h4 {
+                margin: 0;
+            }
+            .shadow-soft;
+        }
+
+        .et-related-list {
+            position: relative;
+            z-index: 500;
+            width: 100%;
+            background-color: @ms2-et-color-bg;
+            overflow-x: auto;
+            overflow-y: hidden; 
+            
+            .et-related-list-container {
+                white-space: nowrap;
+            }
+        }
+    }
+}
+
+.ms-square-card {
+    display: inline-block;
+    width: 156px;
+    height: 156px;
+    margin: 15px 0 15px 15px;
+    background-color: @ms2-color-background;
+    min-width: 0;
+    flex-direction: column;
+    transition: 0.3s all;
+    .shadow-soft;
+    .ms-square-card-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        .ms-top-card {
+            display: flex;
+            width: 100%;
+            > *:first-child {
+                flex: 1;
+                margin: 10px;
+                border-bottom: 1px solid @ms2-et-color-bg;
+            }
+            .glyphicon {
+                display: block;
+                padding: 10px;
+                &:hover {
+                    color: @ms2-color-primary;
+                    cursor: pointer;
+                }
+            }
+        }
+        .ms-preview-card {
+            flex: 1;
+            display: flex;
+            height: 100%;
+            > i {
+                margin: auto;
+                display: block;
+            }
+        }
+    }
+    &:hover {
+        .shadow-far;
+        transform: scale(1.01);
+    }
+    &:first-child {
+        margin-left: 15px;
+    }
+    &:last-child {
+        margin-right: 15px;
+    }
+}
+
+.et-dataset-button {
+    position: absolute;
+    .shadow-far;
+    top: 5px;
+    left: 5px;
+    height: 42px;
+    width: 42px;
+    display: flex;
+    padding: 0;
+    span {
+        margin: auto;
+        font-size: 20px;
+    }
+}
+
+.et-layer-button {
+    position: absolute;
+    .shadow-far;
+    top: 5px;
+    right: 5px;
+    height: 42px;
+    width: 42px;
+    display: flex;
+    padding: 0;
+    span {
+        margin: auto;
+        font-size: 20px;
+    }
+}
+
+.toolbarexpand-enter {
+    opacity: 1.0 !important;
+    height: 1px !important;
+    overflow: hidden !important;
+}
+  
+.toolbarexpand-enter.toolbarexpand-enter-active {
+    opacity: 1;
+    transition: all 500ms ease-in !important;
+    height: 42px !important;
+    overflow: hidden !important;
+}
+  
+.toolbarexpand-leave {
+    opacity: 1;
+    height: 42px !important;
+    overflow: hidden !important;
+}
+  
+.toolbarexpand-leave.toolbarexpand-leave-active {
+    opacity: 1.0 !important;
+    transition: all 300ms ease-in !important;
+    height: 1px !important;
+    overflow: hidden !important;
+}
+
+.checkbox {
+    &.disabled {
+        label {
+            color: darken(@ms2-et-color-bg, 10%);
+        }
+    }
+}
+
+.et-catalog,
+.et-details .ms2-border-layout-body,
+.et-download-modal {
+    .et-filter {
+        width: 220px;
+        height: 100%;
+        border-right: 1px solid @ms2-et-color-bg;
+        display: flex;
+        flex-direction: column;
+        .container-fluid {
+            width: 100%;
+            &:first-child {
+                border-bottom: 1px solid @ms2-et-color-bg;
+            }
+            &:last-child {
+                overflow-y: auto;
+            }
+        }
+        
+    }
+}
+
+@media screen and (max-width: 1366px) {
+    .et-catalog,
+    .et-details .ms2-border-layout-body,
+    .et-download-modal .ms2-border-layout-body {
+        flex-direction: column;
+        .et-filter {
+            width: 100%;
+            height: 220px;
+            border-top: 1px solid @ms2-et-color-bg;
+            border-bottom: 1px solid @ms2-et-color-bg;
+            border-right: none;
+        }
+    }
+
+    .et-search-bar.et-top-left {
+        .MapSearchBar {
+            width: 300px !important;
+        }
+        .search-result-list {
+            width: 300px !important;
+        }
+    }
+
+    .ms-resizable-modal .modal-content.ms-lg {
+        height: ~"calc(100% - 6px)";
+        top: 3px;
+    }
+    
+}
+/*
+@media (max-width: 878px) {
+    #dataexplorationtool-view-container{
+        #mapstore-navbar-container {
+            .et-brand-navbar {
+                .container {
+                    .navbar-header {
+                        .navbar-brand {
+                            // padding: 32px 15px;
+                        }
+                    }
+                }   
+            }
+        }
+    }
+}*/
+
+@media (max-width: 768px) {
+    #dataexplorationtool-view-container {
+        .et-brand-navbar {
+            .et-search-bar {
+                &.et-top-left {
+                    #map-search-bar {
+                        top: 0px !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .et-brand-navbar {
+        border: none;
+        .container {
+            background-color: @ms2-color-background;
+            .shadow-soft;
+            .navbar-header {
+                width: 100%;
+            }
+        }
+
+        .search-result-list {
+            width: ~"calc(100% - 20px)" !important;
+            left: 10px !important;
+            margin-left: 0 !important;
+        }
+
+        .MapSearchBar {
+            width: ~"calc(100% - 20px)" !important;
+            left: 10px !important;
+            margin-left: 0 !important;
+        }
+    }
+
+    .et-dataset-button {
+        top: 10px;
+    }
+
+    #dataexplorationtool-view-container {
+        .et-brand-navbar {
+            &.navbar-inverse {
+                background-color: @navbar-inverse-bg;
+                .container {
+                    background-color: @navbar-inverse-bg;
+                }
+            }
+            .et-search-bar {
+                &.et-top-left,
+                &.et-center {
+                    #map-search-bar {
+                        position: static !important;
+                        width: 100% !important;
+                        /*top: 5px;
+                        right: 16px;
+                        
+                        z-index: 5000;*/
+                        left: 0;
+                        .input-group {
+                            width: 100% !important;
+                            .shadow-soft;
+                            input {
+                                height: 42px !important;
+                                box-shadow: none;
+                            }
+                            .input-group-addon {
+                                height: 42px !important;
+                            }
+                        }
+                    }
+    
+                    .search-result-list {
+                        position: static !important;
+                        width: 100% !important;
+                        top: 10px;
+                        right: 0;
+                        left: auto;
+                        z-index: 5000;
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
+hr {
+    margin: 10px 0;
+}
+
+
+.et-details {
+    .modal-footer {
+        display: none;
+    }
+    .recharts-wrapper {
+        > svg {
+            overflow: visible;
+        }
+    }
+    
+    .btn-group {
+        float: right;
+        margin-bottom: 30px;
+    }
+    .ms2-border-layout-body {
+        overflow: hidden;
+    }
+    .ms2-border-layout-content {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .et-related-data {
+        .catalog-form {
+            padding-bottom: 0 !important;
+        }
+        > .container-fluid {
+            > .row {
+                background-color: @ms2-et-color-bg;
+            }
+        }
+        .et-close-head {
+            span {
+                display: block;
+                transition: 0.3s;
+            }
+            &:hover {
+                span {
+                    transform: scale(1.1);
+                }
+            }
+        }
+        .et-btn-row {
+            margin-bottom: 30px;
+            height: @square-btn-size;
+            display: flex;
+            > .btn {
+                margin: auto;
+            }
+            .btn-default {
+                transition: all 0.3s;
+                .button-variant(@ms2-color-primary; @ms2-color-background; @ms2-color-background);
+                .shadow-soft;
+                &:hover {
+                    .shadow-far;
+                }
+                h4 {
+                    margin: 0;
+                }
+            }
+            
+        }
+        background-color: @ms2-color-background;
+        width: 100%;
+        
+        z-index: 400;
+        transition: height 0.3s;
+        
+        &.et-hide {
+            height: @square-btn-size;
+            &:hover {
+                height: @square-btn-size * 1.2;
+            }
+        }
+
+        &.et-show {
+            height: 100%;
+            .et-btn-row {
+                .btn-default {
+                    background-color: transparent !important;
+                    border-color: transparent !important;
+                    box-shadow: none !important;
+                    pointer-events: none;
+                    &:hover {
+                        box-shadow: none !important;
+                        background-color: transparent !important;
+                        border-color: transparent !important;
+                    }
+    
+                }
+            }
+        }
+        
+    }
+    
+}
+.mapstore-side-card {
+    transform: none !important;
+}
+.modal-header {
+    .modal-title {
+        .ms-title {
+            > span {
+                &:first-child {
+                    font-size: 20px;
+                }
+            }
+        }
+        
+        .ms-header-btn {
+            font-size: 26px;
+        }
+    }
+    margin-bottom: 15px;
+}
+
+.ms-resizable-modal {
+    .ms2-border-layout-body {
+        overflow-x: hidden;
+    }
+}
+
+.et-compact-toc {
+    .shadow-soft;
+    z-index: 10;
+    transition: width 0.3s;
+    position: absolute;
+    right: 0;
+    height: 100%;
+    background-color: @ms2-color-background;
+    .et-close {
+        font-size: @icon-size;
+        display: block;
+        margin: 8px 0;
+        cursor: pointer;
+        transition: all 0.3s;
+        &:hover {
+            transform: scale(1.1);
+        }
+    }
+    .mapstore-side-card {
+        &.ms-sm {
+            &:hover {
+                transform: none;
+            }
+        }
+    }
+    width: 220px;
+
+    > div {
+        > .container-fluid {
+            border-bottom: 1px solid @ms2-et-color-bg;
+        }
+    }
+
+    .ms2-border-layout-content {
+        overflow: hidden;
+        display: flex;
+        .msSideGrid {
+            flex: 1;
+            width: 220px;
+            overflow-y: auto;
+            margin: 0;
+            padding: 15px;
+        }
+    }
+}
+
+
+/* move elements when TOC open needs TOC, Map, MapToolbar in this order (localConfig.json)*/
+
+#mapstore-toolbar #mapstore-toolbar-container {
+    right: 0;
+    transition: right 0.3s;
+}
+
+#map {
+    .ol-attribution.ol-uncollapsible {
+        right: 0;
+        transition: right 0.3s;
+    }
+}
+
+.et-compact-toc.et-open + #map {
+    .ol-attribution.ol-uncollapsible {
+        right: 220px;
+    }
+}
+
+.et-compact-toc.et-open + #map + #mapstore-toolbar #mapstore-toolbar-container {
+    right: 220px;
+}
+
+/* end move elements when TOC open*/
+
+.mapstore-filter.form-group {
+    margin: (@square-btn-size - @square-btn-medium-size)/2 0 0 0;
+    .input-group {
+        height: @square-btn-medium-size;
+        width: 100%;
+        input {
+            height: @square-btn-medium-size;
+        }
+        .input-group-addon {
+            position: absolute;
+            z-index: 2;
+            right: 0;
+            border-color: transparent;
+            background-color: transparent;
+        }
+
+        .close-filter {
+            cursor: pointer;
+        }
+    }
+}
+
+.mapstore-side-card {
+    &.ms-card-hide {
+        opacity: 0.5;
+    }
+    &.ms-card-error {
+        background-color: @ms2-et-color-bg;
+    }
+    &.selected {
+        background-color: #222;
+        .mapstore-side-glyph {
+            color: @ms2-et-color-primary;
+        }
+        .mapstore-side-preview {
+            > .glyphicon {
+                color: @ms2-et-color-primary;
+            }
+        }
+        .mapstore-side-card-tool {
+            > .glyphicon {
+                color: @ms2-et-color-primary;
+            }
+        }
+    }
+}
+
+.noUi-target {
+    background-color: @ms2-et-color-primary;
+    &.noUi-horizontal {
+        margin: 0;
+        .noUi-base {
+            .noUi-origin {
+                .noUi-handle {
+                    border-top: 1px solid @ms2-et-color-bg;
+                    width: 10px;
+                    height: 15px;
+                    left: -5px;
+                    top: -8px;
+                }
+            } 
+        } 
+    }
+}
+
+.ms-drag-over {
+    border-color: @ms2-et-color-primary !important;
+}
+
+.ms-grab {
+    width: 7px;
+    overflow: hidden;
+    display: inline-block;
+    margin-right: 8px;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+
+    &:active { 
+        cursor: grabbing;
+        cursor: -moz-grabbing;
+        cursor: -webkit-grabbing;
+    }
+    &:hover {
+        color: @ms2-et-color-primary;
+    }
+    &:before {
+        top: 2px;
+        position: relative;
+    }
+}
+
+
+.empty-state-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    transform: translateY(0) !important;
+    .empty-state-main-view {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        flex-direction: column;
+        flex: 1;
+        .empty-state-image {
+            width: 128px;
+            height: 128px;
+            margin: auto;
+            margin-bottom: 10px;
+        }
+        h1 {
+            margin: auto;
+            margin-top: 10px;
+        }
+    }
+    .empty-state-content {
+        display: block;
+    }
+}

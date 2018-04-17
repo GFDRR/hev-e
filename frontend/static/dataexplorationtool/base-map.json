@@ -1,0 +1,25 @@
+{
+	"map": {
+		"projection": "EPSG:900913",
+		"units": "m",
+		"center": {"x": 0.000000, "y": 4000000.000000, "crs": "EPSG:900913"},
+    "zoom": 3,
+		"maxExtent": [
+			-20037508.34, -20037508.34,
+			20037508.34, 20037508.34
+		],
+		"layers": [
+      {
+        "type": "tileprovider",
+        "title": "MapBoxStyle",
+        "provider": "MapBoxStyle",
+        "name": "MapBoxStyle",
+        "source": "light-v9",
+				"group": "background",
+				"accessToken": "pk.eyJ1IjoiZ2Vvc29sdXRpb25zIiwiYSI6ImNqZWZzbGlzZDBlNWcyd21uY2RsaDA0bXMifQ.Kqd7xVo6gglnLZ9BAQ7uEg",
+				"visibility": true,
+				"attribution": " © <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors | Imagery from <a href=\"http://mapbox.com/about/maps/\">MapBox</a>"
+      }
+		]
+	}
+}
