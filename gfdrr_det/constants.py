@@ -18,6 +18,7 @@ from enum import Enum, unique
 class DatasetType(Enum):
     exposure = 1
     hazard = 2
+    vulnerability = 3
 
 @unique
 class AdministrativeDivisionLevel(Enum):
