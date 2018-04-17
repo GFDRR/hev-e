@@ -14,4 +14,4 @@ source ~/.virtualenvs/det-dev/bin/activate
 
 pushd $(dirname $0)
 
-DJANGO_SETTINGS_MODULE=gfdrr_det.gfdrr_det_settings python manage.py $@
+DJANGO_SETTINGS_MODULE=gfdrr_det.settings.development python manage.py $@
