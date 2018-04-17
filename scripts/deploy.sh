@@ -14,8 +14,25 @@ source ~/.virtualenvs/det-dev/bin/activate
 
 pushd $(dirname $0)/../
 
-DJANGO_SETTINGS_MODULE=gfdrr_det.gfdrr_det_settings paver update
+git remote update
 
-touch gfdrr_det/wsgi.py
+UPSTREAM=${1:-'@{u}'}
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse "$UPSTREAM")
+BASE=$(git merge-base @ "$UPSTREAM")
+
+if [ $LOCAL = $REMOTE ]; then
+    echo "Up-to-date"
+elif [ $LOCAL = $BASE ]; then
+    echo "Need to pull"
+    git pull
+    DJANGO_SETTINGS_MODULE=gfdrr_det.settings.development paver update
+    touch gfdrr_det/wsgi.py
+    sudo service uwsgi restart
+elif [ $REMOTE = $BASE ]; then
+    echo "Need to push"
+else
+    echo "Diverged"
+fi
 
 exit 0
