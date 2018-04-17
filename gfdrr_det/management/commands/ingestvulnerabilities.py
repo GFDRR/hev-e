@@ -67,7 +67,7 @@ def get_country_names(country_iso_codes):
     for country_iso in country_iso_codes:
         try:
             adm_division = AdministrativeDivision.objects.get(  # pylint: disable=no-member
-                iso=country_iso)
+                iso=country_iso, level=0)
             country_names.append(adm_division.name_eng)
         except AdministrativeDivision.DoesNotExist:  # pylint: disable=no-member
             country_names.append(country_iso)
