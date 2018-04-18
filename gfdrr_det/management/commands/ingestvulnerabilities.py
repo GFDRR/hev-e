@@ -14,6 +14,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from django.db import connections
+from django.contrib.gis import geos
 from django.core.management.base import BaseCommand
 
 from gfdrr_det.constants import DatasetType
@@ -28,10 +29,10 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
     def handle(self, *args, **options):
         table_params = {
             "vf_table": {
-                "type_": "vulnerability_function",
+                "vulnerability_type": "vulnerability_function",
             },
             "ff_table": {
-                "type_": "fragility_function",
+                "vulnerability_type": "fragility_function",
             },
         }
         with connections["hev_e"].cursor() as db_cursor:
@@ -40,8 +41,8 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
                     details = {
                         "db_table": table,
                         "record_id": record.id,
-                        "hazard": record.hazard,
-                        "asset": record.asset,
+                        "hazard": record.hazard.lower(),
+                        "asset": record.asset.lower(),
                         "reference": record.reference,
                     }
                     details.update(extra)
@@ -59,6 +60,8 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
                             countries=get_country_names(record.countries_iso)
                         )
                         hev_e_detail.details = details
+                        hev_e_detail.envelope = get_envelope(
+                            record.countries_iso)
                         hev_e_detail.save()
 
 
@@ -72,3 +75,28 @@ def get_country_names(country_iso_codes):
         except AdministrativeDivision.DoesNotExist:  # pylint: disable=no-member
             country_names.append(country_iso)
     return country_names
+
+
+def get_envelope(country_iso_codes):
+    """Returns a MultiPolygon with a simplified geometry of the countries
+
+    The simplified geometry is calculated as the convex hull of each individual
+    polygon that makes up each country's territory.
+
+    """
+
+    qs = AdministrativeDivision.objects.filter(  # pylint: disable=no-member
+        level=0,
+        iso__in=country_iso_codes,
+    ).values_list("geom", flat=True)
+    geoms = []
+    for multipolygon_geom in qs:
+        geoms += [poly.convex_hull for poly in multipolygon_geom]
+    unioned = geos.MultiPolygon(geoms).cascaded_union
+    if unioned.geom_typeid == 3:  # Polygon
+        result = geos.MultiPolygon(unioned)
+    elif unioned.geom_typeid == 6:  # MultiPolygon
+        result = unioned
+    else:
+        raise RuntimeError("Invalid geometry type")
+    return result

@@ -8,19 +8,20 @@
 #
 #########################################################################
 
-"""Serializers for HEV-e vulnerabilities"""
+"""Serializers for HEV-E vulnerabilities"""
 
 from rest_framework import serializers
 
 
 class VulnerabilitySerializer(serializers.BaseSerializer):
+    """Serializer for the Vulnerabilities list endpoint"""
 
     def to_representation(self, instance):
         return {
             "id": instance.id,
-            "type": instance.details["type_"],
+            "vulnerability_type": instance.details["vulnerability_type"],
             "hazard": instance.details.get("hazard"),
-            "asset": instance.details.get("asset"),
+            "exposure": instance.details.get("asset"),
             "countries": instance.details.get("countries"),
             "reference": instance.details.get("reference"),
         }
