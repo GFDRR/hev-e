@@ -44,11 +44,7 @@ module.exports = ({
                                         {order.order_items && order.order_items[0] && order.order_items[0].format === 'geopackage' && order.order_items[0].download_url && <Button
                                             bsStyle="success"
                                             bsSize="sm"
-                                            onClick={() => {
-                                                const a = document.createElement('a');
-                                                a.setAttribute('href', order.order_items[0].download_url);
-                                                a.click();
-                                            }}>
+                                            href={order.order_items[0].download_url}>
                                             <Message msgId="heve.bDownload"/>
                                         </Button>}
                                         {/*order.order_items && head(order.order_items.filter(itm => itm.status === 'Failed')) && <Button
@@ -83,11 +79,7 @@ module.exports = ({
                                     {item.download_url && item.format !== 'geopackage' && item.status === 'Completed' && <Button
                                         bsStyle="success"
                                         bsSize="sm"
-                                        onClick={() => {
-                                            const a = document.createElement('a');
-                                            a.setAttribute('href', item.download_url);
-                                            a.click();
-                                        }}>
+                                        href={item.download_url}>
                                         <Message msgId="heve.bDownload"/>
                                     </Button>}
                                     {item.download_url && item.format === 'geopackage' && item.status === 'Completed' && <i className="fa fa-check fa-2x text-success"/>}
