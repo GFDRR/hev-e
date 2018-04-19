@@ -13,11 +13,14 @@ from django.db.models import Q
 from django.conf import settings
 from django_filters import STRICTNESS
 from django_filters import rest_framework as django_filters
-from django_filters.filters import BaseInFilter
 from geonode.layers.models import Layer
 from rest_framework.exceptions import ParseError
 from rest_framework_gis.filters import InBBoxFilter
 
+from .. import filters as general_filters
+
+
+# TODO: revisit the spatial filters now that HeveDetails has `envelope` field
 
 def get_filter_bbox(bbox_string):
     try:
@@ -58,35 +61,6 @@ class GeonodeLayerInBBoxFilterBackend(InBBoxFilter):
         return result
 
 
-class CategoryInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
-    pass
-
-
-def filter_category(queryset, name, value):
-    """Filter by category
-
-    This function exists because the current django version does not
-    support using the ``in`` lookup expression in fields of type
-    ``JSONField``.
-
-    We work around this limitation by creating a Q object and OR'ing all
-    of the input values
-
-    """
-
-    lookup_expression = "__".join((name, "exact"))
-    if len(value) > 1:
-        q_obj = Q(**{name: value[0]})
-        for category in value[1:]:
-            q_obj = q_obj | Q(**{lookup_expression: category})
-        qs = queryset.filter(q_obj)
-    elif len(value) == 1:
-        qs = queryset.filter(**{lookup_expression:value[0]})
-    else:
-        qs = queryset
-    return qs
-
-
 class ExposureLayerListFilterSet(django_filters.FilterSet):
     aggregation_type = django_filters.ChoiceFilter(
         name="hevedetails__details__area_type",
@@ -96,10 +70,10 @@ class ExposureLayerListFilterSet(django_filters.FilterSet):
                 "EXPOSURES"]["area_type_mappings"].keys()
         ],
     )
-    category = CategoryInFilter(
+    category = general_filters.CategoryInFilter(
         name="hevedetails__details__category",
         lookup_expr="eq",
-        method=filter_category
+        method=general_filters.filter_category
     )
 
     class Meta:
