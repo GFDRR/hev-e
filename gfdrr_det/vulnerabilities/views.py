@@ -12,11 +12,14 @@
 
 import logging
 
+from django.db import connections
 from django_filters import rest_framework as django_filters
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 from . import serializers
 from . import filters
+from . import utils
 from ..constants import DatasetType
 from ..models import HeveDetails
 from ..pagination import HevePagination
@@ -33,13 +36,43 @@ class VulnerabilityViewSet(viewsets.ReadOnlyModelViewSet):
         django_filters.DjangoFilterBackend,
     )
     filter_class = filters.VulnerabilityLayerListFilterSet
-    bbox_filter_include_overlapping = True
     bbox_filter_field = "envelope"
     pagination_class = HevePagination
+    serializer_class = serializers.VulnerabilityListSerializer
 
-    def get_serializer_class(self):
-        if self.action == "retrieve":
-            result = serializers.VulnerabilityDetailSerializer
+    def retrieve(self, request, *args, **kwargs):
+        heve_details_instance = self.get_object()
+        type_ = heve_details_instance.details["vulnerability_type"]
+        record_getter, serializer_class = {
+            "vulnerability_function": (
+                utils.get_extended_vulnerability_record,
+                serializers.VulnerabilityDetailSerializer,
+            ),
+            "fragility_function": (
+                utils.get_extended_fragility_record,
+                serializers.FragilityDetailSerializer,
+            ),
+            "damage_to_loss_function": (
+                utils.get_extended_damage_to_loss_record,
+                serializers.DamageToLossDetailSerializer,
+            ),
+        }.get(type_, (None, self.serializer_class))
+        if record_getter is not None:
+            with connections["hev_e"].cursor() as db_cursor:
+                record = record_getter(
+                    db_cursor,
+                    heve_details_instance.details["record_id"]
+                )
+            serializer = serializer_class(
+                instance={
+                    "heve_details": heve_details_instance,
+                    "record": record,
+                },
+                context={"request": request}
+            )
         else:
-            result = serializers.VulnerabilityListSerializer
-        return result
+            serializer = serializer_class(
+                instance=heve_details_instance,
+                context={"request": request}
+            )
+        return Response(serializer.data)

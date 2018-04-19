@@ -42,37 +42,97 @@ def get_vulnerability_records(db_cursor, table_name, *ids):
 
 
 def get_extended_vulnerability_record(db_cursor, pk):
-    """Return extended information from a vf_table record"""
     query_template = get_template("vulnerabilities/vf_table_detail_query.sql")
     query = query_template.render()
-    db_cursor.execute(query, {"pk": pk})
+    record = _get_extended_record(db_cursor, query, query_kwargs={"pk": pk})
+    return _add_function_parameters(
+        record,
+        "par_names",
+        [
+            "ub_par_value",
+            "lb_par_value",
+            "med_par_value",
+            "im_range",
+        ]
+    )
+
+
+def get_extended_fragility_record(db_cursor, pk):
+    query_template = get_template("vulnerabilities/ff_table_detail_query.sql")
+    query = query_template.render()
+    record = _get_extended_record(db_cursor, query, query_kwargs={"pk": pk})
+    return _add_function_parameters(
+        record,
+        "par_names",
+        [
+            "ub_par_value",
+            "lb_par_value",
+            "med_par_value",
+            "im_range",
+        ]
+    )
+
+
+def get_extended_damage_to_loss_record(db_cursor, pk):
+    query_template = get_template("vulnerabilities/dtl_table_detail_query.sql")
+    query = query_template.render()
+    record = _get_extended_record(db_cursor, query, query_kwargs={"pk": pk})
+    return _add_function_parameters(
+        record,
+        "dtl_parameters",
+        [
+            "dtl_parameters_values",
+        ]
+    )
+
+
+def _add_function_parameters(record, parameter_names, parameter_values):
+    """Add the function_parameters field to a record"""
+    record_dict = record._asdict()
+    try:
+        function_parameters = _get_record_parameters(
+            record,
+            parameter_names,
+            parameter_values
+        )
+    except AttributeError as err:
+        LOGGER.debug(
+            "Could not extract function parameters from record. "
+            "Error was {}".format(err)
+        )
+        function_parameters = None
+    record_dict.update(function_parameters=function_parameters)
+    final_result_tuple = namedtuple(
+        "Result",
+        record._fields + ("function_parameters",)
+    )
+    return final_result_tuple(**record_dict)
+
+
+def _fix_record_countries(db_record):
+    separator = ";"
+    extra_separators = [
+        ":",
+    ]
+    countries_iso_str = db_record.countries_iso
+    for extra_separator in extra_separators:
+        countries_iso_str = countries_iso_str.replace(
+            extra_separator, separator)
+    countries = [c.strip() for c in countries_iso_str.split(separator)]
+    return countries
+
+
+def _get_extended_record(db_cursor, query, query_kwargs):
     column_overrides = {
         "country_iso": "countries_iso",
     }
+    db_cursor.execute(query, query_kwargs)
     result_tuple = namedtuple(
         "Result",
         [column_overrides.get(col[0], col[0]) for col in db_cursor.description]
     )
     raw_record = result_tuple(*db_cursor.fetchone())
-    countries = _fix_record_countries(raw_record)
-    final_values = raw_record._asdict()
-    final_values.update(
-        countries_iso=countries,
-        function_parameters=_get_record_parameters(
-            raw_record,
-            "par_names",
-            [
-                "ub_par_value",
-                "lb_par_value",
-                "med_par_value",
-            ]
-        )
-    )
-    final_result_tuple = namedtuple(
-        "Result",
-        raw_record._fields + ("function_parameters",)
-    )
-    return final_result_tuple(**final_values)
+    return raw_record._replace(countries_iso=_fix_record_countries(raw_record))
 
 
 def _get_record_parameters(record, parameter_names_attr,
@@ -80,7 +140,6 @@ def _get_record_parameters(record, parameter_names_attr,
     params = {}
     names_list = [i.strip() for i in getattr(
         record, parameter_names_attr).split(delimiter)]
-    LOGGER.debug("names_list: {}".format(names_list))
     for index, name in enumerate(names_list):
         name_values = {}
         for values_attr in parameter_values_attr:
@@ -98,48 +157,3 @@ def _get_record_parameters(record, parameter_names_attr,
                     name_values[values_attr] = values_list[index]
         params[name] = name_values
     return params
-
-
-def get_loss_parameter_records(db_cursor, *names):
-    names_clause = " WHERE lp_name::text=any(%(names)s)" if names else ""
-    query = "SELECT * FROM vulnerabilities.loss_parameter{names}".format(
-        names=names_clause
-    )
-    db_cursor.execute(query, {"names": list(names)})
-    result_tuple = namedtuple("Result",[c[0] for c in db_cursor.description])
-    return [result_tuple(*record) for record in db_cursor.fetchall()]
-
-
-def get_im_table_records(db_cursor, *names):
-    names_clause = " WHERE im_name_f::text=any(%(names)s)" if names else ""
-    query = "SELECT * FROM vulnerabilities.im_table{names}".format(
-        names=names_clause
-    )
-    db_cursor.execute(query, {"names": list(names)})
-    result_tuple = namedtuple("Result",[c[0] for c in db_cursor.description])
-    return [result_tuple(*record) for record in db_cursor.fetchall()]
-
-
-def add_fields_to_tuple(record, **fields):
-    new_values = fields.items()
-    new_record_tuple = namedtuple(
-        "Result",
-        record._fields + tuple(v[0] for v in new_values)
-    )
-    new_contents = dict(fields)
-    new_contents.update(record._asdict())
-    new_record = new_record_tuple(**new_contents)
-    return new_record
-
-
-def _fix_record_countries(db_record):
-    separator = ";"
-    extra_separators = [
-        ":",
-    ]
-    countries_iso_str = db_record.countries_iso
-    for extra_separator in extra_separators:
-        countries_iso_str = countries_iso_str.replace(
-            extra_separator, separator)
-    countries = [c.strip() for c in countries_iso_str.split(separator)]
-    return countries
