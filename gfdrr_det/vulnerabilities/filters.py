@@ -41,6 +41,7 @@ class VulnerabilityLayerListFilterSet(django_filters.FilterSet):
         choices=[
             ("vulnerability_function", "vulnerability_function"),
             ("fragility_function", "fragility_function"),
+            ("damage_to_loss_function", "damage_to_loss_function"),
         ],
     )
     exposure = general_filters.CategoryInFilter(
