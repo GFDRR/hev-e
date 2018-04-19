@@ -19,6 +19,7 @@ from . import serializers
 from . import filters
 from ..constants import DatasetType
 from ..models import HeveDetails
+from ..pagination import HevePagination
 
 
 LOGGER = logging.getLogger(__name__)
@@ -27,7 +28,6 @@ LOGGER = logging.getLogger(__name__)
 class VulnerabilityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HeveDetails.objects.filter(
         dataset_type=DatasetType.vulnerability.name)
-    serializer_class = serializers.VulnerabilitySerializer
     filter_backends = (
         filters.HeveInBboxFilter,
         django_filters.DjangoFilterBackend,
@@ -35,3 +35,11 @@ class VulnerabilityViewSet(viewsets.ReadOnlyModelViewSet):
     filter_class = filters.VulnerabilityLayerListFilterSet
     bbox_filter_include_overlapping = True
     bbox_filter_field = "envelope"
+    pagination_class = HevePagination
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            result = serializers.VulnerabilityDetailSerializer
+        else:
+            result = serializers.VulnerabilityListSerializer
+        return result
