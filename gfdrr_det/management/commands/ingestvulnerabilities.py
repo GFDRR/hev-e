@@ -34,6 +34,9 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
             "ff_table": {
                 "vulnerability_type": "fragility_function",
             },
+            "dtl_table": {
+                "vulnerability_type": "damage_to_loss_function",
+            },
         }
         with connections["hev_e"].cursor() as db_cursor:
             for table, extra in table_params.items():
