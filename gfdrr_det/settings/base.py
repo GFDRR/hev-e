@@ -135,6 +135,7 @@ INSTALLED_APPS += (
     "oseoserver",
     "gfdrr_det.apps.GfdrrdetConfig",
     "{}.exposures".format(PROJECT_NAME),
+    "{}.vulnerabilities".format(PROJECT_NAME),
 )
 
 # Location of url mappings
