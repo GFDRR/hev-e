@@ -54,6 +54,6 @@ SELECT
   v.vf_math_model,
   v.vf_relationship
 FROM vulnerabilities.vf_table AS v
-  INNER JOIN vulnerabilities.loss_parameter AS p ON (p.lp_name = v.lp_name)
-  INNER JOIN vulnerabilities.im_table AS i ON (i.im_name_f = v.im_name_f)
+  LEFT OUTER JOIN vulnerabilities.loss_parameter AS p ON (p.lp_name = v.lp_name)
+  LEFT OUTER JOIN vulnerabilities.im_table AS i ON (i.im_name_f = v.im_name_f)
 WHERE v.id = %(pk)s
