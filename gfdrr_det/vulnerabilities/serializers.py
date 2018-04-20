@@ -20,14 +20,16 @@ LOGGER = logging.getLogger(__name__)
 class VulnerabilityListSerializer(serializers.BaseSerializer):
     """Serializer for the Vulnerabilities list endpoint"""
 
+    url_field = serializers.HyperlinkedIdentityField(
+        view_name="vulnerabilities-detail",
+        lookup_field="id",
+        lookup_url_kwarg="pk",
+    )
+
     def to_representation(self, instance):
-        url_field = serializers.HyperlinkedIdentityField(
-            view_name="vulnerabilities-detail",
-            lookup_field="id",
-            lookup_url_kwarg="pk",
-        )
         return {
-            "url": url_field.get_url(
+            "id": instance.id,
+            "url": self.url_field.get_url(
                 instance,
                 "vulnerabilities-detail",
                 self.context["request"],
@@ -38,10 +40,11 @@ class VulnerabilityListSerializer(serializers.BaseSerializer):
             "exposure": instance.details.get("asset"),
             "countries": instance.details.get("countries"),
             "reference": instance.details.get("reference"),
+            "name": instance.details.get("reference"),
         }
 
 
-class VulnerabilityDetailSerializer(serializers.BaseSerializer):
+class VulnerabilityDetailSerializer(VulnerabilityListSerializer):
     """Serializer for vulnerability detail endpoint"""
 
     def to_representation(self, instance):
@@ -49,12 +52,20 @@ class VulnerabilityDetailSerializer(serializers.BaseSerializer):
         heve_details = instance["heve_details"]
         return {
             "vulnerability_type": heve_details.details["vulnerability_type"],
-            "id": record.id,
+            "url": self.url_field.get_url(
+                heve_details,
+                "vulnerabilities-detail",
+                self.context["request"],
+                None
+            ),
+            "id": heve_details.id,
+            "table_id": record.id,
             "hazard": record.hazard,
             "exposure": record.asset,
             "geographical_applicability": heve_details.details["countries"],
             "scale_applicability": record.scale_applicability,
             "reference": record.reference,
+            "name": record.reference,
             "taxonomy": record.taxonomy,  # TODO: normalize taxonomies
             "vf_relationship": record.vf_relationship,
             "vf_math": record.vf_math,
@@ -71,14 +82,21 @@ class VulnerabilityDetailSerializer(serializers.BaseSerializer):
         }
 
 
-class FragilityDetailSerializer(serializers.BaseSerializer):
+class FragilityDetailSerializer(VulnerabilityListSerializer):
 
     def to_representation(self, instance):
         record = instance["record"]
         heve_details = instance["heve_details"]
         return {
             "vulnerability_type": heve_details.details["vulnerability_type"],
-            "id": record.id,
+            "url": self.url_field.get_url(
+                heve_details,
+                "vulnerabilities-detail",
+                self.context["request"],
+                None
+            ),
+            "id": heve_details.id,
+            "table_id": record.id,
             "hazard": record.hazard,
             "exposure": record.asset,
             "geographical_applicability": heve_details.details["countries"],
@@ -105,14 +123,21 @@ class FragilityDetailSerializer(serializers.BaseSerializer):
         }
 
 
-class DamageToLossDetailSerializer(serializers.BaseSerializer):
+class DamageToLossDetailSerializer(VulnerabilityListSerializer):
 
     def to_representation(self, instance):
         record = instance["record"]
         heve_details = instance["heve_details"]
         return {
             "vulnerability_type": heve_details.details["vulnerability_type"],
-            "id": record.id,
+            "url": self.url_field.get_url(
+                heve_details,
+                "vulnerabilities-detail",
+                self.context["request"],
+                None
+            ),
+            "id": heve_details.id,
+            "table_id": record.id,
             "hazard": record.hazard,
             "exposure": record.asset,
             "taxonomy": record.taxonomy,  # TODO: normalize taxonomies
