@@ -35,14 +35,9 @@ class HeveInBboxFilter(InBBoxFilter):
 
 
 class VulnerabilityLayerListFilterSet(django_filters.FilterSet):
-    vulnerability_type = django_filters.ChoiceFilter(
+    vulnerability_type = general_filters.CategoryInFilter(
         name="details__vulnerability_type",
-        empty_label="",
-        choices=[
-            ("vulnerability_function", "vulnerability_function"),
-            ("fragility_function", "fragility_function"),
-            ("damage_to_loss_function", "damage_to_loss_function"),
-        ],
+        method=general_filters.filter_category
     )
     exposure = general_filters.CategoryInFilter(
         name="details__asset",
