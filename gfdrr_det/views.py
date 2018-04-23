@@ -30,6 +30,7 @@ from sendfile import sendfile
 
 from . import models
 from . import serializers
+from .constants import DatasetType
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,7 @@ class DatasetRepresentationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.DatasetRepresentationSerializer
 
 
-class OrderItemViewSet(viewsets.ViewSet):
+class OrderItemViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.OrderItemSerializer
     queryset = oseoserver_models.OrderItem.objects.all()
 
@@ -170,8 +171,13 @@ class OrderItemViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None, *args, **kwargs):
-        order_item = get_object_or_404(self.queryset, pk=pk)
-        serializer = self.serializer_class(
+        order_item = self.get_object()
+        serializer_class = {
+            DatasetType.exposure.name: serializers.ExposureOrderItemSerializer,
+            DatasetType.vulnerability.name: (
+                serializers.VulnerabilityOrderItemSerializer),
+        }.get(order_item.item_specification.collection, self.serializer_class)
+        serializer = serializer_class(
             order_item, context={"request": request})
         return Response(serializer.data)
 

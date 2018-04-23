@@ -7,11 +7,14 @@
 # LICENSE file in the root directory of this source tree.
 #
 #########################################################################
-
+import hashlib
+import shlex
+import subprocess
 from decimal import Decimal
 import logging
 
 from django.conf import settings
+from django.db import connections
 from pathlib2 import Path
 
 logger = logging.getLogger(__name__)
@@ -144,3 +147,40 @@ def get_dict_str(mapping):
         else:
             result.append("{}:{}".format(k, v))
     return ",".join(sorted(result))
+
+
+def get_layer_hash(name, bbox_ewkt=None, taxonomic_categories=None):
+    hash_contents = [
+        name,
+        bbox_ewkt if bbox_ewkt else "",
+    ] + (
+        list(taxonomic_categories) if taxonomic_categories is not None else [])
+    return hashlib.md5("".join(sorted(hash_contents))).hexdigest()
+
+
+def run_process(command_str):
+    process = subprocess.Popen(
+        args=shlex.split(command_str),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout, stderr
+
+
+def prepare_ogr2ogr_command(query, target_path, name):
+    connection_params = connections["hev_e"].get_connection_params()
+    db_connection_string = (
+        'PG:"dbname={database} host={host} port={port} user={user} '
+        'password={password}"'.format(**connection_params)
+    )
+    command_str = (
+        "ogr2ogr -gt unlimited -f GPKG -append "
+        "-sql \"{query}\" {target_path} {db} -nln {name}".format(
+            query=query,
+            target_path=target_path,
+            db=db_connection_string,
+            name=name
+        )
+    )
+    return command_str

@@ -20,17 +20,36 @@ from oseoserver.models import OrderItem
 
 from .constants import DatasetType
 from .exposures import download as exposure_download
+from .vulnerabilities import download as vulnerability_download
 from . import utils
 
 logger = logging.getLogger(__name__)
 
 
+def prepare_collection_type_batch(sequential_items):
+    hash_contents = []
+    for item_info in sequential_items:
+        hash_contents += [
+            item_info["identifier"],
+            utils.get_dict_str(item_info["options"])
+        ]
+    name_hash = hashlib.md5("".join(sorted(hash_contents))).hexdigest()
+    target_dir = Path(settings.HEV_E["general"]["downloads_dir"])
+    if not target_dir.is_dir():
+        target_dir.mkdir(parents=True)
+    target_path = target_dir / "{}.gpkg".format(name_hash)
+    logger.debug("name_hash: {}".format(name_hash))
+    return name_hash, target_path
+
+
 def select_processing_type(order_item_identifier, **order_item_options):
-    if order_item_options.get("format") == "geopackage":
-        result = "sequential"
-    else:
-        result = "parallel"
-    return result
+    logger.debug("select_processing_type_called: {}".format(locals()))
+    format_ = order_item_options.get(
+        "format",
+        order_item_options.get("vulnerabilityFormat")
+    )
+    logger.debug("format_: {}".format(format_))
+    return "sequential" if format_ == "geopackage" else "parallel"
 
 
 class HeveOrderProcessor(object):
@@ -94,24 +113,22 @@ class HeveOrderProcessor(object):
         return result
 
     def prepare_batch(self, sequential_items, *args, **kwargs):
-        """Perform some batch-related operations"""
-        hash_contents = []
-        for item_info in sequential_items:
-            hash_contents += [
-                item_info["identifier"],
-                utils.get_dict_str(item_info["options"])
-            ]
-        name_hash = hashlib.md5("".join(sorted(hash_contents))).hexdigest()
         target_dir = Path(settings.HEV_E["general"]["downloads_dir"])
         if not target_dir.is_dir():
             target_dir.mkdir(parents=True)
-        target_path = target_dir / "{}.gpkg".format(name_hash)
-        return {
-            "name_hash": name_hash,
+        result = {
             "target_dir": str(target_dir),
-            "geopackage_target_path": str(target_path),
-            "geopackage_exists": target_path.is_file()
         }
+        for type_name in DatasetType.__members__.keys():
+            items = [i for i in sequential_items if
+                     i["identifier"].partition(":")[0] == type_name]
+            name_hash, target_path = prepare_collection_type_batch(items)
+            result[type_name] = {
+                "name_hash": name_hash,
+                "geopackage_target_path": str(target_path),
+                "geopackage_exists": target_path.is_file()
+            }
+        return result
 
 
     def prepare_item(self, identifier, options=None, batch_data=None,
@@ -130,6 +147,7 @@ class HeveOrderProcessor(object):
 
         """
 
+        logger.debug("prepare_item called: {}".format(locals()))
         collection, layer_name = identifier.partition(":")[::2]
         options = dict(options) if options is not None else {}
         # altering the option's name to `format_` to avoid clashing with
@@ -139,5 +157,7 @@ class HeveOrderProcessor(object):
             del options["format"]
         handler = {  # add additional handlers for hazards and vulnerabilities
             DatasetType.exposure.name: exposure_download.prepare_exposure_item,
+            DatasetType.vulnerability.name: (
+                vulnerability_download.prepare_item),
         }[collection]
         return handler(layer_name, batch_data=batch_data, **options)
