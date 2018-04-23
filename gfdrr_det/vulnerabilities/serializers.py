@@ -55,7 +55,7 @@ class VulnerabilityDetailSerializer(VulnerabilityListSerializer):
             "url": self.url_field.get_url(
                 heve_details,
                 "vulnerabilities-detail",
-                self.context["request"],
+                self.context.get("request"),
                 None
             ),
             "id": heve_details.id,
@@ -97,6 +97,7 @@ class FragilityDetailSerializer(VulnerabilityListSerializer):
             ),
             "id": heve_details.id,
             "table_id": record.id,
+            "name": record.reference,
             "hazard": record.hazard,
             "exposure": record.asset,
             "geographical_applicability": heve_details.details["countries"],
@@ -143,6 +144,7 @@ class DamageToLossDetailSerializer(VulnerabilityListSerializer):
             "taxonomy": record.taxonomy,  # TODO: normalize taxonomies
             "geographical_applicability": heve_details.details["countries"],
             "scale_applicability": record.scale_applicability,
+            "name": record.reference,
             "reference_author_year": record.reference_author_year,
             "reference_title": record.reference_title,
             "dtl_pdf_type": record.dtl_pdf_type,

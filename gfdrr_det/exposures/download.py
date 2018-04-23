@@ -10,21 +10,19 @@
 
 """Utilities for the preparation of downloadable files from exposures"""
 
-import hashlib
 import logging
-import shlex
 import shutil
-import subprocess
 from urlparse import urlparse
 
-from django.db import connections
 from django.conf import settings
 from pathlib2 import Path
 import requests
 
+from ..models import HeveDetails
 from .. import utils as general_utils
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 def prepare_exposure_item(layer_name, batch_data=None,
                           bbox=None, format_=None,
@@ -47,21 +45,15 @@ def prepare_exposure_item(layer_name, batch_data=None,
     )
 
 
-def get_layer_hash(name, bbox_ewkt=None, taxonomic_categories=None):
-    hash_contents = [
-        name,
-        bbox_ewkt if bbox_ewkt else "",
-    ] + (
-        list(taxonomic_categories) if taxonomic_categories is not None else [])
-    return hashlib.md5("".join(sorted(hash_contents))).hexdigest()
-
-
-def get_exposure_shapefile_item(layer_name, batch_data=None,  # pylint: disable=unused-argument
+def get_exposure_shapefile_item(layer_name, batch_data=None,
                                 bbox_ewkt=None, taxonomic_categories=None):
     """Use geonode's API to get a shapefile from the input layer"""
-    file_hash = get_layer_hash(layer_name, bbox_ewkt=bbox_ewkt,
-                               taxonomic_categories=taxonomic_categories)
-    target_dir = Path(settings.HEV_E["general"]["downloads_dir"])
+    file_hash = general_utils.get_layer_hash(
+        layer_name,
+        bbox_ewkt=bbox_ewkt,
+        taxonomic_categories=taxonomic_categories
+    )
+    target_dir = Path(batch_data["target_dir"])
     target_path = target_dir / "{}.zip".format(file_hash)
     if not target_path.is_file():
         logger.debug("generating a new shapefile...")
@@ -114,18 +106,20 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
 
 def get_exposure_geopackage_item(layer_name, batch_data=None, bbox_ewkt=None,
                                  taxonomic_categories=None):
-    batch_data = dict(batch_data) if batch_data is not None else {}
-    if batch_data.get("geopackage_exists"):
+    heve_details = HeveDetails.objects.get(layer__name=layer_name)  # pylint: disable=no-member
+    if batch_data[heve_details.dataset_type].get("geopackage_exists"):
         pass
     else:
         generate_geopackage(
             layer_name,
-            batch_data["geopackage_target_path"],
+            batch_data[heve_details.dataset_type]["geopackage_target_path"],
             bbox_ewkt=bbox_ewkt,
             taxonomic_categories=taxonomic_categories
         )
     return urlparse(
-        batch_data["geopackage_target_path"], scheme="file").geturl()
+        batch_data[heve_details.dataset_type]["geopackage_target_path"],
+        scheme="file"
+    ).geturl()
 
 
 def generate_geopackage(layer_name, target_path,
@@ -147,8 +141,9 @@ def generate_geopackage(layer_name, target_path,
     }
     for table_name, query_handler in query_handlers.items():
         query = query_handler(**kwargs)
-        command_str = _prepare_ogr2ogr_command(query, target_path, table_name)
-        return_code, stderr = _run_process(command_str)[::2]
+        command_str = general_utils.prepare_ogr2ogr_command(
+            query, target_path, table_name)
+        return_code, stderr = general_utils.run_process(command_str)[::2]
         if return_code != 0:
             raise RuntimeError(
                 "Could not generate GeoPackage file: {}".format(stderr))
@@ -238,16 +233,6 @@ def _prepare_tags_query(layer_name, bbox_ewkt=None, categories=None):
     )
 
 
-def _run_process(command_str):
-    process = subprocess.Popen(
-        args=shlex.split(command_str),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    stdout, stderr = process.communicate()
-    return process.returncode, stdout, stderr
-
-
 def _get_intersection_clause(bbox_ewkt):
     return (
         " AND ST_Intersects("
@@ -258,21 +243,3 @@ def _get_categories_clause(categories):
     parts = ["v.parsed_taxonomy LIKE '%{}%'".format(c) for c in categories]
     categories_clause = " OR ".join(parts)
     return " AND ({})".format(categories_clause)
-
-
-def _prepare_ogr2ogr_command(query, target_path, name):
-    connection_params = connections["hev_e"].get_connection_params()
-    db_connection_string = (
-        'PG:"dbname={database} host={host} port={port} user={user} '
-        'password={password}"'.format(**connection_params)
-    )
-    command_str = (
-        "ogr2ogr -gt unlimited -f GPKG -append "
-        "-sql \"{query}\" {target_path} {db} -nln {name}".format(
-            query=query,
-            target_path=target_path,
-            db=db_connection_string,
-            name=name
-        )
-    )
-    return command_str

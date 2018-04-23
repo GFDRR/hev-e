@@ -137,27 +137,12 @@ class OrderItemSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
     additional_status_info = serializers.CharField(read_only=True)
     layer = serializers.SerializerMethodField()
-    format = serializers.SerializerMethodField()
-    bbox = serializers.SerializerMethodField()
-    taxonomic_categories = serializers.SerializerMethodField()
     created_on = serializers.DateTimeField(read_only=True)
     expires_on = serializers.DateTimeField(read_only=True)
     download_url = serializers.SerializerMethodField()
 
     def get_layer(self, obj):
         return obj.identifier
-
-    def get_bbox(self, obj):
-        options = obj.export_options()
-        return options.get("bbox")
-
-    def get_taxonomic_categories(self, obj):
-        options = obj.export_options()
-        return options.get("exposureTaxonomicCategory")
-
-    def get_format(self, obj):
-        options = obj.export_options()
-        return options.get("format")
 
     def get_download_url(self, obj):
         if obj.available:
@@ -172,6 +157,32 @@ class OrderItemSerializer(serializers.Serializer):
         else:
             result = None
         return result
+
+
+class ExposureOrderItemSerializer(OrderItemSerializer):
+    format = serializers.SerializerMethodField()
+    bbox = serializers.SerializerMethodField()
+    taxonomic_categories = serializers.SerializerMethodField()
+
+    def get_bbox(self, obj):
+        options = obj.export_options()
+        return options.get("bbox")
+
+    def get_taxonomic_categories(self, obj):
+        options = obj.export_options()
+        return options.get("exposureTaxonomicCategory")
+
+    def get_format(self, obj):
+        options = obj.export_options()
+        return options.get("format")
+
+
+class VulnerabilityOrderItemSerializer(OrderItemSerializer):
+    format = serializers.SerializerMethodField()
+
+    def get_format(self, obj):
+        options = obj.export_options()
+        return options.get("vulnerabilityFormat")
 
 
 class OrderSerializer(serializers.BaseSerializer):
@@ -244,7 +255,7 @@ class OrderSerializer(serializers.BaseSerializer):
             if not format_:
                 raise serializers.ValidationError(
                     {"format": "this field is required"})
-            _validate_format(format_)
+            _validate_format(format_, collection)
             bbox_str = item.get("bbox")
             cats = item.get("taxonomic_categories")
             order_item = {
@@ -272,10 +283,13 @@ def _validate_layer(layer_str):
     return collection, layer_name
 
 
-def _validate_format(format_str):
+def _validate_format(format_str, collection):
     options_conf = settings.OSEOSERVER_PROCESSING_OPTIONS
+    option_name = {
+        "vulnerability": "vulnerabilityFormat"
+    }.get(collection, "format")
     format_choices = [
-        i["choices"] for i in options_conf if i["name"] == "format"][0]
+        i["choices"] for i in options_conf if i["name"] == option_name][0]
     if format_str not in format_choices:
         raise serializers.ValidationError({"format": "invalid value"})
 

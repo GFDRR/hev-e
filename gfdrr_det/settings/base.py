@@ -662,7 +662,15 @@ OSEOSERVER_PROCESSING_OPTIONS = [
         "name": "format",
         "description": "Output format for the ordered item",
         "choices": [
+            "geopackage",
             "shapefile",
+        ],
+    },
+    {
+        "name": "vulnerabilityFormat",
+        "description": "Output format for the ordered item",
+        "choices": [
+            "csv",
             "geopackage",
         ],
     },
@@ -698,7 +706,23 @@ OSEOSERVER_COLLECTIONS = [
                 "http",
             ],
         }
-    }
+    },
+    {
+        "name": "vulnerability",
+        "catalogue_endpoint": None,  # FIXME - add a sensible value
+        "collection_identifier": "vulnerability",
+        "generation_frequency": "on-demand",
+        "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
+        "product_order": {
+            "enabled": True,
+            "options": [
+                "vulnerabilityFormat",
+            ],
+            "online_data_access_options": [
+                "http",
+            ],
+        }
+    },
 ]
 
 
