@@ -11,6 +11,7 @@ const emptyState = require('../../../MapStore2/web/client/components/misc/enhanc
 const Message = require('../../../MapStore2/web/client/components/I18N/Message');
 const SideGrid = emptyState(({items=[]}) => items.length === 0, {glyph: 'download', title: <Message msgId="heve.noMatchedDownloads"/>})(require('../../../MapStore2/web/client/components/misc/cardgrids/SideGrid'));
 const Toolbar = require('../../../MapStore2/web/client/components/misc/toolbar/Toolbar');
+const {Glyphicon} = require('react-bootstrap');
 
 module.exports = ({
     downloads = [],
@@ -22,16 +23,16 @@ module.exports = ({
 }) => (
     <SideGrid
         items={downloads.filter((item) => onFilter(item)).map(item => ({
-            preview: <i className={'fa fa-4x text-center fa-' + item.icon}/>,
-            title: item.properties && item.properties.title && <span>{item.properties.title}</span>,
-            description: item.properties && item.properties.description && <span>{item.properties.description}</span>,
-            caption: item.properties && item.properties.category && <span>{item.properties.category}</span>,
+            preview: item.icon && <i className={'fa fa-4x text-center ' + item.icon}/> || <Glyphicon glyph="download fa-4x text-center"/>,
+            title: <span>{item.title}</span>,
+            description: <span>{item.description}</span>,
+            caption: <span>{item.caption}</span>,
             selected: download && download.id === item.id,
             onClick: () => onSelectItem(download && item.id === download.id ? null : {...item}),
             tools: (
                 <div>
                     {item.availableFormats[format] && <span><Message msgId={'heve.' + item.availableFormats[format][0].code}/>&nbsp;&nbsp;</span>}
-                    <Toolbar
+                    {!item.vulnerabilities && <Toolbar
                         btnDefaultProps={
                             {
                                 className: 'square-button-md',
@@ -49,7 +50,7 @@ module.exports = ({
                                     }
                                 }
                             ]
-                        }/>
+                        }/>}
                 </div>
             )
         }))}/>

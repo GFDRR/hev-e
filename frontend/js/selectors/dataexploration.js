@@ -25,5 +25,7 @@ module.exports = {
     ordersSelector: state => state.dataexploration && state.dataexploration.orders,
     showDownloadsSelector: state => state.dataexploration && state.dataexploration.showDownloads,
     datasetSelector: state => state.dataexploration && state.dataexploration.dataset || [],
-    orderLoadingSelector: state => state.dataexploration && state.dataexploration.orderLoading
+    orderLoadingSelector: state => state.dataexploration && state.dataexploration.orderLoading,
+    downaloadSelector: state => state.dataexploration && state.dataexploration.download || null,
+    explorerBBOXSelector: state => state.dataexploration && state.dataexploration.explorerBBOX
 };

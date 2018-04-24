@@ -172,6 +172,15 @@ div.ol-scale-line.ol-unselectable {
     box-sizing: unset;
 }
 
+.mapstore-side-card {
+    &.et-no-selectable{
+        pointer-events: none;
+        .mapstore-side-card-tool {
+            pointer-events: auto;
+        }
+    }
+}
+
 #dataexplorationtool-view-container {
     .et-brand-navbar {
 
@@ -436,11 +445,12 @@ div.ol-scale-line.ol-unselectable {
         }
     }
 
+    .mapstore-side-card-title {
+        font-size: 16px;
+    }
+
     // DATA EXPLORER PANEL
     .et-data-explorer {
-        .mapstore-side-card-title {
-            font-size: 16px;
-        }
         display: flex;
         flex-direction: column;
         transition: width 0.2s ease-in;
@@ -677,6 +687,9 @@ div.ol-scale-line.ol-unselectable {
         border-right: 1px solid @ms2-et-color-bg;
         display: flex;
         flex-direction: column;
+        .msSideGrid {
+            margin: 8px 0 30px 0;
+        }
         .container-fluid {
             width: 100%;
             &:first-child {

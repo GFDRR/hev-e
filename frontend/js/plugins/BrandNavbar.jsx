@@ -147,9 +147,6 @@ class BrandNavbar extends React.Component {
                             <NavItem href="#/about">
                                 <Message msgId="heve.about"/>
                             </NavItem>
-                            <NavItem href="#/support">
-                                <Message msgId="heve.support"/>
-                            </NavItem>
                         </Nav>
                         {width < 767 && <Navbar.Form pullRight>
                             <SearchBar />

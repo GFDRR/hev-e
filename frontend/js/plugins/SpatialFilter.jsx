@@ -22,7 +22,8 @@ class SpatialFilterComponent extends React.Component {
         draw: PropTypes.bool,
         enabled: PropTypes.bool,
         drawStatus: PropTypes.string,
-        onClick: PropTypes.func
+        onClick: PropTypes.func,
+        disabled: PropTypes.bool
     };
 
     static defaultProps = {
@@ -31,8 +32,17 @@ class SpatialFilterComponent extends React.Component {
     };
 
     render() {
-        return this.props.enabled ? (
-            <ButtonT
+        if (!this.props.enabled) {
+            return null;
+        }
+        return this.props.disabled ? (
+            <Button
+                className="square-button"
+                disabled
+                bsStyle="primary">
+                <Glyphicon glyph={this.props.draw ? 'remove-square' : 'bbox'}/>
+            </Button>
+        ) : (<ButtonT
                 className="square-button"
                 tooltipId={this.props.draw ? 'heve.removeSpatialFilter' : this.props.drawStatus === 'start' ? 'heve.drawSpatialFilter' : 'heve.applySpatialFilter'}
                 tooltipPosition="left"
@@ -42,8 +52,7 @@ class SpatialFilterComponent extends React.Component {
                     this.props.onClick();
                 }}>
                 <Glyphicon glyph={this.props.draw ? 'remove-square' : 'bbox'}/>
-            </ButtonT>
-        ) : null;
+            </ButtonT>);
     }
 }
 
@@ -55,7 +64,8 @@ const spatialFilterSelector = createSelector([
 ], (features, drawStatus, currentDetails, dataExplorerEnabled) => ({
     draw: !(features && features.length === 0),
     drawStatus,
-    enabled: !currentDetails && dataExplorerEnabled
+    enabled: dataExplorerEnabled,
+    disabled: currentDetails
 }));
 
 const SpatialFilter = connect(

@@ -135,14 +135,14 @@ class CompactTOC extends React.Component {
                                 if (layer.loadingError) {
                                     return null;
                                 }
-                                if (this.props.currentDetails && this.props.currentDetails.properties.name === layer.name) {
+                                if (this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.name === layer.name) {
                                     this.props.onShowDetails(null);
                                 } else {
                                     this.props.onShowDetails(layer.record);
                                 }
                             },
                             dataId: layer.id,
-                            selected: this.props.currentDetails && this.props.currentDetails.properties.name === layer.name || false,
+                            selected: this.props.currentDetails && this.props.currentDetails.properties && this.props.currentDetails.properties.name === layer.name || false,
                             body: !layer.loadingError ? (<div className="mapstore-slider" onClick={(e) => { e.stopPropagation(); }}>
                                 <Slider
                                     disabled={!layer.visibility}
