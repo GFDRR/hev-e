@@ -63,19 +63,10 @@ module.exports = (config, pluginsDef) => {
                 current: 'no-version'
             }
         }, { ...appEpics, setSupportedLocales });
-        /*
-            ,
-            version: require('../MapStore2/web/client/reducers/version')
-        */
-        const {loadMapConfig} = require('../MapStore2/web/client/actions/config');
+
         const {setControlProperty} = require('../MapStore2/web/client/actions/controls');
         const initialActions = [
-            // () => loadMaps(ConfigUtils.getDefaults().geoStoreUrl, ConfigUtils.getDefaults().initialMapFilter || "*"),
-            // tmp only mock,
-            () => setControlProperty('dataExplorer', 'enabled', false),
-            () => loadMapConfig('/static/dataexplorationtool/base-map.json')
-            // end tmp
-            // loadVersion
+            () => setControlProperty('dataExplorer', 'enabled', false)
         ];
 
         LocaleUtils.setSupportedLocales({

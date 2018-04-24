@@ -18,7 +18,7 @@ const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const loadingState = require('../../MapStore2/web/client/components/misc/enhancers/loadingState');
 const {removeOrder, removeDownload, updateDownloadEmail, selectDownloadFormat, selectDownloadTab, downloadData, closeDownloads, selectDownload} = require('../actions/dataexploration');
 const FilterPreview = require('../components/FilterPreview');
-const {downloadEmailSelector, downloadFormatSelector, selectedDownloadTabSelector, ordersSelector, showDownloadsSelector, orderLoadingSelector, downaloadSelector} = require('../selectors/dataexploration');
+const {downloadEmailSelector, downloadFormatSelector, selectedDownloadTabSelector, ordersSelector, showDownloadsSelector, orderLoadingSelector, downloadSelector} = require('../selectors/dataexploration');
 const emptyState = require('../../MapStore2/web/client/components/misc/enhancers/emptyState');
 const SideGrid = require('../../MapStore2/web/client/components/misc/cardgrids/SideGrid');
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
@@ -40,7 +40,7 @@ const getDownloads = downloads => {
     return vulnerabilitiesDownload ? [...others, vulnerabilitiesDownload] : [...others];
 };
 
-const downloadSelector = createSelector([
+const downloadBodySelector = createSelector([
     state => state.dataexploration && state.dataexploration.downloads,
     state => state.dataexploration && state.dataexploration.restoreDownloads,
     downloadEmailSelector,
@@ -55,7 +55,7 @@ const downloadSelector = createSelector([
 }));
 
 const connectDownload = connect(
-    downloadSelector,
+    downloadBodySelector,
     {
         onUpdateEmail: updateDownloadEmail,
         onSelectType: selectDownloadFormat,
@@ -247,7 +247,7 @@ const downloadPluginSelector = createSelector([
     selectedDownloadTabSelector,
     ordersSelector,
     orderLoadingSelector,
-    downaloadSelector
+    downloadSelector
 ], (enabled, downloadTab, orders, loading, download) => ({
     enabled,
     downloadTab,

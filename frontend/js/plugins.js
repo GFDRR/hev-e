@@ -20,6 +20,9 @@ module.exports = {
         SpatialFilterPlugin: require('./plugins/SpatialFilter'),
         MapLoadingPlugin: require('./plugins/MapLoading'),
         DownloadPlugin: require('./plugins/Download'),
+        AboutPlugin: require('./plugins/About'),
+        SearchPlugin: require('./plugins/Search'),
+        DownloadsCounterPlugin: require('./plugins/DownloadsCounter'),
 
         ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
         ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
