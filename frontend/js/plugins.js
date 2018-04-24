@@ -32,7 +32,7 @@ module.exports = {
         ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
         ZoomAllPlugin: require('../MapStore2/web/client/plugins/ZoomAll'),
         FullScreenPlugin: require('../MapStore2/web/client/plugins/FullScreen'),
-        // NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
+        NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
         // MapPlugin: require('../MapStore2/web/client/plugins/Map')
         MapPlugin: require('./plugins/Map')
 

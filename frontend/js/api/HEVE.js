@@ -53,10 +53,13 @@ const Api = {
                     records: []
                 };
             })
-            .catch(() => ({
+            .catch(e => ({
                 numberOfRecordsMatched: 0,
                 numberOfRecordsReturned: 0,
-                records: []
+                records: [],
+                error: {
+                    message: e.statusText
+                }
             })));
         });
     },
@@ -104,10 +107,13 @@ const Api = {
                     records: []
                 };
             })
-            .catch(() => ({
+            .catch(e => ({
                 numberOfRecordsMatched: 0,
                 numberOfRecordsReturned: 0,
-                records: []
+                records: [],
+                error: {
+                    message: e.statusText
+                }
             })));
         });
     }
