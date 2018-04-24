@@ -28,7 +28,8 @@ const {
     ADD_DATASET_KEYS,
     UPDATE_CURRENT_DATASET,
     REMOVE_ORDER,
-    ORDER_LOADING
+    ORDER_LOADING,
+    SELECT_DOWNLOAD
 } = require('../actions/dataexploration');
 
 const{head} = require('lodash');
@@ -49,7 +50,8 @@ function dataexploration(state = {
                 {...state, area: {...(action.area || state.area)}}
                 : {...state};
         case UPDATE_DETAILS:
-            return {...state, showRelatedData: false, currentDetails: action.details ? {...action.details} : null};
+            const currentDetails = state.currentDetails || {};
+            return {...state, showRelatedData: false, currentDetails: action.details ? {...currentDetails, ...action.details} : null};
         case SET_SORT_TYPE:
             return {...state, sortType: action.sort};
         case UPDATE_TMP_DETAILS_BBOX:
@@ -59,7 +61,7 @@ function dataexploration(state = {
         case DETAILS_LOADING:
             return {...state, detailsLoading: action.loading};
         case UPDATE_BBOX_FILTER:
-            return {...state, bboxFilter: action.bbox};
+            return {...state, bboxFilter: action.bboxFilter, explorerBBOX: action.bbox};
         case ADD_DOWNLOAD:
             const containsDownload = head((state.downloads || []).filter(download => download.id === action.download.id));
             const downloads = !containsDownload ?
@@ -73,9 +75,11 @@ function dataexploration(state = {
                 return {...state, restoreDownloads: null, downloads: [...state.restoreDownloads]};
             }
             if (action.downloadId === 'clear') {
-                return {...state, restoreDownloads: null, downloads: []};
+                return {...state, restoreDownloads: null, downloads: [], download: null};
             }
-            return {...state, restoreDownloads: state.downloads ? [...state.downloads] : null, downloads: !state.downloads || action.downloadId === 'all' ? [] : state.downloads.filter(download => download.downloadId !== action.downloadId)};
+            const vulnerabilities = state.download && state.download.vulnerabilities && state.download.vulnerabilities.filter(dwnld => dwnld.downloadId !== action.downloadId);
+            const download = vulnerabilities && {...state.download, vulnerabilities} || {...state.download};
+            return {...state, download, restoreDownloads: state.downloads ? [...state.downloads] : null, downloads: !state.downloads || action.downloadId === 'all' ? [] : state.downloads.filter(dwnld => dwnld.downloadId !== action.downloadId)};
         case UPDATE_DOWNLOAD_EMAIL:
             return {...state, downloadEmail: action.email};
         case SELECT_DOWNLOAD_FORMAT:
@@ -98,6 +102,8 @@ function dataexploration(state = {
             return {...state, currentDataset: action.currentDataset};
         case ORDER_LOADING:
             return {...state, orderLoading: action.loading};
+        case SELECT_DOWNLOAD:
+            return {...state, download: action.download};
         default:
             return state;
     }

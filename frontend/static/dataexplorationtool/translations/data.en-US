@@ -69,7 +69,10 @@
             "createdOn": "created on",
             "expiresOn": "expires on",
             "bboxOrder": "bbox",
-            "filterOrder": "filters"
+            "filterOrder": "filters",
+
+            "csv": "CSV",
+            "vulnerabilitiesList": "Downloads list"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"
