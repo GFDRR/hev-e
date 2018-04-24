@@ -192,7 +192,13 @@ class OrderSerializer(serializers.BaseSerializer):
             batch__order=instance)
         serialized_items = []
         for item in items:
-            serializer = OrderItemSerializer(
+            item_dataset_type = item.identifier.partition(":")[0]
+            serializer_class = {
+                DatasetType.exposure.name: ExposureOrderItemSerializer,
+                DatasetType.vulnerability.name: (
+                    VulnerabilityOrderItemSerializer),
+            }.get(item_dataset_type, OrderItemSerializer)
+            serializer = serializer_class(
                 item,
                 context={"request": self.context.get("request")}
             )
