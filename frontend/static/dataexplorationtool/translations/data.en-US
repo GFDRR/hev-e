@@ -72,7 +72,8 @@
             "filterOrder": "filters",
 
             "csv": "CSV",
-            "vulnerabilitiesList": "Downloads list"
+            "vulnerabilitiesList": "Downloads list",
+            "home": "HEV-E"
         },
         "search":{
             "placeholder": "Search by location name or coordinates"

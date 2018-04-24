@@ -226,7 +226,7 @@ class DataExplorerComponent extends React.Component {
                                         {this.props.dataset.map(item => (
                                         <NavItem
                                             eventKey={item}
-                                            onClick={() => item === 'hazards' ? () => {} : this.props.onSelectDataset(item)}>
+                                            onClick={() => this.props.onSelectDataset(item)}>
                                             <Message msgId={'heve.' + item}/>
                                         </NavItem>))}
                                     </Nav>

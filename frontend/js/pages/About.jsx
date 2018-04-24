@@ -9,8 +9,6 @@
 const React = require('react');
 const PropTypes = require('prop-types');
 
-require('../../assets/css/dataexplorationtool.css');
-
 const {connect} = require('react-redux');
 
 const url = require('url');
@@ -18,37 +16,33 @@ const urlQuery = url.parse(window.location.href, true).query;
 
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
 
-const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
 const {resetControls} = require('../../MapStore2/web/client/actions/controls');
-const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
+
 const HolyGrail = require('../../MapStore2/web/client/containers/HolyGrail');
 
-class DataExplorationToolPage extends React.Component {
+class AboutPage extends React.Component {
     static propTypes = {
         name: PropTypes.string,
         mode: PropTypes.string,
         match: PropTypes.object,
-        map: PropTypes.object,
-        loadMapConfig: PropTypes.func,
+        loadMaps: PropTypes.func,
         reset: PropTypes.func,
         plugins: PropTypes.object
     };
 
     static defaultProps = {
-        name: "dataexplorationtool",
+        name: 'about',
         mode: 'desktop',
-        loadMapConfig: () => {},
-        reset: () => {},
-        map: {}
+        loadMaps: () => {},
+        reset: () => {}
     };
 
     componentWillMount() {
-        if (!this.props.map) {
+        if (this.props.match.params.mapType && this.props.match.params.mapId) {
             if (this.props.mode === 'mobile') {
                 // require('../assets/css/mobile.css');
             }
             this.props.reset();
-            this.props.loadMapConfig('/static/dataexplorationtool/base-map.json');
         }
     }
 
@@ -64,7 +58,7 @@ class DataExplorationToolPage extends React.Component {
         };
 
         return (<HolyGrail
-            id="dataexplorationtool-view-container"
+            id="about-container"
             pagePluginsConfig={pagePlugins}
             pluginsConfig={pluginsConfig}
             plugins={this.props.plugins}
@@ -74,10 +68,8 @@ class DataExplorationToolPage extends React.Component {
 }
 
 module.exports = connect((state) => ({
-    mode: urlQuery.mobile || state.browser && state.browser.mobile ? 'mobile' : 'desktop',
-    map: mapSelector(state)
+    mode: urlQuery.mobile || state.browser && state.browser.mobile ? 'mobile' : 'desktop'
 }),
     {
-        loadMapConfig,
         reset: resetControls
-    })(DataExplorationToolPage);
+    })(AboutPage);
