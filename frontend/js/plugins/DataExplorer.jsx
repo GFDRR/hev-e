@@ -202,7 +202,7 @@ class DataExplorerComponent extends React.Component {
         dataset: [],
         onSelectDataset: () => {},
         currentDataset: '',
-        getWidth: width => width > 687 && width * 2 / 5 || width
+        getWidth: width => width > 687 && width * 2 / 5 || width / 2
     };
 
     render() {
