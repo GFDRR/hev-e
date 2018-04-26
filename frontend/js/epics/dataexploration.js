@@ -378,11 +378,14 @@ const closeDetailsStream = (state, details, e) => {
     const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
     || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
+    const taxonomyObj = tocTmpLayer && tmpLayer && tmpLayer.taxonomy ? {taxonomy: {...tmpLayer.taxonomy}} : {};
+
     return Rx.Observable.concat(
         // restore last visibility of toc layer
         tocTmpLayer ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
             visibility: tocTmpLayer.lastVisibility,
-            lastVisibility: undefined
+            lastVisibility: undefined,
+            ...taxonomyObj
         })) : Rx.Observable.empty(),
 
         Rx.Observable.of(
