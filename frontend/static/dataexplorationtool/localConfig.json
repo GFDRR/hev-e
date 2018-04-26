@@ -4,6 +4,10 @@
     "printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
     "themePrefix": "dataexplorationtool",
     "heveAboutUrl": "/static/dataexplorationtool/about.md",
+    "heveCountriesDataUrl": "/static/dataexplorationtool/mockdata/countries_data.json",
+    "heveFilterUrl": "/static/dataexplorationtool/filters.json",
+    "heveOrderUrl": "/gfdrr_det/api/v1/order/",
+    "heveAPIUrl": "/gfdrr_det/api/v1/",
     "translationsPath": [
         "/static/dataexplorationtool/MapStore2/web/client/translations",
         "/static/dataexplorationtool/translations"
@@ -60,6 +64,33 @@
             "SpatialFilter",
             "ZoomToSearch",
             "DownloadsCounter",
+            {
+                "name": "Notifications",
+                "cfg": {
+                    "style": {
+                        "NotificationItem": {
+                            "error": {
+                                "backgroundColor": "#fff",
+                                "color": "#db0033",
+                                "borderColor": "#db0033",
+                                "boxShadow": "0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22)",
+                                "borderRadius": 0
+                            }
+                        },
+                        "Title": {
+                            "error": {
+                                "color": "#db0033"
+                            }
+                        },
+                        "Dismiss": {
+                            "error": {
+                                "color": "#db0033",
+                                "backgroundColor": "transparent"
+                            }
+                        }
+                    }
+                }
+            },
             {
                 "name": "FullScreen",
                 "override": {

@@ -54,7 +54,8 @@ module.exports = {
                 } : {}
             };
         }),
-        total: result && result.numberOfRecordsMatched
+        total: result && result.numberOfRecordsMatched,
+        error: result.error
     }),
 
     vulnerabilities: ({result = {}, onShowDetails = () => {}, groupInfo, LayerToolbar = () => <div/>, availableFormats, currentDataset}) => ({
@@ -91,7 +92,8 @@ module.exports = {
                 onClick: () => onShowDetails({...record, dataset: currentDataset})
             };
         }),
-        total: result && result.numberOfRecordsMatched
+        total: result && result.numberOfRecordsMatched,
+        error: result.error
     }),
 
     hazards: ({result = {}, groupInfo, onShowDetails = () => {}, onShowBbox = () => {}, LayerToolbar = () => <div/>, availableFormats, currentDataset}) => ({

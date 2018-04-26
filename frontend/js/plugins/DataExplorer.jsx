@@ -22,6 +22,7 @@ const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
+const ConfigUtils = require("../../MapStore2/web/client/utils/ConfigUtils");
 
 const getGroupInfo = filters => {
     return filters && filters.category
@@ -170,7 +171,7 @@ const dataCatalogSelector = createSelector([
     bboxFilter,
     groupInfo: getGroupInfo(filters[currentDataset]),
     currentDataset,
-    catalogURL: '/gfdrr_det/api/v1/' + currentDataset + '/',
+    catalogURL: ConfigUtils.getConfigProp('heveAPIUrl') + currentDataset + '/',
     sortOptions: filters[currentDataset].ordering,
     searchFilter: filters[currentDataset].search,
     categoryParams: getCategoryParams(filters[currentDataset]),

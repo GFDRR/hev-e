@@ -73,7 +73,9 @@
 
             "csv": "CSV",
             "vulnerabilitiesList": "Lista dei downloads",
-            "home": "HEV-E"
+            "home": "HEV-E",
+            "datasetNotFound": "Dataset not found",
+            "error": " "
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"
