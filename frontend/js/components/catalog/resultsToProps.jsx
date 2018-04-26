@@ -94,8 +94,50 @@ module.exports = {
         total: result && result.numberOfRecordsMatched
     }),
 
-    hazards: () => ({
-        items: [],
-        total: 0
+    hazards: ({result = {}, groupInfo, onShowDetails = () => {}, onShowBbox = () => {}, LayerToolbar = () => <div/>, availableFormats, currentDataset}) => ({
+        items: (result.records || []).map((record = {}) => {
+
+            const item = getItem.hazards(record, groupInfo);
+
+            return {
+                title: <span>{item.title}</span>,
+                description: <span>{item.description}</span>,
+                caption: <span>{item.caption}</span>,
+                preview: item.icon && <i className={'fa-4x text-center ' + item.icon}/> || <i className="fa fa-4x text-center fa-database"/>,
+
+                onClick: () => onShowDetails({...record, dataset: currentDataset}),
+                onMouseEnter: () => onShowBbox('bbox_layer', 'layers', {
+                    features: [{...record}],
+                    style: {
+                        fill: {
+                            color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
+                        },
+                        stroke: {
+                            color: groupInfo[record.properties.hazard_type] && groupInfo[record.properties.hazard_type].checked && groupInfo[record.properties.hazard_type].color || '#aaa',
+                            width: groupInfo[record.properties.hazard_type] && groupInfo[record.properties.hazard_type].checked && groupInfo[record.properties.hazard_type].color ? 2 : 1,
+                            opacity: 1
+                        }
+                    }
+                }),
+                onMouseLeave: () => onShowBbox('bbox_layer', 'layers', {features: [], style: {}}),
+                tools: <LayerToolbar
+                    item={{...item,
+                        geometry: record.geometry && {...record.geometry},
+                        properties: {...record.properties},
+                        dataset: currentDataset
+                    }}
+                    showZoomTo
+                    // showDownload
+                    showAddLayer
+                    showRemoveLayer
+                    dataset={currentDataset}
+                    availableFormats={availableFormats}/>,
+                style: groupInfo[record.properties.hazard_type] && groupInfo[record.properties.hazard_type].checked && groupInfo[record.properties.hazard_type].color ? {
+                    borderBottom: '2px solid ' + groupInfo[record.properties.hazard_type].color
+                } : {}
+            };
+        }),
+        total: result && result.numberOfRecordsMatched
     })
+
 };

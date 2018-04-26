@@ -7,10 +7,11 @@
  */
 
 module.exports = {
-    getTOCLayerObject: (item, bbox, prefix = '') => ({
+    getTOCLayerObject: (item, bbox, prefix = '', visibility = true) => ({
         type: 'wms',
         url: item.properties.wms_url,
-        visibility: true,
+        visibility,
+        ...(!visibility && {lastVisibility: true} || {}),
         name: item.properties.name,
         title: item.properties.title,
         description: item.properties.description,
