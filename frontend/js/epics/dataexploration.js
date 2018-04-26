@@ -51,6 +51,8 @@ const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUt
 const {CHANGE_DRAWING_STATUS} = require('../../MapStore2/web/client/actions/draw');
 const FilterUtils = require('../../MapStore2/web/client/utils/FilterUtils');
 const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
+const ConfigUtils = require("../../MapStore2/web/client/utils/ConfigUtils");
+const {error} = require('../../MapStore2/web/client/actions/notifications');
 
 const createBaseVectorLayer = name => ({
     type: 'vector',
@@ -73,7 +75,7 @@ const reprojectBbox = (bbox, state, faeturesBbox) => {
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/countries_data.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get(ConfigUtils.getConfigProp('heveCountriesDataUrl')).then(response => response.data))
             .switchMap(data => {
                 return Rx.Observable.of(
                     addLayer(
@@ -99,8 +101,15 @@ const initDataLayerEpic = action$ =>
                     )
                 );
             })
-            .catch(() => {
-                return Rx.Observable.empty();
+            .catch(e => {
+                return Rx.Observable.of(
+                    error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 6,
+                        position: "tc"
+                    })
+                );
             });
         });
 
@@ -127,7 +136,7 @@ const selectAreaEpic = (action$, store) =>
                 );
             }
 
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/filters.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get(ConfigUtils.getConfigProp('heveFilterUrl')).then(response => response.data))
                 .switchMap(responseData => {
 
                     const datasetKeys = responseData.dataset;
@@ -362,18 +371,21 @@ const defaultDetailsLayerParams = ({
     }
 });
 
-const closeDetailsStream = (state, details) => {
+const closeDetailsStream = (state, details, e) => {
 
     const layers = layersSelector(state);
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
     || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
+    const taxonomyObj = tocTmpLayer && tmpLayer && tmpLayer.taxonomy ? {taxonomy: {...tmpLayer.taxonomy}} : {};
+
     return Rx.Observable.concat(
         // restore last visibility of toc layer
         tocTmpLayer ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
             visibility: tocTmpLayer.lastVisibility,
-            lastVisibility: undefined
+            lastVisibility: undefined,
+            ...taxonomyObj
         })) : Rx.Observable.empty(),
 
         Rx.Observable.of(
@@ -384,7 +396,13 @@ const closeDetailsStream = (state, details) => {
             updateDatails(),
             detailsLoading(false)
         ),
-        Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300)
+        Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300),
+        e ? Rx.Observable.of(error({
+            title: "heve.error",
+            message: e.message || "",
+            autoDismiss: 6,
+            position: "tc"
+        })) : Rx.Observable.empty()
     );
 };
 
@@ -454,6 +472,51 @@ const updateDetailsObservables = {
             detailsLoading(false),
             updateTmpDetailsBbox({placeholder: true})
         );
+    },
+    hazards: ({state, details, actionBbox}) => {
+        const layers = layersSelector(state);
+        const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+        const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+
+        const coordinates = details && details.geometry && details.geometry.coordinates;
+        const bbox = coordinates && [-180, -80, 180, 80]; // [...coordinates[0][0], ...coordinates[0][2]];
+
+        return Rx.Observable.concat(
+            // hide toc layer
+            tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                lastVisibility: tocTmpLayer.visibility,
+                visibility: false
+            })) : Rx.Observable.empty(),
+
+            Rx.Observable.of(
+                updateNode('datasets_layer', 'layers', {visibility: false}),
+                setControlProperty('dataExplorer', 'enabled', true),
+                setControlProperty('compacttoc', 'hide', true),
+                updateDatails(details),
+                detailsLoading(false),
+                tmpLayer ?
+                    updateNode('heve_tmp_layer', 'layers', {
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+                    :
+                    addLayer({
+                        type: 'wms',
+                        group: 'heve_tmp_group',
+                        id: 'heve_tmp_layer',
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+            ),
+            actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+        );
     }
 };
 
@@ -465,7 +528,7 @@ const updateDetailsStream = (state, item, actionBbox) => {
         Rx.Observable.of(updateDatails(item), detailsLoading(true)),
         Rx.Observable.fromPromise(axios.get(`${url}${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
         .switchMap(details => updateDetailsObservables[currentDataset] && updateDetailsObservables[currentDataset]({state, details, actionBbox}) || Rx.Observable.of(detailsLoading(false)))
-        .catch(() => closeDetailsStream(state))
+        .catch((e) => closeDetailsStream(state, null, e))
     );
 };
 
@@ -567,7 +630,7 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
             return bbox && tmpDetailsBboxStr !== bbox.join(',') ? Rx.Observable.concat(
-                !isEmpty(tmpDetailsBbox) ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
+                (!isEmpty(tmpDetailsBbox) || faeturesBbox.type === 'filter') ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
 
@@ -622,8 +685,13 @@ const updateOrdersEpic = (action$, store) =>
                 .switchMap(updatedOrder => {
                     return Rx.Observable.of(updateOrder({...updatedOrder}));
                 })
-                .catch(() => {
-                    return Rx.Observable.empty();
+                .catch(e => {
+                    return Rx.Observable.of(error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 3,
+                        position: "tc"
+                    }));
                 });
             });
         })
@@ -684,7 +752,7 @@ const downloadDataEpic = (action$, store) =>
         return Rx.Observable.concat(
             Rx.Observable.of(orderLoading(true)),
             Rx.Observable.fromPromise(
-                axios.post('/gfdrr_det/api/v1/order/', {
+                axios.post(ConfigUtils.getConfigProp('heveOrderUrl'), {
                     notification_email: notificationEmail,
                     order_items: [...orderItems, ...vulnerabilitiesOrder]
                 },
@@ -703,8 +771,17 @@ const downloadDataEpic = (action$, store) =>
                     orderLoading(false)
                 );
             })
-            .catch(() => {
-                return Rx.Observable.of(orderLoading(false));
+            .catch(e => {
+                return Rx.Observable.of(
+                    orderLoading(false),
+                    error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 6,
+                        position: "tc"
+                    })
+                );
+
             })
         );
     });

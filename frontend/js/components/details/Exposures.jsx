@@ -9,14 +9,25 @@
 const React = require('react');
 const {Grid, Row, Col} = require('react-bootstrap');
 const ContainerDimensions = require('react-container-dimensions').default;
-const sampleData = require('../../../MapStore2/web/client/components/widgets/enhancers/sampleChartData');
-const SimpleChart = sampleData(require('../../../MapStore2/web/client/components/charts/SimpleChart'));
+const SimpleChart = require('../../../MapStore2/web/client/components/charts/SimpleChart');
 const BorderLayout = require('../../../MapStore2/web/client/components/layout/BorderLayout');
 const {truncate, isString, head} = require('lodash');
 const {withState} = require('recompose');
 const {getItem} = require('../../utils/ItemsUtils');
 
-const CustomizedAxisTick = class DataDetails extends React.Component {
+const CustomizedYAxisTick = class DataDetails extends React.Component {
+    render() {
+        const {x, y, payload} = this.props;
+        return (
+            <g transform={`translate(${x},${y})`} >
+                <title>{payload.value}</title>
+                <text x={0} y={0} dx={-8} textAnchor="end">{payload.value}</text>
+            </g>
+        );
+    }
+};
+
+const CustomizedXAxisTick = class DataDetails extends React.Component {
     render() {
         const {x, y, payload} = this.props;
         return (
@@ -72,12 +83,16 @@ module.exports = withState('showFilter', 'onToggleFilter', true)(({
                             item={{
                                 ...getItem.exposures(currentDetails, groupInfo),
                                 ...taxonomyObj,
+                                properties: currentDetails.properties && {...currentDetails.properties},
                                 geometry: currentDetails.geometry && {...currentDetails.geometry}
                             }}
                             dataset={currentDataset}
+                            hideOnAdd
                             showDownload
                             showFilter
                             showZoomTo
+                            showAddLayer
+                            showRemoveLayer
                             activeFilter={showFilter}
                             onToggleFilter={() => onToggleFilter(!showFilter)}
                             mapBbox={bbox}
@@ -120,7 +135,8 @@ module.exports = withState('showFilter', 'onToggleFilter', true)(({
                                                 type="bar"
                                                 legend={false}
                                                 series={{ dataKey: group.name, isAnimationActive: false }}
-                                                xAxis={{ dataKey: 'name', tick: <CustomizedAxisTick />, interval: 0 }}
+                                                yAxis={{tick: <CustomizedYAxisTick />}}
+                                                xAxis={{ dataKey: 'name', tick: <CustomizedXAxisTick />, interval: 0 }}
                                                 width={wChart - 40}
                                                 colorGenerator={() => ['#333333']} />
                                         }

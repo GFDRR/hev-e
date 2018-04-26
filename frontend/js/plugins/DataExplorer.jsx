@@ -12,8 +12,8 @@ const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
 const {Nav, NavItem, Col, Row} = require('react-bootstrap');
 const {setControlProperty} = require('../../MapStore2/web/client/actions/controls');
-const {showDatails, updateFilter, showFilter, setSortType, showRelatedData, addDownload, updateCurrentDataset} = require('../actions/dataexploration');
-const {datasetSelector, currentDatasetSelector, currentDetailsSelector, sortSelector, showRelatedDataSelector, bboxFilterStringSelector, tmpDetailsBboxSelector, explorerBBOXSelector} = require('../selectors/dataexploration');
+const {showDatails, updateFilter, showFilter, setSortType, showRelatedData, addDownload, updateCurrentDataset, updateHazardFilter} = require('../actions/dataexploration');
+const {datasetSelector, currentDatasetSelector, currentDetailsSelector, sortSelector, showRelatedDataSelector, bboxFilterStringSelector, tmpDetailsBboxSelector, explorerBBOXSelector, hazardsFilterSelector} = require('../selectors/dataexploration');
 const DockPanel = require('../../MapStore2/web/client/components/misc/panels/DockPanel');
 const ContainerDimensions = require('react-container-dimensions').default;
 const {updateNode} = require("../../MapStore2/web/client/actions/layers");
@@ -22,6 +22,7 @@ const Message = require('../../MapStore2/web/client/components/I18N/Message');
 const {addLayer, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require('../../MapStore2/web/client/selectors/layers');
 const {head} = require('lodash');
+const ConfigUtils = require("../../MapStore2/web/client/utils/ConfigUtils");
 
 const getGroupInfo = filters => {
     return filters && filters.category
@@ -94,8 +95,9 @@ const dataDetailsSelector = createSelector([
     layersSelector,
     state => state.dataexploration && state.dataexploration.downloads,
     tmpDetailsBboxSelector,
-    state => state.dataexploration && state.dataexploration.detailsLoading
-], (currentDetails, sortBy, showData, filters, dataset, layers, downloads, bbox, loading) => {
+    state => state.dataexploration && state.dataexploration.detailsLoading,
+    hazardsFilterSelector
+], (currentDetails, sortBy, showData, filters, dataset, layers, downloads, bbox, loading, hazardsFilter) => {
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     const currentDataset = currentDetails && currentDetails.dataset || dataset;
     return {
@@ -109,7 +111,8 @@ const dataDetailsSelector = createSelector([
         loading,
         currentDataset,
         availableFormats: filters[currentDataset] && filters[currentDataset].format || {},
-        layout: filters[currentDataset] && filters[currentDataset].layout || {}
+        layout: filters[currentDataset] && filters[currentDataset].layout || {},
+        hazardsFilter
     };
 });
 
@@ -117,7 +120,8 @@ const DataDetails = connect(
     dataDetailsSelector,
     {
         onClose: showDatails.bind(null, null),
-        onShowRelatedData: showRelatedData
+        onShowRelatedData: showRelatedData,
+        onUpdateFilter: updateHazardFilter
     }
 )(require('../components/DataDetails'));
 
@@ -167,7 +171,7 @@ const dataCatalogSelector = createSelector([
     bboxFilter,
     groupInfo: getGroupInfo(filters[currentDataset]),
     currentDataset,
-    catalogURL: '/gfdrr_det/api/v1/' + currentDataset + '/',
+    catalogURL: ConfigUtils.getConfigProp('heveAPIUrl') + currentDataset + '/',
     sortOptions: filters[currentDataset].ordering,
     searchFilter: filters[currentDataset].search,
     categoryParams: getCategoryParams(filters[currentDataset]),
@@ -198,7 +202,7 @@ class DataExplorerComponent extends React.Component {
         dataset: [],
         onSelectDataset: () => {},
         currentDataset: '',
-        getWidth: width => width * 2 / 5 > 687 && width * 2 / 5 || width / 2
+        getWidth: width => width > 687 && width * 2 / 5 || width / 2
     };
 
     render() {

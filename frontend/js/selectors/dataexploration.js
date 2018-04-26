@@ -28,5 +28,6 @@ module.exports = {
     orderLoadingSelector: state => state.dataexploration && state.dataexploration.orderLoading,
     downloadSelector: state => state.dataexploration && state.dataexploration.download || null,
     explorerBBOXSelector: state => state.dataexploration && state.dataexploration.explorerBBOX,
-    downloadsSelector: state => state.dataexploration && state.dataexploration.downloads
+    downloadsSelector: state => state.dataexploration && state.dataexploration.downloads,
+    hazardsFilterSelector: state => state.dataexploration && state.dataexploration.hazardsFilter
 };

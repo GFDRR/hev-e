@@ -53,10 +53,13 @@ const Api = {
                     records: []
                 };
             })
-            .catch(() => ({
+            .catch(e => ({
                 numberOfRecordsMatched: 0,
                 numberOfRecordsReturned: 0,
-                records: []
+                records: [],
+                error: {
+                    message: e.statusText
+                }
             })));
         });
     },
@@ -90,6 +93,56 @@ const Api = {
             }).then((response) => {
 
                 const records = response.data && response.data.results || null;
+                const numberOfRecordsMatched = response.data && response.data.count || 0;
+                if (records) {
+                    return {
+                        numberOfRecordsMatched,
+                        numberOfRecordsReturned: records.length,
+                        records
+                    };
+                }
+                return {
+                    numberOfRecordsMatched: 0,
+                    numberOfRecordsReturned: 0,
+                    records: []
+                };
+            })
+            .catch(e => ({
+                numberOfRecordsMatched: 0,
+                numberOfRecordsReturned: 0,
+                records: [],
+                error: {
+                    message: e.statusText
+                }
+            })));
+        });
+    },
+    hazards: ({catalogURL, page, maxRecords, bboxFilter, categoryParams, groupInfo}) => {
+        return new Promise((resolve) => {
+            const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
+            const categoryFilterObj = categoryParams.reduce((params, param) => {
+                const hasFilter = groupInfo && Object.keys(groupInfo)
+                .filter(key => groupInfo[key].param === param && groupInfo[key].checked)
+                .reduce((values, key) =>
+                    [...values, ...(groupInfo[key] && groupInfo[key].values && groupInfo[key].values.map(value => value.code)
+                    || groupInfo[key] && groupInfo[key].code && [groupInfo[key].code])],
+                []);
+                return {
+                    ...params,
+                    ...(hasFilter.length > 0 ? {[param]: join(hasFilter, ',')} : {})
+                };
+            }, {});
+
+            resolve(axios.get(parseUrl(catalogURL), {
+                params: {
+                    page: page + 1,
+                    page_size: maxRecords,
+                    format: 'json',
+                    ...categoryFilterObj,
+                    ...bboxObj
+                }
+            }).then((response) => {
+                const records = response.data && response.data.features || null;
                 const numberOfRecordsMatched = response.data && response.data.count || 0;
                 if (records) {
                     return {

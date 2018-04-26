@@ -23,6 +23,13 @@ const HEVEAPI = require('../api/HEVE');
 const SideGrid = compose(
     loadingState(({loading, items = []} ) => items.length === 0 && loading),
     emptyState(
+        ({error} ) => error,
+        {
+            title: <Message msgId="heve.datasetNotFound" />,
+            style: { transform: "translateY(50%)"},
+            glyph: 'exclamation-mark'
+        }),
+    emptyState(
         ({loading, items = []} ) => items.length === 0 && !loading,
         {
             title: <Message msgId="catalog.noRecordsMatched" />,
@@ -74,7 +81,8 @@ module.exports = compose(
     filterList,
     setSearchText = () => {},
     sortOptions,
-    searchFilter
+    searchFilter,
+    error
 }) => {
     const Form = filterForm || CatalogForm;
     const FilterList = filterList;
@@ -95,6 +103,7 @@ module.exports = compose(
                     </div>
                 }>
                 <SideGrid
+                    error={error}
                     items={items}
                     loading={loading}/>
             </BorderLayout>
