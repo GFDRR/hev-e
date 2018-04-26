@@ -46,7 +46,8 @@ module.exports = ({
     dataset,
     availableFormats,
     taxonomy,
-    filterBBOX
+    filterBBOX,
+    hideOnAdd
 }) => {
     const layerTaxonomy = getTaxonomyFromLayers(layers, item);
     const taxonomyObj = layerTaxonomy && layerTaxonomy[item.type] && {taxonomy: layerTaxonomy[item.type]} || taxonomy && taxonomy[item.type] && {taxonomy: taxonomy[item.type]} || {};
@@ -103,7 +104,7 @@ module.exports = ({
                         if (coordinates) {
                             const bbox = [...coordinates[0][0], ...coordinates[0][2]];
                             onAddLayer({
-                                ...getTOCLayerObject(item, bbox, prefix)
+                                ...getTOCLayerObject(item, bbox, prefix, !hideOnAdd)
                             });
                         }
                     }

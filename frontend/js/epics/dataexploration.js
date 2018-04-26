@@ -454,6 +454,51 @@ const updateDetailsObservables = {
             detailsLoading(false),
             updateTmpDetailsBbox({placeholder: true})
         );
+    },
+    hazards: ({state, details, actionBbox}) => {
+        const layers = layersSelector(state);
+        const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+        const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+
+        const coordinates = details && details.geometry && details.geometry.coordinates;
+        const bbox = coordinates && [-180, -80, 180, 80]; // [...coordinates[0][0], ...coordinates[0][2]];
+
+        return Rx.Observable.concat(
+            // hide toc layer
+            tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                lastVisibility: tocTmpLayer.visibility,
+                visibility: false
+            })) : Rx.Observable.empty(),
+
+            Rx.Observable.of(
+                updateNode('datasets_layer', 'layers', {visibility: false}),
+                setControlProperty('dataExplorer', 'enabled', true),
+                setControlProperty('compacttoc', 'hide', true),
+                updateDatails(details),
+                detailsLoading(false),
+                tmpLayer ?
+                    updateNode('heve_tmp_layer', 'layers', {
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+                    :
+                    addLayer({
+                        type: 'wms',
+                        group: 'heve_tmp_group',
+                        id: 'heve_tmp_layer',
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+            ),
+            actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+        );
     }
 };
 
@@ -567,7 +612,7 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
             return bbox && tmpDetailsBboxStr !== bbox.join(',') ? Rx.Observable.concat(
-                !isEmpty(tmpDetailsBbox) ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
+                (!isEmpty(tmpDetailsBbox) || faeturesBbox.type === 'filter') ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
 

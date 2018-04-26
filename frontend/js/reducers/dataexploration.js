@@ -29,7 +29,8 @@ const {
     UPDATE_CURRENT_DATASET,
     REMOVE_ORDER,
     ORDER_LOADING,
-    SELECT_DOWNLOAD
+    SELECT_DOWNLOAD,
+    UPDATE_HAZARD_FILTER
 } = require('../actions/dataexploration');
 
 const{head} = require('lodash');
@@ -38,7 +39,8 @@ function dataexploration(state = {
     filter: {},
     downloads: [],
     orders: [],
-    downloadFormat: 'single'
+    downloadFormat: 'single',
+    hazardsFilter: {}
 }, action) {
     switch (action.type) {
         case SHOW_FILTER:
@@ -104,6 +106,11 @@ function dataexploration(state = {
             return {...state, orderLoading: action.loading};
         case SELECT_DOWNLOAD:
             return {...state, download: action.download};
+        case UPDATE_HAZARD_FILTER:
+            if (action.key === 'clear') {
+                return {...state, hazardsFilter: {}};
+            }
+            return {...state, hazardsFilter: {...(state.hazardsFilter || {}), [action.key]: action.value}};
         default:
             return state;
     }

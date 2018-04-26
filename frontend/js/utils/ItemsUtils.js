@@ -52,6 +52,15 @@ const getItem = {
         exposure: getName(item.exposure && item.exposure.toLowerCase(), groupInfo),
         hazard: getName(item.hazard && item.hazard.toLowerCase(), groupInfo),
         caption: getName(item.vulnerability_type && item.vulnerability_type.toLowerCase(), groupInfo)
+    }),
+    hazards: (item, groupInfo) => ({
+        id: item.id,
+        type: item.properties && item.properties.category,
+        name: item.properties && item.properties.name,
+        title: item.properties && item.properties.title,
+        description: item.properties && item.properties.description,
+        caption: item.properties && item.properties.hazard_type,
+        icon: item.properties && groupInfo[item.properties.hazard_type] && groupInfo[item.properties.hazard_type].icon && groupInfo[item.properties.hazard_type].icon || 'database'
     })
 };
 

@@ -141,45 +141,50 @@
                 {
                     "name": "Hazard",
                     "icon": "bolt",
+                    "code": "hazard_type",
+                    "colors_range": [
+                        "yellow",
+                        "navy"
+                    ],
                     "filters": [
                         {
                             "name": "Earthquake",
-                            "code": "Earthquake",
+                            "code": "earthquake",
                             "icon": "icon-eq"
                         },
                         {
                             "name": "Tsunami",
-                            "code": "Tsunami",
+                            "code": "tsunami",
                             "icon": "icon-ts"
                         },
                         {
                             "name": "Flood",
-                            "code": "Flood",
+                            "code": "flood",
                             "icon": "icon-fl"
                         },
                         {
                             "name": "Wind",
-                            "code": "Wind",
+                            "code": "wind",
                             "icon": "icon-cy"
                         },
                         {
                             "name": "Landslide",
-                            "code": "Landslide",
+                            "code": "landslide",
                             "icon": "icon-ls"
                         },
                         {
                             "name": "Storm surge",
-                            "code": "Storm surge",
+                            "code": "storm surge",
                             "icon": "icon-cy"
                         },
                         {
                             "name": "Volcanic ash",
-                            "code": "Volcanic ash",
+                            "code": "volcano",
                             "icon": "icon-va"
                         },
                         {
                             "name": "Drought",
-                            "code": "Drought",
+                            "code": "drought",
                             "icon": "icon-dg"
                         }
                     ]
@@ -422,7 +427,22 @@
                 }
             ]
         },
-        "hazards": {},
+        "hazards": {
+            "layout": {
+                "events": [
+                    {
+                        "code": "min",
+                        "name": "Min"
+                    }
+                ],
+                "footprints": [
+                    {
+                        "code": "min",
+                        "name": "Min"
+                    }
+                ]
+            }
+        },
         "vulnerabilities": {
             "layout": {
                 "commons": {
