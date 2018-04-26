@@ -162,7 +162,8 @@ def get_heve_detail(geonode_layer, event_set, view_aggregate_info):
     heve_detail.details = {
         "event_set_id": event_set.id,
         "geographic_area_name": event_set.geographic_area_name,
-        "hazard_type": event_set.hazard_type,
+        "hazard_type": _utils.get_mapped_category(
+            event_set.hazard_type, DatasetType.hazard),
         "creation_date": event_set.creation_date.isoformat(),
         "description": event_set.description,
         "bibliography": event_set.bibliography,
