@@ -20,7 +20,7 @@ const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
 
 const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
 const {resetControls} = require('../../MapStore2/web/client/actions/controls');
-
+const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
 const HolyGrail = require('../../MapStore2/web/client/containers/HolyGrail');
 
 class DataExplorationToolPage extends React.Component {
@@ -28,7 +28,8 @@ class DataExplorationToolPage extends React.Component {
         name: PropTypes.string,
         mode: PropTypes.string,
         match: PropTypes.object,
-        loadMaps: PropTypes.func,
+        map: PropTypes.object,
+        loadMapConfig: PropTypes.func,
         reset: PropTypes.func,
         plugins: PropTypes.object
     };
@@ -36,17 +37,18 @@ class DataExplorationToolPage extends React.Component {
     static defaultProps = {
         name: "dataexplorationtool",
         mode: 'desktop',
-        loadMaps: () => {},
-        reset: () => {}
+        loadMapConfig: () => {},
+        reset: () => {},
+        map: {}
     };
 
     componentWillMount() {
-        if (this.props.match.params.mapType && this.props.match.params.mapId) {
+        if (!this.props.map) {
             if (this.props.mode === 'mobile') {
                 // require('../assets/css/mobile.css');
             }
             this.props.reset();
-            this.props.loadMaps(ConfigUtils.getDefaults().geoStoreUrl, ConfigUtils.getDefaults().initialMapFilter || "*");
+            this.props.loadMapConfig('/static/dataexplorationtool/base-map.json');
         }
     }
 
@@ -72,7 +74,8 @@ class DataExplorationToolPage extends React.Component {
 }
 
 module.exports = connect((state) => ({
-    mode: urlQuery.mobile || state.browser && state.browser.mobile ? 'mobile' : 'desktop'
+    mode: urlQuery.mobile || state.browser && state.browser.mobile ? 'mobile' : 'desktop',
+    map: mapSelector(state)
 }),
     {
         loadMapConfig,

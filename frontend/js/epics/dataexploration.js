@@ -51,6 +51,8 @@ const CoordinatesUtils = require('../../MapStore2/web/client/utils/CoordinatesUt
 const {CHANGE_DRAWING_STATUS} = require('../../MapStore2/web/client/actions/draw');
 const FilterUtils = require('../../MapStore2/web/client/utils/FilterUtils');
 const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
+const ConfigUtils = require("../../MapStore2/web/client/utils/ConfigUtils");
+const {error} = require('../../MapStore2/web/client/actions/notifications');
 
 const createBaseVectorLayer = name => ({
     type: 'vector',
@@ -61,19 +63,19 @@ const createBaseVectorLayer = name => ({
     hideLoading: true
 });
 
-const reprojectBbox = (bbox, state) => {
+const reprojectBbox = (bbox, state, faeturesBbox) => {
     const reprojectedBbox = CoordinatesUtils.reprojectBbox(bbox.bounds, bbox.crs, 'EPSG:4326');
     const bboxFilter = bboxFilterSelector(state);
     if (bboxFilter && reprojectedBbox && reprojectedBbox.join(',') === bboxFilter.join(',')) {
         return Rx.Observable.empty();
     }
-    return Rx.Observable.of(updateBBOXFilter(reprojectedBbox));
+    return Rx.Observable.of(updateBBOXFilter(reprojectedBbox, {...faeturesBbox}));
 };
 
 const initDataLayerEpic = action$ =>
     action$.ofType(MAP_CONFIG_LOADED)
         .switchMap(() => {
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/mockdata/countries_data.json').then(response => response.data))
+            return Rx.Observable.fromPromise(axios.get(ConfigUtils.getConfigProp('heveCountriesDataUrl')).then(response => response.data))
             .switchMap(data => {
                 return Rx.Observable.of(
                     addLayer(
@@ -99,8 +101,15 @@ const initDataLayerEpic = action$ =>
                     )
                 );
             })
-            .catch(() => {
-                return Rx.Observable.empty();
+            .catch(e => {
+                return Rx.Observable.of(
+                    error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 6,
+                        position: "tc"
+                    })
+                );
             });
         });
 
@@ -126,13 +135,16 @@ const selectAreaEpic = (action$, store) =>
                     ).delay(300)
                 );
             }
-            // console.log(chroma.scale(['#89ff32', '#ff7132']).mode('lch').colors(7));
-            return Rx.Observable.fromPromise(axios.get('/static/dataexplorationtool/filters.json').then(response => response.data))
+
+            return Rx.Observable.fromPromise(axios.get(ConfigUtils.getConfigProp('heveFilterUrl')).then(response => response.data))
                 .switchMap(responseData => {
 
                     const datasetKeys = responseData.dataset;
 
                     const list = datasetKeys.reduce((newList, key) => {
+                        const formatObj = (responseData.list[key].format ? {format: {...responseData.list[key].format}} : {});
+                        const orderingObj = (responseData.list[key].ordering ? {ordering: [...responseData.list[key].ordering]} : {});
+                        const serachObj = (responseData.list[key].search ? {search: responseData.list[key].search} : {});
                         return {
                             ...newList,
                             [key]: responseData.list[key].category && {
@@ -145,21 +157,25 @@ const selectAreaEpic = (action$, store) =>
                                     }
                                     return {...group};
                                 }),
-                                ...(responseData.list[key].format ? {format: {...responseData.list[key].format}} : {})
+                                ...formatObj,
+                                ...orderingObj,
+                                ...serachObj
                             } || {}
                         };
                     }, {});
 
                     const detail = datasetKeys.reduce((newDetail, key) => {
+                        const layoutObj = responseData.detail[key] && responseData.detail[key].layout && {layout: responseData.detail[key].layout} || {};
                         return {
                             ...newDetail,
                             [key]: {
-                                taxonomy: Object.keys(responseData.detail[key]).reduce((nowTaxonomy, type) => {
+                                taxonomy: Object.keys(responseData.detail[key]).filter(k => k !== 'layout').reduce((nowTaxonomy, type) => {
                                     return {
                                         ...nowTaxonomy,
                                         [type]: responseData.detail[key][type].map(taxonomy => ({...taxonomy, styleChecked: responseData.detail[key][type][0] && responseData.detail[key][type][0].style || ''}))
                                     };
-                                }, {})
+                                }, {}),
+                                ...layoutObj
                             }
                         };
                     }, {});
@@ -355,18 +371,21 @@ const defaultDetailsLayerParams = ({
     }
 });
 
-const closeDetailsStream = (state, details) => {
+const closeDetailsStream = (state, details, e) => {
 
     const layers = layersSelector(state);
     const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
     const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
     || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
+    const taxonomyObj = tocTmpLayer && tmpLayer && tmpLayer.taxonomy ? {taxonomy: {...tmpLayer.taxonomy}} : {};
+
     return Rx.Observable.concat(
         // restore last visibility of toc layer
         tocTmpLayer ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
             visibility: tocTmpLayer.lastVisibility,
-            lastVisibility: undefined
+            lastVisibility: undefined,
+            ...taxonomyObj
         })) : Rx.Observable.empty(),
 
         Rx.Observable.of(
@@ -377,72 +396,141 @@ const closeDetailsStream = (state, details) => {
             updateDatails(),
             detailsLoading(false)
         ),
-        Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300)
+        Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300),
+        e ? Rx.Observable.of(error({
+            title: "heve.error",
+            message: e.message || "",
+            autoDismiss: 6,
+            position: "tc"
+        })) : Rx.Observable.empty()
     );
 };
 
+const updateDetailsObservables = {
 
-const updateDetailsStream = (state, item, actionBbox) =>
-    Rx.Observable.concat(
+    exposures: ({state, details, actionBbox}) => {
+        const layers = layersSelector(state);
+        const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+        const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+
+        const coordinates = details && details.geometry && details.geometry.coordinates;
+        const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
+
+        const filters = filterSelector(state);
+        const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
+
+        const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
+        const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
+
+        return Rx.Observable.concat(
+            // hide toc layer
+            tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                lastVisibility: tocTmpLayer.visibility,
+                visibility: false
+            })) : Rx.Observable.empty(),
+
+            Rx.Observable.of(
+                updateNode('datasets_layer', 'layers', {visibility: false}),
+                setControlProperty('dataExplorer', 'enabled', true),
+                setControlProperty('compacttoc', 'hide', true),
+                updateDatails(details),
+                detailsLoading(false),
+                tmpLayer ?
+                    updateNode('heve_tmp_layer', 'layers', {
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            taxonomyObj,
+                            styleObj,
+                            bbox
+                        })
+                    })
+                    :
+                    addLayer({
+                        type: 'wms',
+                        group: 'heve_tmp_group',
+                        id: 'heve_tmp_layer',
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            taxonomyObj,
+                            styleObj,
+                            bbox
+                        })
+                    })
+            ),
+            actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+        );
+    },
+    vulnerabilities: ({details}) => {
+        return Rx.Observable.of(
+            updateNode('datasets_layer', 'layers', {visibility: false}),
+            setControlProperty('dataExplorer', 'enabled', true),
+            setControlProperty('compacttoc', 'hide', true),
+            updateDatails(details),
+            detailsLoading(false),
+            updateTmpDetailsBbox({placeholder: true})
+        );
+    },
+    hazards: ({state, details, actionBbox}) => {
+        const layers = layersSelector(state);
+        const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
+        const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+
+        const coordinates = details && details.geometry && details.geometry.coordinates;
+        const bbox = coordinates && [-180, -80, 180, 80]; // [...coordinates[0][0], ...coordinates[0][2]];
+
+        return Rx.Observable.concat(
+            // hide toc layer
+            tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
+                lastVisibility: tocTmpLayer.visibility,
+                visibility: false
+            })) : Rx.Observable.empty(),
+
+            Rx.Observable.of(
+                updateNode('datasets_layer', 'layers', {visibility: false}),
+                setControlProperty('dataExplorer', 'enabled', true),
+                setControlProperty('compacttoc', 'hide', true),
+                updateDatails(details),
+                detailsLoading(false),
+                tmpLayer ?
+                    updateNode('heve_tmp_layer', 'layers', {
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+                    :
+                    addLayer({
+                        type: 'wms',
+                        group: 'heve_tmp_group',
+                        id: 'heve_tmp_layer',
+                        visibility: true,
+                        ...defaultDetailsLayerParams({
+                            details,
+                            bbox
+                        })
+                    })
+            ),
+            actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+        );
+    }
+};
+
+
+const updateDetailsStream = (state, item, actionBbox) => {
+    const currentDataset = item.dataset || currentDatasetSelector(state);
+    const url = item.url || item.properties && item.properties.url;
+    return Rx.Observable.concat(
         Rx.Observable.of(updateDatails(item), detailsLoading(true)),
-        Rx.Observable.fromPromise(axios.get(`/gfdrr_det/api/v1/exposures/${item.id}/?format=json${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
-        .switchMap(details => {
-            const layers = layersSelector(state);
-            const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
-            const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
-            || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
-
-            const coordinates = details && details.geometry && details.geometry.coordinates;
-            const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
-
-            const filters = filterSelector(state);
-            const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
-
-            const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
-            const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
-
-            return Rx.Observable.concat(
-                // hide toc layer
-                tocTmpLayer && tocTmpLayer.lastVisibility === undefined ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
-                    lastVisibility: tocTmpLayer.visibility,
-                    visibility: false
-                })) : Rx.Observable.empty(),
-
-                Rx.Observable.of(
-                    updateNode('datasets_layer', 'layers', {visibility: false}),
-                    setControlProperty('dataExplorer', 'enabled', true),
-                    setControlProperty('compacttoc', 'hide', true),
-                    updateDatails(details),
-                    detailsLoading(false),
-                    tmpLayer ?
-                        updateNode('heve_tmp_layer', 'layers', {
-                            visibility: true,
-                            ...defaultDetailsLayerParams({
-                                details,
-                                taxonomyObj,
-                                styleObj,
-                                bbox
-                            })
-                        })
-                        :
-                        addLayer({
-                            type: 'wms',
-                            group: 'heve_tmp_group',
-                            id: 'heve_tmp_layer',
-                            visibility: true,
-                            ...defaultDetailsLayerParams({
-                                details,
-                                taxonomyObj,
-                                styleObj,
-                                bbox
-                            })
-                        })
-                ),
-                actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
-            );
-        })
-        .catch(() => closeDetailsStream(state))
+        Rx.Observable.fromPromise(axios.get(`${url}${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
+        .switchMap(details => updateDetailsObservables[currentDataset] && updateDetailsObservables[currentDataset]({state, details, actionBbox}) || Rx.Observable.of(detailsLoading(false)))
+        .catch((e) => closeDetailsStream(state, null, e))
     );
+};
 
 const showDetailsEpic = (action$, store) =>
     action$.ofType(SHOW_DETAILS)
@@ -518,6 +606,11 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
 
         const currentDetails = currentDetailsSelector(state);
         const tmpDetailsBbox = tmpDetailsBboxSelector(state);
+        const currentDataset = currentDetails && currentDetails.dataset || currentDatasetSelector(state);
+
+        if (currentDetails && currentDataset === 'vulnerabilities') {
+            return Rx.Observable.empty();
+        }
 
         if (currentDetails) {
 
@@ -537,7 +630,7 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
             return bbox && tmpDetailsBboxStr !== bbox.join(',') ? Rx.Observable.concat(
-                !isEmpty(tmpDetailsBbox) ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
+                (!isEmpty(tmpDetailsBbox) || faeturesBbox.type === 'filter') ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
 
@@ -547,12 +640,24 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         }
 
         const drawFaetures = drawFeaturesSelector(store.getState());
-        const bbox = drawFaetures && drawFaetures[0] && { bounds: drawFaetures[0].extent, crs: drawFaetures[0].projection} || action.bbox || null;
-        if (!bbox) {
+        const bbox = drawFaetures && drawFaetures[0] && { bounds: drawFaetures[0].extent, crs: drawFaetures[0].projection, type: 'filter'} || {...action.bbox, type: 'view'} || null;
+        if (!bbox || bbox && !bbox.bounds) {
             return Rx.Observable.empty();
         }
 
-        return reprojectBbox(bbox, state);
+        const faeturesBbox = drawFaetures && drawFaetures[0] && drawFaetures[0].extent && {
+            type: 'filter',
+            bounds: {
+                minx: drawFaetures[0].extent[0],
+                miny: drawFaetures[0].extent[1],
+                maxx: drawFaetures[0].extent[2],
+                maxy: drawFaetures[0].extent[3]
+            },
+            crs: drawFaetures[0].projection
+        } || {...action.bbox, type: 'view'} || null;
+        const extent = faeturesBbox && faeturesBbox.bounds && CoordinatesUtils.reprojectBbox(faeturesBbox.bounds, faeturesBbox.crs, 'EPSG:4326');
+
+        return reprojectBbox(bbox, state, {...faeturesBbox, extent});
     });
 
 /*
@@ -580,8 +685,13 @@ const updateOrdersEpic = (action$, store) =>
                 .switchMap(updatedOrder => {
                     return Rx.Observable.of(updateOrder({...updatedOrder}));
                 })
-                .catch(() => {
-                    return Rx.Observable.empty();
+                .catch(e => {
+                    return Rx.Observable.of(error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 3,
+                        position: "tc"
+                    }));
                 });
             });
         })
@@ -619,23 +729,32 @@ const downloadDataEpic = (action$, store) =>
         const notificationEmail = downloadEmailSelector(state);
         const downloadFormat = downloadFormatSelector(state);
 
-        const orderItems = action.data.map((download) => {
+        const orderItems = action.data.filter(download => !download.vulnerabilities).map((download) => {
             const taxonomicCategoriesObj = getTaxonomicCategoriesFromDownload(download);
             const bboxObj = getBBOXFromDownload(download);
             return {
-                layer: datasetName[download.dataset] + ':' + download.properties.name,
+                layer: datasetName[download.dataset] + ':' + (download.name || download.properties && download.properties.name),
                 format: download.availableFormats[downloadFormat][download.formatId].code,
                 ...bboxObj,
                 ...taxonomicCategoriesObj
             };
         });
 
+        const vulnerabilitiesItems = action.data.filter(download => download.vulnerabilities).reduce((items, item) => [...items, ...item.vulnerabilities], []);
+
+        const vulnerabilitiesOrder = vulnerabilitiesItems.map(download => {
+            return {
+                layer: 'vulnerability:' + download.id,
+                format: download.availableFormats[downloadFormat][download.formatId].code
+            };
+        });
+
         return Rx.Observable.concat(
             Rx.Observable.of(orderLoading(true)),
             Rx.Observable.fromPromise(
-                axios.post('/gfdrr_det/api/v1/order/', {
+                axios.post(ConfigUtils.getConfigProp('heveOrderUrl'), {
                     notification_email: notificationEmail,
-                    order_items: [...orderItems]
+                    order_items: [...orderItems, ...vulnerabilitiesOrder]
                 },
                 {
                     headers: {
@@ -652,8 +771,17 @@ const downloadDataEpic = (action$, store) =>
                     orderLoading(false)
                 );
             })
-            .catch(() => {
-                return Rx.Observable.of(orderLoading(false));
+            .catch(e => {
+                return Rx.Observable.of(
+                    orderLoading(false),
+                    error({
+                        title: "heve.error",
+                        message: e.message || "",
+                        autoDismiss: 6,
+                        position: "tc"
+                    })
+                );
+
             })
         );
     });

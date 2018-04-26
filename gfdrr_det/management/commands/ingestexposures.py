@@ -24,15 +24,17 @@ from django.core import management
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.template.loader import get_template
-import django.utils.text
 from geonode.layers.models import Layer
 from geonode.base.models import SpatialRepresentationType
 from geonode.base.models import TopicCategory
 from geoserver.catalog import Catalog
 
 from gfdrr_det import models
+from gfdrr_det import utils as general_utils
 from gfdrr_det.constants import DatasetType
 from gfdrr_det.exposures import utils
+
+from . import _utils
 
 
 class Command(BaseCommand):
@@ -148,8 +150,8 @@ class Command(BaseCommand):
             taxonomy_details = {}
             if not options["sql_dry_run"]:
                 for model in models_to_use:
-                    view_name = get_view_name(model.id, model.name,
-                                              model.category)
+                    view_name = general_utils.get_view_name(
+                        model.id, model.name, model.category)
                     self.stdout.write(
                         "Gathering details for view {!r}...".format(view_name))
                     taxonomy_details[view_name] = {
@@ -233,21 +235,20 @@ def install_normalize_gem_taxonomy_function(db_cursor, schema_name,
 # TODO: add license
 def complete_geonode_layer_import(exposure_model, taxonomy_details,
                                   logger=print):
-    mapped_category = utils.get_mapped_category(exposure_model.category)
+    mapped_category = _utils.get_mapped_category(
+        exposure_model.category)
     iso_19115_topic_category = settings.HEV_E["EXPOSURES"][
         "category_mappings"][mapped_category]["topic_category"]
     topic_category = TopicCategory.objects.get(
         identifier=iso_19115_topic_category)
-    layer_name = get_view_name(
+    layer_name = general_utils.get_view_name(
         model_id=exposure_model.id,
         model_name=exposure_model.name,
         category=exposure_model.category,
     )
     logger("layer_name: {}".format(layer_name))
     layer = Layer.objects.get(name=layer_name)
-    layer.title = get_humanized_view_name(
-        exposure_model.id, exposure_model.name, exposure_model.category,
-    )
+    layer.title = layer_name.replace("_", " ").capitalize()
     layer.abstract = exposure_model.description
     layer.category = topic_category
     layer.is_approved = True
@@ -256,7 +257,7 @@ def complete_geonode_layer_import(exposure_model, taxonomy_details,
     keywords = [
         mapped_category,
         exposure_model.taxonomy_source,
-        "exposure",
+        DatasetType.exposure.name,
         "HEV-E",
     ]
     if exposure_model.tag_names is not None:
@@ -408,8 +409,9 @@ def handle_views(db_cursor, schema_name, models_to_use,
     created = False
     result = []
     for model in models_to_use:
-        name = get_view_name(model.id, model.name, model.category)
-        mapped_category = utils.get_mapped_category(model.category)
+        name = general_utils.get_view_name(
+            model.id, model.name, model.category)
+        mapped_category = _utils.get_mapped_category(model.category)
         view_mappings = settings.HEV_E["EXPOSURES"]["category_mappings"][
             mapped_category]["view_geometries"]
         coarse_geom_column = view_mappings["coarse_geometry_column"]
@@ -432,8 +434,8 @@ def handle_views(db_cursor, schema_name, models_to_use,
                 logger=logger
             )
             logger("Refreshing view {!r}...".format(name))
-            refresh_view(db_cursor, detail_qualified_name,
-                         dry_run=dry_run, logger=logger)
+            _utils.refresh_view(db_cursor, detail_qualified_name,
+                                dry_run=dry_run, logger=logger)
             created = True
     return result, created
 
@@ -446,39 +448,6 @@ def get_models_with_geom(db_cursor, schema_name, geom_column_name):
     """.format(schema=schema_name, geom=geom_column_name)
     db_cursor.execute(query)
     return [row[0] for row in db_cursor.fetchall()]
-
-
-def get_humanized_view_name(model_id, model_name, category, prefix="",
-                            suffix="", separator="_"):
-    view_name = get_view_name(
-        model_id,
-        model_name,
-        category,
-        prefix=prefix,
-        suffix=suffix,
-        separator=separator
-    )
-    return view_name.replace(separator, " ").capitalize()
-
-
-def get_view_name(model_id, model_name, category, prefix="", suffix="",
-                  separator="_"):
-    """Return a name for a view that is also a valid GeoServer layer name"""
-    pattern = "{prefix}{name}{sep}{category}{sep}{id}{suffix}"
-    final_prefix = "{prefix}{sep}".format(
-        prefix=prefix, sep=separator) if prefix != "" else prefix
-    final_suffix = "{sep}{suffix}".format(
-        suffix=suffix, sep=separator) if suffix != "" else suffix
-    return django.utils.text.slugify(
-        pattern.format(
-            prefix=final_prefix,
-            sep=separator,
-            id=model_id,
-            name=model_name,
-            category=category,
-            suffix=final_suffix
-        )
-    ).replace("-", separator)
 
 
 def handle_database_schema(db_cursor, ddl_file_path, schema_name,
@@ -506,15 +475,6 @@ def handle_database_schema(db_cursor, ddl_file_path, schema_name,
             db_params["user"]
         )
     rename_schema(db_cursor, "level2", schema_name)
-
-
-def drop_materialized_view(db_cursor, view_name, dry_run=False, logger=print):
-    drop_query = "DROP MATERIALIZED VIEW IF EXISTS {} CASCADE".format(
-        view_name)
-    if dry_run:
-        logger(drop_query)
-    else:
-        db_cursor.execute(drop_query)
 
 
 def schema_exists(db_cursor, schema_name):
@@ -545,7 +505,8 @@ def create_view(db_cursor, name, model_id, has_full_geom,
                 coarse_geom_col, coarse_geom_type,
                 detail_geom_col, detail_geom_type,
                 dry_run=False, logger=print):
-    drop_materialized_view(db_cursor, name, dry_run=dry_run, logger=logger)
+    _utils.drop_materialized_view(db_cursor, name,
+                                  dry_run=dry_run, logger=logger)
     if has_full_geom:
         geom_col_detail = detail_geom_col
         geom_type_detail = detail_geom_type
@@ -645,14 +606,6 @@ def create_materialized_view(db_cursor, view_name,
             db_cursor.execute(index_query)
 
 
-def refresh_view(db_cursor, view_name, dry_run=False, logger=print):
-    query = "REFRESH MATERIALIZED VIEW {} WITH DATA".format(view_name)
-    if dry_run:
-        logger(query)
-    else:
-        db_cursor.execute(query)
-
-
 def get_exposure_models(db_cursor):
     """Retrieve relevant exposure models from GED4All DB
 
@@ -681,7 +634,7 @@ def get_exposure_models(db_cursor):
     for row in db_cursor.fetchall():
         exposure_model = ResultTuple(*row)
         try:
-            utils.get_mapped_category(exposure_model.category)
+            _utils.get_mapped_category(exposure_model.category)
             result.append(exposure_model)
         except RuntimeError:
             pass  # we are not interested in using this exposure model in HEV-E

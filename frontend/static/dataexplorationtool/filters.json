@@ -6,6 +6,17 @@
     ],
     "list": {
         "exposures": {
+            "ordering": [
+                {
+                    "value": "name",
+                    "label": "alphabeticalAToZ"
+                },
+                {
+                    "value": "-name",
+                    "label": "alphabeticalZToA"
+                }
+            ],
+            "search": true,
             "format": {
                 "single": [
                     {
@@ -111,11 +122,224 @@
                 }
             ]
         },
-        "hazards": {},
-        "vulnerabilities": {}
+        "hazards": {
+            "format": {
+                "single": [
+                    {
+                        "name": "ESRI Shapefile",
+                        "code": "shapefile"
+                    }
+                ],
+                "package": [
+                    {
+                        "name": "GeoPackage",
+                        "code": "geopackage"
+                    }
+                ]
+            },
+            "category": [
+                {
+                    "name": "Hazard",
+                    "icon": "bolt",
+                    "code": "hazard_type",
+                    "colors_range": [
+                        "yellow",
+                        "navy"
+                    ],
+                    "filters": [
+                        {
+                            "name": "Earthquake",
+                            "code": "earthquake",
+                            "icon": "icon-eq"
+                        },
+                        {
+                            "name": "Tsunami",
+                            "code": "tsunami",
+                            "icon": "icon-ts"
+                        },
+                        {
+                            "name": "Flood",
+                            "code": "flood",
+                            "icon": "icon-fl"
+                        },
+                        {
+                            "name": "Wind",
+                            "code": "wind",
+                            "icon": "icon-cy"
+                        },
+                        {
+                            "name": "Landslide",
+                            "code": "landslide",
+                            "icon": "icon-ls"
+                        },
+                        {
+                            "name": "Storm surge",
+                            "code": "storm surge",
+                            "icon": "icon-cy"
+                        },
+                        {
+                            "name": "Volcanic ash",
+                            "code": "volcano",
+                            "icon": "icon-va"
+                        },
+                        {
+                            "name": "Drought",
+                            "code": "drought",
+                            "icon": "icon-dg"
+                        }
+                    ]
+                }
+            ]
+        },
+        "vulnerabilities": {
+            "format": {
+                "single": [
+                    {
+                        "name": "GeoPackage",
+                        "code": "geopackage"
+                    }
+                ],
+                "package": [
+                    {
+                        "name": "GeoPackage",
+                        "code": "geopackage"
+                    }
+                ]
+            },
+            "category": [
+                {
+                    "name": "Type",
+                    "code": "vulnerability_type",
+                    "colors_range": [
+                        "yellow",
+                        "navy"
+                    ],
+                    "icon": "cog",
+                    "filters": [
+                        {
+                            "name": "Vulnerability function",
+                            "code": "vulnerability_function"
+                        },
+                        {
+                            "name": "Fragility function",
+                            "code": "fragility_function"
+                        },
+                        {
+                            "name": "Damage to loss function",
+                            "code": "damage_to_loss_function"
+                        }
+                    ]
+                },
+                {
+                    "name": "Exposure",
+                    "icon": "crosshairs",
+                    "code": "exposure",
+                    "filters": [
+                        {
+                            "name": "Buildings",
+                            "code": "buildings",
+                            "values": [
+                                {
+                                    "code": "buildings",
+                                    "name": "Buildings"
+                                }
+                            ],
+                            "icon": "home"
+                        },
+                        {
+                            "name": "Infrastructure",
+                            "code": "infrastructure",
+                            "values": [
+                                {
+                                    "code": "lifelines",
+                                    "name": "Lifelines"
+                                }
+                            ],
+                            "icon": "road"
+                        },
+                        {
+                            "name": "Agriculture",
+                            "code": "agriculture",
+                            "values": [
+                                {
+                                    "code": "crops",
+                                    "name": "Crops"
+                                }
+                            ],
+                            "icon": "leaf"
+                        },
+                        {
+                            "name": "Social",
+                            "code": "social",
+                            "values": [
+                                {
+                                    "code": "people",
+                                    "name": "People"
+                                }
+                            ],
+                            "icon": "users"
+                        }
+                    ]
+                },
+                {
+                    "name": "Hazard",
+                    "icon": "bolt",
+                    "code": "hazard",
+                    "filters": [
+                        {
+                            "name": "Earthquake",
+                            "code": "earthquake",
+                            "icon": "icon-eq"
+                        },
+                        {
+                            "name": "Tsunami",
+                            "code": "tsunami",
+                            "icon": "icon-ts"
+                        },
+                        {
+                            "name": "Flood",
+                            "code": "flood",
+                            "icon": "icon-fl"
+                        },
+                        {
+                            "name": "Wind",
+                            "code": "wind",
+                            "icon": "icon-cy"
+                        },
+                        {
+                            "name": "Landslide",
+                            "code": "landslide",
+                            "icon": "icon-ls"
+                        },
+                        {
+                            "name": "Storm surge",
+                            "code": "storm surge",
+                            "icon": "icon-cy"
+                        },
+                        {
+                            "name": "Volcanic ash",
+                            "code": "volcanic ash",
+                            "icon": "icon-va"
+                        },
+                        {
+                            "name": "Drought",
+                            "code": "drought",
+                            "icon": "icon-dg"
+                        }
+                    ]
+                }
+            ]
+        }
     },
     "detail": {
         "exposures": {
+            "layout": {
+                "buildings": [
+                    {
+                        "name": "counts"
+                    }
+                ]
+            },
             "buildings": [
                 {
                     "name": "Construction",
@@ -203,7 +427,254 @@
                 }
             ]
         },
-        "hazards": {},
-        "vulnerabilities": {}
+        "hazards": {
+            "layout": {
+                "events": [
+                    {
+                        "code": "min",
+                        "name": "Min"
+                    }
+                ],
+                "footprints": [
+                    {
+                        "code": "min",
+                        "name": "Min"
+                    }
+                ]
+            }
+        },
+        "vulnerabilities": {
+            "layout": {
+                "commons": {
+                    "id": "id",
+                    "Reference": [
+                        {
+                            "code": "reference_title",
+                            "name": "Title"
+                        },
+                        {
+                            "code": "reference_author_year",
+                            "name": "Author / Year"
+                        }
+                    ],
+                    "Applicability": [
+                        {
+                            "code": "hazard",
+                            "name": "Hazard type"
+                        },
+                        {
+                            "code": "exposure",
+                            "name": "Asset type"
+                        },
+                        {
+                            "code": "taxonomy",
+                            "name": "Taxonomy"
+                        },
+                        {
+                            "code": "geographical_applicability",
+                            "name": "Geographical applicatibility"
+                        },
+                        {
+                            "code": "scale_applicability",
+                            "name": "Scale applicability"
+                        }
+                    ],
+                    "Intensity measure": [
+                        {
+                            "code": "im_name_f",
+                            "name": "Name"
+                        },
+                        {
+                            "code": "im_data_source",
+                            "name": "Data source"
+                        },
+                        {
+                            "code": "im_definition",
+                            "name": "Definition"
+                        },
+                        {
+                            "code": "im_units",
+                            "name": "Units"
+                        },
+                        {
+                            "code": "im_table_range",
+                            "name": "Range"
+                        }
+                    ],
+                    "Damage scale": [
+                        {
+                            "code": "damage_scale_name",
+                            "name": "Name"
+                        },
+                        {
+                            "code": "damage_scale_dm_states_name",
+                            "name": "States"
+                        },
+                        {
+                            "code": "damage_scale_reference",
+                            "name": "Reference"
+                        }
+                    ]
+                },
+                "vulnerability_function": {
+                    "order": [
+                        "id",
+                        "Reference",
+                        "Applicability",
+                        "Intensity measure",
+                        "Loss parameter",
+                        "Function Model"
+                    ],
+                    "Loss parameter": [
+                        {
+                            "code": "loss_parameter_name",
+                            "name": "Loss Parameter name"
+                        },
+                        {
+                            "code": "loss_parameter_description",
+                            "name": "Description"
+                        },
+                        {
+                            "code": "loss_parameter_units",
+                            "name": "Units"
+                        }
+                    ],
+                    "Function Model": [
+                        {
+                            "code": "vf_math_model",
+                            "name": "Mathematical Model"
+                        },
+                        {
+                            "code": "vf_relationship",
+                            "name": "Relationship"
+                        },
+                        {
+                            "code": "vf_math",
+                            "name": "Type of Discrete function"
+                        },
+                        {
+                            "code": "function_parameters",
+                            "name": "Parameters",
+                            "values": [
+                                {
+                                    "code": "par_names",
+                                    "name": "Name"
+                                },
+                                {
+                                    "code": "ub_par_value",
+                                    "name": "Upper bound value"
+                                },
+                                {
+                                    "code": "med_par_value",
+                                    "name": "Median value"
+                                },
+                                {
+                                    "code": "lb_par_value",
+                                    "name": "Lower bound value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "fragility_function": {
+                    "order": [
+                        "id",
+                        "Reference",
+                        "Applicability",
+                        "Intensity measure",
+                        "Damage scale",
+                        "Engineering Demand Parameter",
+                        "Function Model"
+                    ],
+                    "Engineering Demand Parameter": [
+                        {
+                            "code": "edp_name_all",
+                            "name": "Name"
+                        },
+                        {
+                            "code": "edp.description",
+                            "name": "Description"
+                        },
+                        {
+                            "code": "edp.units",
+                            "name": "Units"
+                        }
+                    ],
+                    "Function Model": [
+                        {
+                            "code": "ff_math_modelf ",
+                            "name": "Mathematical Model"
+                        },
+                        {
+                            "code": "ff_relationship",
+                            "name": "Relationship"
+                        },
+                        {
+                            "code": "ff_math",
+                            "name": "Type of Discrete function"
+                        },
+                        {
+                            "code": "function_parameters",
+                            "name": "Parameters",
+                            "values": [
+                                {
+                                    "code": "par_names",
+                                    "name": "Name"
+                                },
+                                {
+                                    "code": "ub_par_value",
+                                    "name": "Upper bound value"
+                                },
+                                {
+                                    "code": "med_par_value",
+                                    "name": "Median value"
+                                },
+                                {
+                                    "code": "lb_par_value",
+                                    "name": "Lower bound value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "damage_to_loss_function": {
+                    "order": [
+                        "id",
+                        "Reference",
+                        "Applicability",
+                        "DTL Probability Distribution",
+                        "Damage scale"
+                    ],
+                    "DTL Probability Distribution": [
+                        {
+                            "code": "dtl_pdf_type",
+                            "name": "Type"
+                        },
+                        {
+                            "code": "function_parameters",
+                            "name": "Parameters",
+                            "values": [
+                                {
+                                    "code": "par_names",
+                                    "name": "Name"
+                                },
+                                {
+                                    "code": "ub_par_value",
+                                    "name": "Upper bound value"
+                                },
+                                {
+                                    "code": "med_par_value",
+                                    "name": "Median value"
+                                },
+                                {
+                                    "code": "lb_par_value",
+                                    "name": "Lower bound value"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
     }
 }

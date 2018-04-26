@@ -107,17 +107,13 @@ class FilterPreview extends React.Component {
         bbox: null
     }
 
+    componentWillMount() {
+        this.updateBBOX(this.props.download);
+    }
+
     componentWillUpdate(newProps) {
         if (newProps.download && !isEqual(this.props.download, newProps.download)) {
-            const isFilterBBOX = newProps.download.bbox && newProps.download.bbox.type === 'filter';
-            this.setState({
-                bbox: isFilterBBOX ? {...newProps.download.bbox, _et_forceUpdate: true} : null
-            });
-            setTimeout(() => {
-                this.setState({
-                    bbox: isFilterBBOX ? newProps.download.bbox : null
-                });
-            }, 100);
+            this.updateBBOX(newProps.download);
         }
     }
 
@@ -170,7 +166,7 @@ class FilterPreview extends React.Component {
                 <Grid fluid>
                     <Row>
                         <Col xs={12}>
-                            <h4>{hasFilter ? <Message msgId="heve.appliedFilters"/> : <Message msgId="heve.noAppliedFilters"/>}</h4>
+                            <h4>{hasFilter || this.state.bbox ? <Message msgId="heve.appliedFilters"/> : <Message msgId="heve.noAppliedFilters"/>}</h4>
                         </Col>
                     </Row>
                 </Grid>
@@ -215,6 +211,18 @@ class FilterPreview extends React.Component {
     hasFilter(filter) {
         return head(filter.map(group => this.hasGroupFilter(group) || null ).filter(val => val));
     }
+
+    updateBBOX = (download) => {
+        const isFilterBBOX = download.bbox && download.bbox.type === 'filter';
+        this.setState({
+            bbox: isFilterBBOX ? {...download.bbox, _et_forceUpdate: true} : null
+        });
+        setTimeout(() => {
+            this.setState({
+                bbox: isFilterBBOX ? download.bbox : null
+            });
+        }, 100);
+    };
 }
 
 module.exports = FilterPreview;

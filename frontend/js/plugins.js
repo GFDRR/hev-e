@@ -20,6 +20,9 @@ module.exports = {
         SpatialFilterPlugin: require('./plugins/SpatialFilter'),
         MapLoadingPlugin: require('./plugins/MapLoading'),
         DownloadPlugin: require('./plugins/Download'),
+        AboutPlugin: require('./plugins/About'),
+        SearchPlugin: require('./plugins/Search'),
+        DownloadsCounterPlugin: require('./plugins/DownloadsCounter'),
 
         ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
         ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
@@ -29,7 +32,7 @@ module.exports = {
         ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
         ZoomAllPlugin: require('../MapStore2/web/client/plugins/ZoomAll'),
         FullScreenPlugin: require('../MapStore2/web/client/plugins/FullScreen'),
-        // NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
+        NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
         // MapPlugin: require('../MapStore2/web/client/plugins/Map')
         MapPlugin: require('./plugins/Map')
 

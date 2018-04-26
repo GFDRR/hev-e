@@ -5,64 +5,46 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 const React = require('react');
 const {Col, FormGroup, FormControl, Grid, Row, Form} = require('react-bootstrap');
-const CatalogServiceSelector = require('../../MapStore2/web/client/components/catalog/CatalogServiceSelector');
 const localizeProps = require('../../MapStore2/web/client/components/misc/enhancers/localizedProps');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
-const SearchInput = localizeProps("placeholder")(FormControl);
+const Filter = localizeProps('filterPlaceholder')(require('../ms2override/components/Filter'));
 
 const Toolbar = require('../../MapStore2/web/client/components/misc/toolbar/Toolbar');
 module.exports = ({
     onSearchTextChange = () => { },
     searchText,
-    title,
-    catalog,
-    services,
-    isValidServiceSelected,
-    showCatalogSelector,
     onShowFilter = () => {},
     showFilter,
     onChangeSortType = () => {},
     sortType,
-    sortOptions = [
-        {
-            value: 'name',
-            label: 'alphabeticalAToZ'
-        },
-        {
-            value: '-name',
-            label: 'alphabeticalZToA'
-        }
-    ]
+    sortOptions,
+    searchFilter
 }) =>(
     <Grid className="catalog-form" fluid>
         <Row>
-            <Col xs={12}>
-            <h4 className="text-center">{title}</h4>
-            {
-                showCatalogSelector ? (
-                <FormGroup>
-                    <CatalogServiceSelector servieces={services} catalog={catalog} isValidServiceSelected={isValidServiceSelected}/>
-                </FormGroup>
-                ) : null
-            }
-                <FormGroup controlId="catalog-form">
-                    <SearchInput type="text" placeholder="heve.textSearchPlaceholder" value={searchText} onChange={(e) => onSearchTextChange(e.currentTarget.value)}/>
-                </FormGroup>
+            <Col xs={12} style={{padding: 10}}>
+                {searchFilter && <Filter
+                    filterText={searchText || ''}
+                    filterPlaceholder="heve.textSearchPlaceholder"
+                    onFilter={text => onSearchTextChange(text)} />}
             </Col>
             <Col xs={12}>
                 <Form inline>
                     <FormGroup controlId="formInlineName" className="pull-right">
-                        <span><Message msgId="heve.sortBy" />: </span>{' '}
-                        <FormControl
-                            componentClass="select"
-                            value={sortType}
-                            onChange={e => {
-                                onChangeSortType(e.target.value);
-                            }}>
-                            {sortOptions.map(option => (<option value={option.value}><Message msgId={'heve.' + option.label} /></option>))}
-                        </FormControl>{' '}
+                        {sortOptions && <span>
+                            <Message msgId="heve.sortBy" />: {' '}
+                            <FormControl
+                                componentClass="select"
+                                value={sortType}
+                                onChange={e => {
+                                    onChangeSortType(e.target.value);
+                                }}>
+                                {sortOptions.map(option => (<option value={option.value}><Message msgId={'heve.' + option.label} /></option>))}
+                            </FormControl>{' '}
+                        </span>}
                         <Toolbar
                             btnDefaultProps={
                                 {

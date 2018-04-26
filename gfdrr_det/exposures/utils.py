@@ -45,19 +45,6 @@ def execute_taxonomic_counts_bbox_query(db_cursor, qualified_layer_name,
     db_cursor.execute(query)
 
 
-def get_mapped_category(model_category):
-    """Map the exposure model category to the naming used in HEV-E"""
-    mapping = settings.HEV_E["EXPOSURES"]["category_mappings"]
-    for hev_e_category, maps in mapping.items():
-        if model_category.lower() in maps["exposure_model_categories"]:
-            result = hev_e_category
-            break
-    else:
-        raise RuntimeError("Could not determine the HEV-E category to map "
-                           "with {!r}".format(model_category))
-    return result
-
-
 def get_mapped_area_type(model_area_type):
     """Map the exposure model category to the naming used in HEV-E"""
     mapping = settings.HEV_E["EXPOSURES"]["area_type_mappings"]

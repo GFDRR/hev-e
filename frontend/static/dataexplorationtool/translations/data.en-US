@@ -69,7 +69,13 @@
             "createdOn": "created on",
             "expiresOn": "expires on",
             "bboxOrder": "bbox",
-            "filterOrder": "filters"
+            "filterOrder": "filters",
+
+            "csv": "CSV",
+            "vulnerabilitiesList": "Downloads list",
+            "home": "HEV-E",
+            "datasetNotFound": "Dataset not found",
+            "error": " "
         },
         "search":{
             "placeholder": "Search by location name or coordinates"
