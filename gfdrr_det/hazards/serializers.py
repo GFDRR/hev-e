@@ -53,8 +53,7 @@ class HazardLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
         return obj.details["description"]
 
     def get_hazard_type(self, obj):
-        return get_mapped_category(
-            obj.details["hazard_type"], DatasetType.hazard)
+        return obj.details["hazard_type"]
 
     def get_wms_url(self, obj):
         try:
@@ -90,8 +89,7 @@ class HazardLayerDetailSerializer(gis_serializers.GeoFeatureModelSerializer):
         return obj.details["description"]
 
     def get_hazard_type(self, obj):
-        return get_mapped_category(
-            obj.details["hazard_type"], DatasetType.hazard)
+        return obj.details["hazard_type"]
 
     def get_wms_url(self, obj):
         try:
