@@ -3,6 +3,7 @@
     "geoStoreUrl": "/rest/geostore",
     "printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
     "themePrefix": "dataexplorationtool",
+    "heveAboutUrl": "/static/dataexplorationtool/about.md",
     "translationsPath": [
         "/static/dataexplorationtool/MapStore2/web/client/translations",
         "/static/dataexplorationtool/translations"
@@ -17,6 +18,7 @@
     "plugins": {
         "dataexplorationtool": [
             "TOC",
+            "Search",
             {
                 "name": "Map",
                 "cfg": {
@@ -33,7 +35,13 @@
             {
                 "name": "BrandNavbar",
                 "cfg": {
-                    "containerPosition": "header"
+                    "containerPosition": "header",
+                    "links": [
+                        {
+                            "href": "#/about",
+                            "msgId": "heve.about"
+                        }
+                    ]
                 }
             },
             {
@@ -51,6 +59,7 @@
             "ZoomAll",
             "SpatialFilter",
             "ZoomToSearch",
+            "DownloadsCounter",
             {
                 "name": "FullScreen",
                 "override": {
@@ -77,6 +86,21 @@
             },
             "DataExplorerButton",
             "Download"
+        ],
+        "about": [
+            {
+                "name": "BrandNavbar",
+                "cfg": {
+                    "containerPosition": "header",
+                    "links": [
+                        {
+                            "href": "#/",
+                            "msgId": "heve.home"
+                        }
+                    ]
+                }
+            },
+            "About"
         ]
     }
 }

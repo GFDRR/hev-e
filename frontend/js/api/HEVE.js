@@ -19,16 +19,15 @@ const parseUrl = url => {
 };
 
 const Api = {
-    textSearch: function(url, page, startPosition, maxRecords, text, sortBy, groupInfo, bboxFilter) {
+    exposures: ({catalogURL, page, maxRecords, searchText, sortBy, groupInfo, bboxFilter}) => {
         return new Promise((resolve) => {
-
             const hasFilter = groupInfo && Object.keys(groupInfo).filter(key => groupInfo[key].checked).map(key => groupInfo[key] && groupInfo[key].code);
             const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
             const categoryObj = hasFilter.length > 0 ? {category: join(hasFilter, ',')} : {};
-            const searchObj = text ? {search: text} : {};
+            const searchObj = searchText ? {search: searchText} : {};
             const sortByObj = sortBy ? {ordering: sortBy} : {};
 
-            resolve(axios.get(parseUrl(url), {
+            resolve(axios.get(parseUrl(catalogURL), {
                 params: {
                     page: page + 1,
                     page_size: maxRecords,
@@ -40,7 +39,7 @@ const Api = {
                 }
             }).then((response) => {
                 const records = response.data && response.data.features || null;
-                const numberOfRecordsMatched = response.data && response.data.count || null;
+                const numberOfRecordsMatched = response.data && response.data.count || 0;
                 if (records) {
                     return {
                         numberOfRecordsMatched,
@@ -48,7 +47,62 @@ const Api = {
                         records
                     };
                 }
-                return null;
+                return {
+                    numberOfRecordsMatched: 0,
+                    numberOfRecordsReturned: 0,
+                    records: []
+                };
+            })
+            .catch(() => ({
+                numberOfRecordsMatched: 0,
+                numberOfRecordsReturned: 0,
+                records: []
+            })));
+        });
+    },
+    vulnerabilities: ({catalogURL, page, maxRecords, groupInfo, bboxFilter, categoryParams}) => {
+
+        return new Promise((resolve) => {
+
+            const bboxObj = bboxFilter ? {bbox: bboxFilter} : {};
+
+            const categoryFilterObj = categoryParams.reduce((params, param) => {
+                const hasFilter = groupInfo && Object.keys(groupInfo)
+                .filter(key => groupInfo[key].param === param && groupInfo[key].checked)
+                .reduce((values, key) =>
+                    [...values, ...(groupInfo[key] && groupInfo[key].values && groupInfo[key].values.map(value => value.code)
+                    || groupInfo[key] && groupInfo[key].code && [groupInfo[key].code])],
+                []);
+                return {
+                    ...params,
+                    ...(hasFilter.length > 0 ? {[param]: join(hasFilter, ',')} : {})
+                };
+            }, {});
+
+            resolve(axios.get(parseUrl(catalogURL), {
+                params: {
+                    page: page + 1,
+                    page_size: maxRecords,
+                    format: 'json',
+                    ...bboxObj,
+                    ...categoryFilterObj
+                }
+            }).then((response) => {
+
+                const records = response.data && response.data.results || null;
+                const numberOfRecordsMatched = response.data && response.data.count || 0;
+                if (records) {
+                    return {
+                        numberOfRecordsMatched,
+                        numberOfRecordsReturned: records.length,
+                        records
+                    };
+                }
+                return {
+                    numberOfRecordsMatched: 0,
+                    numberOfRecordsReturned: 0,
+                    records: []
+                };
             })
             .catch(() => ({
                 numberOfRecordsMatched: 0,

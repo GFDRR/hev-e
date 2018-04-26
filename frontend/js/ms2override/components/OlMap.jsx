@@ -370,12 +370,16 @@ class OpenlayersMap extends React.Component {
             }).reduce((newExtent, coords) => {
                 return [...newExtent, coords.x, coords.y];
             }, []);
-            view.fit(extent, {
-                duration: 500,
-                constrainResolution: false,
-                padding: [10, 10, 10, 10],
-                nearest: true
-            });
+
+            if (extent[0] < extent[2]) {
+                view.fit(extent, {
+                    duration: 500,
+                    constrainResolution: false,
+                    padding: [10, 10, 10, 10],
+                    nearest: true
+                });
+            }
+
         } else {
             if (!centerIsUpdated) {
                 // let center = ol.proj.transform([newProps.center.x, newProps.center.y], 'EPSG:4326', newProps.projection);

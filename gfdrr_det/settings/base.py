@@ -99,7 +99,7 @@ DATABASES = {
     'hev_e': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'OPTIONS': {
-            'options': '-c search_path=exposures,public'
+            'options': '-c search_path=exposures,vulnerabilities,public'
         },
         'NAME': get_environment_variable("HEV_E_DB_NAME", default_value="hev-e"),
         'USER': get_environment_variable("HEV_E_DB_USER", default_value='geonode'),
@@ -135,6 +135,8 @@ INSTALLED_APPS += (
     "oseoserver",
     "gfdrr_det.apps.GfdrrdetConfig",
     "{}.exposures".format(PROJECT_NAME),
+    "{}.vulnerabilities".format(PROJECT_NAME),
+    "{}.hazards".format(PROJECT_NAME),
 )
 
 # Location of url mappings
@@ -661,7 +663,15 @@ OSEOSERVER_PROCESSING_OPTIONS = [
         "name": "format",
         "description": "Output format for the ordered item",
         "choices": [
+            "geopackage",
             "shapefile",
+        ],
+    },
+    {
+        "name": "vulnerabilityFormat",
+        "description": "Output format for the ordered item",
+        "choices": [
+            "csv",
             "geopackage",
         ],
     },
@@ -697,7 +707,23 @@ OSEOSERVER_COLLECTIONS = [
                 "http",
             ],
         }
-    }
+    },
+    {
+        "name": "vulnerability",
+        "catalogue_endpoint": None,  # FIXME - add a sensible value
+        "collection_identifier": "vulnerability",
+        "generation_frequency": "on-demand",
+        "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
+        "product_order": {
+            "enabled": True,
+            "options": [
+                "vulnerabilityFormat",
+            ],
+            "online_data_access_options": [
+                "http",
+            ],
+        }
+    },
 ]
 
 
@@ -717,7 +743,7 @@ HEV_E = {
                     "detail_geometry_column": "full_geom",
                     "detail_geometry_type": "MultiPolygon",
                 },
-                "exposure_model_categories": ["buildings"],
+                "categories": ["buildings"],
                 "topic_category": "structure",
             },
             "road_network": {
@@ -727,7 +753,7 @@ HEV_E = {
                     "detail_geometry_column": "full_geom",
                     "detail_geometry_type": "MultiLineString",
                 },
-                "exposure_model_categories": ["road_network"],
+                "categories": ["road_network"],
                 "topic_category": "transportation",
             },
             # "rails": {
@@ -836,4 +862,20 @@ HEV_E = {
             },
         }
     },
+    "HAZARDS": {
+        "category_mappings": {
+            "earthquake": {
+                "categories": ["eqk"],
+                "topic_category": "geoscientificInformation",
+            },
+            "tsunami": {
+                "categories": ["tsu"],
+                "topic_category": "geoscientificInformation",
+            },
+            "volcano": {
+                "categories": ["vol"],
+                "topic_category": "geoscientificInformation",
+            },
+        }
+    }
 }

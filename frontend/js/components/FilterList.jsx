@@ -116,7 +116,7 @@ class FilterList extends React.Component {
                                                             : '2px solid transparent',
                                                         display: 'inline-block'
                                                     }
-                                                }>{dataset.name}</span>
+                                                }>{dataset.icon && this.getIcon(dataset.icon)} {dataset.name}</span>
                                             </Checkbox>
                                         ))
                                     }
@@ -128,6 +128,12 @@ class FilterList extends React.Component {
                 </Grid>}
             </div>
         ) : null;
+    }
+
+    getIcon(icon) {
+        return icon && icon.indexOf('icon-') !== -1 && <i className={icon} />
+        || icon && <i className={'fa fa-' + icon} />
+        || null;
     }
 
     hasFilter(filter) {

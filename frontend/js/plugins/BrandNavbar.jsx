@@ -9,53 +9,19 @@
 
 const React = require('react');
 const PropTypes = require('prop-types');
-const { Navbar, Nav, NavItem, Glyphicon } = require('react-bootstrap');
+const { Navbar, Nav, NavItem } = require('react-bootstrap');
 const ContainerDimensions = require('react-container-dimensions').default;
 const toopltip = require('../../MapStore2/web/client/components/misc/enhancers/tooltip');
 const ImgT = toopltip(({getSrc, width, href, inverse, ...props}) => <a href={href} target="_blank"><img {...props} src={getSrc({width, inverse})}/></a>);
-const NavItemT = toopltip(NavItem);
-const {connect} = require('react-redux');
-const {createSelector} = require('reselect');
-const {SearchPlugin, epics, reducers} = require('../../MapStore2/web/client/plugins/Search');
 const Message = require('../../MapStore2/web/client/components/I18N/Message');
-const {openDownloads} = require('../actions/dataexploration');
-const {ordersSelector} = require('../selectors/dataexploration');
-const {isEqual} = require('lodash');
-
-class Search extends React.Component {
-    static propTypes = {
-        selectedData: PropTypes.bool
-    };
-
-    static defaultProps = {
-        selectedData: false
-    };
-
-    render() {
-        const center = this.props.selectedData ? ' et-center' : ' et-top-left';
-        return (
-            <div className={'et-search-bar' + center}>
-                <SearchPlugin {...this.props}/>
-            </div>
-        );
-    }
-}
-
-const searchSelector = createSelector([
-    state => state.controls && state.controls.dataExplorer.enabled
-], (selectedData) => ({
-    selectedData: !selectedData
-}));
-
-const SearchBar = connect(searchSelector)(Search);
+const {head} = require('lodash');
 
 class BrandNavbar extends React.Component {
     static propTypes = {
         brandImages: PropTypes.array,
         inverse: PropTypes.bool,
-        onShowDownload: PropTypes.func,
-        downloads: PropTypes.array,
-        orders: PropTypes.array
+        items: PropTypes.array,
+        links: PropTypes.array
     };
 
     static defaultProps = {
@@ -80,32 +46,17 @@ class BrandNavbar extends React.Component {
             }
         ],
         inverse: true,
-        onToggleDownload: () => {},
-        downloads: [],
-        orders: []
+        links: []
     };
 
-    state = {
-        className: ''
-    };
-
-    componentWillUpdate(newProps) {
-        if (newProps.downloads && this.props.downloads && newProps.downloads.length > 0
-            && (newProps.downloads.length > this.props.downloads.length || !isEqual(newProps.downloads, this.props.downloads))) {
-            this.setState({
-                className: ' et-animation'
-            });
-            setTimeout(() => {
-                this.setState({
-                    className: ' et-no-animation'
-                });
-            }, 500);
-        }
+    getPluginByName = name => {
+        return this.props.items && head(this.props.items.filter(item => item.plugin && item.name === name)) || null;
     }
 
     render() {
         const inverseStr = this.props.inverse ? '-inverse' : '';
-        const downloadEnabled = this.props.downloads.length > 0 || this.props.orders.length > 0;
+        const Search = this.getPluginByName('search');
+        const DownloadsCounter = this.getPluginByName('downloads-counter');
         return (
             <ContainerDimensions>
             {({width}) => (
@@ -116,43 +67,22 @@ class BrandNavbar extends React.Component {
                                 return <ImgT inverse={inverseStr} width={width} {...image}/>;
                             })}
                         </Navbar.Brand>
-                        <Navbar.Toggle pullRight />
+                        <Navbar.Toggle />
                     </Navbar.Header>
                     <Navbar.Collapse>
-                        {width >= 767 && <Navbar.Form pullRight>
-                            <SearchBar />
+                        {width >= 767 && Search && <Navbar.Form pullRight>
+                            <Search.plugin pluginCfg={Search.cfg} key={Search.name} items={Search.items || []}/>
                         </Navbar.Form>}
                         <Nav pullRight>
-                            <NavItemT
-                                tooltipId={downloadEnabled ? 'heve.collectedData' : 'heve.noCollectedData'}
-                                tooltipPosition="bottom"
-                                onClick={() => downloadEnabled ? this.props.onShowDownload() : null}>
-                                    {this.state.className !== ' et-animation' && this.props.downloads.length > 0 && <div style={{
-                                        position: 'absolute',
-                                        right: 4,
-                                        top: 24,
-                                        padding: '0 4px',
-                                        fontSize: 10,
-                                        color: '#fff',
-                                        height: 14,
-                                        display: 'flex',
-                                        zIndex: 1
-                                    }}>
-                                        <span style={{margin: 'auto'}}>{this.props.downloads.length}</span>
-                                    </div>}
-                                <Glyphicon
-                                    className={downloadEnabled ? 'text-hev-e-primary text-hev-e-primary-hover' + this.state.className : 'text-disabled'}
-                                    glyph="download"/>
-                            </NavItemT>
-                            <NavItem href="#/about">
-                                <Message msgId="heve.about"/>
-                            </NavItem>
-                            <NavItem href="#/support">
-                                <Message msgId="heve.support"/>
-                            </NavItem>
+                            {DownloadsCounter && <DownloadsCounter.plugin pluginCfg={DownloadsCounter.cfg} key={DownloadsCounter.name} items={DownloadsCounter.items || []}/>}
+                            {this.props.links && this.props.links.map((link, idx) => (
+                                <NavItem key={idx} href={link.href}>
+                                    <Message msgId={link.msgId}/>
+                                </NavItem>
+                            ))}
                         </Nav>
-                        {width < 767 && <Navbar.Form pullRight>
-                            <SearchBar />
+                        {width < 767 && Search && <Navbar.Form pullRight>
+                            <Search.plugin pluginCfg={Search.cfg} key={Search.name} items={Search.items || []}/>
                         </Navbar.Form>}
                     </Navbar.Collapse>
                 </Navbar>
@@ -162,23 +92,6 @@ class BrandNavbar extends React.Component {
     }
 }
 
-const brandNavbarSelector = createSelector([
-    state => state.dataexploration && state.dataexploration.downloads,
-    ordersSelector
-], (downloads, orders) => ({
-    downloads,
-    orders
-}));
-
-const BrandNavbarPlugin = connect(
-    brandNavbarSelector,
-    {
-        onShowDownload: openDownloads
-    }
-)(BrandNavbar);
-
 module.exports = {
-    BrandNavbarPlugin,
-    reducers,
-    epics
+    BrandNavbarPlugin: BrandNavbar
 };

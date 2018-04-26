@@ -23,7 +23,11 @@
                     <ParameterData>
                         <encoding>XMLEncoding</encoding>
                         <values>
-                            <format>{{ item.options.format }}</format>
+                            {% if item.collection == 'vulnerability' %}
+                                <vulnerabilityFormat>{{ item.options.format }}</vulnerabilityFormat>
+                            {% else %}
+                                <format>{{ item.options.format }}</format>
+                            {% endif %}
                             {% if item.options.bbox %}
                                 <bbox>
                                     <gml:boundingBox srsName="urn:x-ogc:def:crs:EPSG:6.11:4326">

@@ -1,115 +1,103 @@
-
 /*
  * Copyright 2018, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
-*/
+ */
 
 const React = require('react');
-const PropTypes = require('prop-types');
-const CompactCatalog = require('./CompactCatalog');
-const LayerToolbar = require('./LayerToolbar');
+const Rx = require('rxjs');
+const {compose, mapPropsStream} = require('recompose');
+const {isNil, isEqual} = require('lodash');
+const Message = require('../../MapStore2/web/client/components/I18N/Message');
+const BorderLayout = require('../../MapStore2/web/client/components/layout/BorderLayout');
+const LoadingSpinner = require('../../MapStore2/web/client/components/misc/LoadingSpinner');
+const withVirtualScroll = require('../../MapStore2/web/client/components/misc/enhancers/infiniteScroll/withInfiniteScroll');
+const loadingState = require('../../MapStore2/web/client/components/misc/enhancers/loadingState');
+const emptyState = require('../../MapStore2/web/client/components/misc/enhancers/emptyState');
+const withControllableState = require('../../MapStore2/web/client/components/misc/enhancers/withControllableState');
+const CatalogForm = require('../../MapStore2/web/client/components/catalog/CatalogForm');
+const HEVEAPI = require('../api/HEVE');
 
-class DataCatalog extends React.Component {
-    static propTypes = {
-        onShowDetails: PropTypes.func,
-        catalogURL: PropTypes.string,
-        filterList: PropTypes.node,
-        filterForm: PropTypes.node,
-        onShowBbox: PropTypes.func,
-        onZoomTo: PropTypes.func,
-        sortBy: PropTypes.string,
-        groupInfo: PropTypes.object,
-        onAddLayer: PropTypes.func,
-        layers: PropTypes.array,
-        bboxFilter: PropTypes.string,
-        onRemove: PropTypes.func
-    };
+const SideGrid = compose(
+    loadingState(({loading, items = []} ) => items.length === 0 && loading),
+    emptyState(
+        ({loading, items = []} ) => items.length === 0 && !loading,
+        {
+            title: <Message msgId="catalog.noRecordsMatched" />,
+            style: { transform: "translateY(50%)"}
+        })
 
-    static defaultProps = {
-        onShowDetails: () => {},
-        catalogURL: '',
-        filterList: null,
-        filterForm: null,
-        onShowBbox: () => {},
-        onZoomTo: () => {},
-        sortBy: '',
-        groupInfo: {},
-        onAddLayer: () => {},
-        onRemove: () => {},
-        layers: []
-    };
+)(require('../../MapStore2/web/client/components/misc/cardgrids/SideGrid'));
 
-    render() {
-        const FilterList = this.props.filterList;
-        return (
-            <div className="et-catalog" style={{display: 'flex', flex: 1, height: '100%'}}>
-                <FilterList/>
-                {this.props.catalogURL && <CompactCatalog
-                    filterForm={this.props.filterForm}
-                    onRecordSelected={() => {}}
-                    sortBy={this.props.sortBy}
-                    bboxFilter={this.props.bboxFilter}
-                    groupInfo={this.props.groupInfo}
-                    layers={this.props.layers}
-                    getCustomItem={
-                        (item) => ({
-                            title: <span>{item.title}</span>,
-                            description: <span>{item.description}</span>,
-                            caption: <span>{item.caption}</span>,
-                            preview: item.icon ? <i className={'fa fa-4x text-center fa-' + item.icon}></i> : null,
-                            style: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color ? {
-                                borderBottom: '2px solid ' + this.props.groupInfo[item.caption].color
-                            } : {},
-                            onMouseEnter: () => {
-                                const feature = item && item.record && {...item.record};
-                                if (feature) {
-                                    this.props.onShowBbox('bbox_layer', 'layers', {
-                                        features: [feature],
-                                        style: {
-                                            fill: {
-                                                color: 'rgba(52, 52, 52, 0.1)' // 'transparent' // "rgba(33, 186, 176, 0.25)"
-                                            },
-                                            stroke: {
-                                                color: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color || '#aaa',
-                                                width: this.props.groupInfo[item.caption] && this.props.groupInfo[item.caption].checked && this.props.groupInfo[item.caption].color ? 2 : 1,
-                                                opacity: 1
-                                            }
-                                        }
-                                    });
-                                }
-                            },
-                            onMouseLeave: () => {
-                                this.props.onShowBbox('bbox_layer', 'layers', {
-                                    features: [],
-                                    style: {}
-                                });
-                            },
-                            onClick: () => {
-                                this.props.onShowDetails(item.record ? {...item.record} : {});
-                            },
-                            tools: <LayerToolbar
-                                item={{...item.record}}
-                                showAddLayer
-                                showRemoveLayer
-                                layers={this.props.layers}
-                                showFilter={false}
-                                onZoomTo={this.props.onZoomTo}
-                                onRemoveLayer={this.props.onRemove}
-                                onAddLayer={this.props.onAddLayer}/>
-                        })
-                    }
-                    catalog= {{
-                        url: this.props.catalogURL,
-                        type: 'hev-e',
-                        title: 'HEV-E',
-                        autoload: true
-                    }}/>}
-            </div>
-        );
-    }
-}
+const resToProps = require('./catalog/resultsToProps');
 
-module.exports = DataCatalog;
+const PAGE_SIZE = 10;
+
+const loadPage = ({currentDataset, layerToolbar, ...props}, page = 0) => Rx.Observable
+    .fromPromise((HEVEAPI[currentDataset] || HEVEAPI.exposures)({
+        page,
+        maxRecords: PAGE_SIZE,
+        ...props
+    }))
+    .map((result) => ({result}))
+    .map(({result}) => resToProps[currentDataset] && resToProps[currentDataset]({result, LayerToolbar: layerToolbar, currentDataset, ...props}) || resToProps.exposures({result, LayerToolbar: layerToolbar, ...props}));
+
+const scrollSpyOptions = {querySelector: ".ms2-border-layout-body", pageSize: PAGE_SIZE};
+
+module.exports = compose(
+    withControllableState('searchText', "setSearchText", ""),
+    withVirtualScroll({loadPage, scrollSpyOptions, hasMore: ({total, items}) => items.length < total}),
+    mapPropsStream( props$ =>
+        props$.merge(props$.take(1).switchMap(({loadFirst = () => {}, ...others}) =>
+            props$
+                .debounceTime(500)
+                .startWith({...others})
+                .distinctUntilChanged((previous, next) =>
+                    previous.searchText === next.searchText
+                    && previous.sortBy === next.sortBy
+                    && previous.bboxFilter === next.bboxFilter
+                    && isEqual(previous.groupInfo, next.groupInfo))
+                .do(({...props} = {}) =>
+                    loadFirst({...props})
+                )
+                .ignoreElements()
+    )))
+
+)(({
+    loading,
+    searchText,
+    items = [],
+    total,
+    filterForm,
+    filterList,
+    setSearchText = () => {},
+    sortOptions,
+    searchFilter
+}) => {
+    const Form = filterForm || CatalogForm;
+    const FilterList = filterList;
+    return (
+        <div className="et-catalog" style={{display: 'flex', flex: 1, height: '100%'}}>
+            <FilterList/>
+            <BorderLayout
+                className="compat-catalog"
+                header={<Form
+                    searchText={searchText}
+                    onSearchTextChange={setSearchText}
+                    sortOptions={sortOptions}
+                    searchFilter={searchFilter}/>}
+                footer={
+                    <div className="catalog-footer">
+                        <span>{loading ? <LoadingSpinner /> : null}</span>
+                        {!isNil(total) ? <span className="res-info"><Message msgId="catalog.pageInfoInfinite" msgParams={{loaded: items.length, total}}/></span> : null}
+                    </div>
+                }>
+                <SideGrid
+                    items={items}
+                    loading={loading}/>
+            </BorderLayout>
+        </div>
+    );
+});

@@ -10,13 +10,14 @@
 #########################################################################
 
 from collections import namedtuple
+
+from django.core import files
 from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models as gismodels
 from django.db import models
 from django.db.models import CASCADE
 from jsonfield_compat.fields import JSONField
 from mptt.models import MPTTModel, TreeForeignKey
-from django.core import files
 
 from . import validators
 from .constants import DatasetType
@@ -256,5 +257,9 @@ class HeveDetails(models.Model):
     )
     details = JSONField(
         blank=True,
+        null=True
+    )
+    envelope = gismodels.MultiPolygonField(
+        spatial_index=True,
         null=True
     )
