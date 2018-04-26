@@ -18,7 +18,8 @@ from geonode.urls import urlpatterns
 
 from . import views
 from .exposures import views as exposure_views
-from .vulnerabilities import views as vulnerabilities_views
+from .vulnerabilities import views as vulnerability_views
+from .hazards import views as hazard_views
 
 router = DefaultRouter()
 router.register(
@@ -59,8 +60,13 @@ router.register(
 )
 router.register(
     r"vulnerabilities",
-    vulnerabilities_views.VulnerabilityViewSet,
+    vulnerability_views.VulnerabilityViewSet,
     base_name="vulnerabilities"
+)
+router.register(
+    r"hazards",
+    hazard_views.HazardLayerViewSet,
+    base_name="hazards"
 )
 schema_view = get_schema_view("HEV-E API")
 
