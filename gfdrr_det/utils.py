@@ -7,12 +7,14 @@
 # LICENSE file in the root directory of this source tree.
 #
 #########################################################################
+
 import hashlib
 import shlex
 import subprocess
 from decimal import Decimal
 import logging
 
+import django.utils
 from django.conf import settings
 from django.db import connections
 from pathlib2 import Path
@@ -184,3 +186,27 @@ def prepare_ogr2ogr_command(query, target_path, name):
         )
     )
     return command_str
+
+
+def get_view_name(model_id, model_name, category, prefix="", suffix="",
+                  separator="_"):
+    """Return a name for a view that is also a valid GeoServer layer name"""
+    slug_pattern = "{prefix}{name}{sep}{category}"
+    final_prefix = "{prefix}{sep}".format(
+        prefix=prefix, sep=separator) if prefix != "" else prefix
+    final_suffix = "{sep}{suffix}".format(
+        suffix=suffix, sep=separator) if suffix != "" else suffix
+    slugged = django.utils.text.slugify(
+        slug_pattern.format(
+            prefix=final_prefix,
+            sep=separator,
+            name=model_name,
+            category=category,
+        )
+    )
+    return "{slugged}{sep}{id}{suffix}".format(
+        slugged=slugged,
+        sep=separator,
+        id=model_id,
+        suffix=final_suffix
+    ).replace("-", separator)

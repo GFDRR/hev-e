@@ -136,6 +136,7 @@ INSTALLED_APPS += (
     "gfdrr_det.apps.GfdrrdetConfig",
     "{}.exposures".format(PROJECT_NAME),
     "{}.vulnerabilities".format(PROJECT_NAME),
+    "{}.hazards".format(PROJECT_NAME),
 )
 
 # Location of url mappings
@@ -742,7 +743,7 @@ HEV_E = {
                     "detail_geometry_column": "full_geom",
                     "detail_geometry_type": "MultiPolygon",
                 },
-                "exposure_model_categories": ["buildings"],
+                "categories": ["buildings"],
                 "topic_category": "structure",
             },
             "road_network": {
@@ -752,7 +753,7 @@ HEV_E = {
                     "detail_geometry_column": "full_geom",
                     "detail_geometry_type": "MultiLineString",
                 },
-                "exposure_model_categories": ["road_network"],
+                "categories": ["road_network"],
                 "topic_category": "transportation",
             },
             # "rails": {
@@ -861,4 +862,20 @@ HEV_E = {
             },
         }
     },
+    "HAZARDS": {
+        "category_mappings": {
+            "earthquake": {
+                "categories": ["eqk"],
+                "topic_category": "geoscientificInformation",
+            },
+            "tsunami": {
+                "categories": ["tsu"],
+                "topic_category": "geoscientificInformation",
+            },
+            "volcano": {
+                "categories": ["vol"],
+                "topic_category": "geoscientificInformation",
+            },
+        }
+    }
 }
