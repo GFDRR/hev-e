@@ -39,7 +39,7 @@ const getItem = {
         title: item.properties && item.properties.name,
         description: item.properties && item.properties.description,
         caption: item.properties && item.properties.category,
-        icon: item.properties && groupInfo[item.properties.category] && groupInfo[item.properties.category].icon && 'fa-' + groupInfo[item.properties.category].icon || 'database'
+        icon: item.properties && groupInfo[item.properties.category] && groupInfo[item.properties.category].icon && 'fa-' + groupInfo[item.properties.category].icon || 'fa-database'
     }),
     vulnerabilities: (item, groupInfo) => ({
         id: item.id,
@@ -59,8 +59,8 @@ const getItem = {
         name: item.properties && item.properties.name,
         title: item.properties && item.properties.title,
         description: item.properties && item.properties.description,
-        caption: item.properties && item.properties.hazard_type,
-        icon: item.properties && groupInfo[item.properties.hazard_type] && groupInfo[item.properties.hazard_type].icon && groupInfo[item.properties.hazard_type].icon || 'database'
+        caption: item.properties && item.properties.hazard_type && getName(item.properties.hazard_type.toLowerCase(), groupInfo) || item.properties && item.properties.hazard_type,
+        icon: item.properties && item.properties.hazard_type && groupInfo[item.properties.hazard_type.toLowerCase()] && groupInfo[item.properties.hazard_type.toLowerCase()].icon || 'fa-database'
     })
 };
 

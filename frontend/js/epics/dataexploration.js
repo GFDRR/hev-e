@@ -20,6 +20,7 @@ const {
     SHOW_DETAILS,
     TOGGLE_SPATIAL_FILTER,
     RELOAD_ORDER,
+    UPDATE_HAZARD_FILTER,
     updateOrder,
     addOrder,
     selectArea,
@@ -32,10 +33,11 @@ const {
     updateCurrentDataset,
     removeDownload,
     selectDownloadTab,
-    orderLoading
+    orderLoading,
+    setHazardsFilter
 } = require('../actions/dataexploration');
 
-const {downloadFormatSelector, filterSelector, currentDatasetSelector, drawFeaturesSelector, currentDetailsSelector, bboxFilterSelector, tmpDetailsBboxSelector, downloadEmailSelector, ordersSelector} = require('../selectors/dataexploration');
+const {hazardsFilterSelector, downloadFormatSelector, filterSelector, currentDatasetSelector, drawFeaturesSelector, currentDetailsSelector, bboxFilterSelector, tmpDetailsBboxSelector, downloadEmailSelector, ordersSelector} = require('../selectors/dataexploration');
 const {ADD_LAYER, addLayer, updateNode, sortNode, removeLayer} = require("../../MapStore2/web/client/actions/layers");
 const {layersSelector} = require("../../MapStore2/web/client/selectors/layers");
 const {SET_CONTROL_PROPERTY, setControlProperty} = require('../../MapStore2/web/client/actions/controls');
@@ -105,7 +107,7 @@ const initDataLayerEpic = action$ =>
                 return Rx.Observable.of(
                     error({
                         title: "heve.error",
-                        message: e.message || "",
+                        message: "heve.errorCountries" || e.message || "",
                         autoDismiss: 6,
                         position: "tc"
                     })
@@ -247,6 +249,32 @@ const resetSearchLayerEpic = action$ =>
         }));
     });
 
+const getCQLObject = (taxonomy) => {
+    const filterFields = taxonomy && taxonomy.buildings.reduce((plainGroup, group) => {
+        return [...plainGroup, ...group.filters.filter(filt => filt.checked).map(filt => ({
+            groupId: 1,
+            attribute: 'parsed_taxonomy',
+            operator: 'LIKE',
+            type: 'string',
+            value: group.code + ':' + filt.code
+        }))];
+    }, []) || null;
+
+    const filterObj = {
+        filterFields,
+        groupFields: [
+            {
+                id: 1,
+                index: 0,
+                logic: 'OR'
+            }
+        ]
+    };
+
+    const CQL_FILTER = filterFields && FilterUtils.isFilterValid(filterObj) && FilterUtils.toCQLFilter(filterObj);
+    return filterFields && CQL_FILTER ? {CQL_FILTER} : {};
+};
+
 const updateFilterEpic = (action$, store) =>
     action$.ofType(UPDATE_FILTER)
     .switchMap(action => {
@@ -298,29 +326,7 @@ const updateFilterEpic = (action$, store) =>
             })) : Rx.Observable.empty();
 
             // update type buildings based on selection
-            const filterFields = newTaxonomy.buildings.reduce((plainGroup, group) => {
-                return [...plainGroup, ...group.filters.filter(filt => filt.checked).map(filt => ({
-                    groupId: 1,
-                    attribute: 'parsed_taxonomy',
-                    operator: 'LIKE',
-                    type: 'string',
-                    value: group.code + ':' + filt.code
-                }))];
-            }, []);
-
-            const filterObj = {
-                filterFields,
-                groupFields: [
-                    {
-                        id: 1,
-                        index: 0,
-                        logic: 'OR'
-                    }
-                ]
-            };
-
-            const CQL_FILTER = FilterUtils.isFilterValid(filterObj) && FilterUtils.toCQLFilter(filterObj);
-            const cqlFilterObj = CQL_FILTER ? {CQL_FILTER} : {};
+            const cqlFilterObj = getCQLObject(newTaxonomy);
 
             return newTaxonomy ? Rx.Observable.concat(
                 Rx.Observable.of(
@@ -354,10 +360,10 @@ const defaultDetailsLayerParams = ({
     styleObj,
     bbox = [-180, -90, 180, 90]
 }) => ({
-    url: details.properties.wms_url,
-    name: details.properties.name,
-    title: details.properties.title,
-    description: details.properties.description,
+    url: details.properties && details.properties.wms_url || details.wms_url,
+    name: details.properties && details.properties.name || details.name,
+    title: details.properties && details.properties.title || details.title,
+    description: details.properties && details.properties.description || details.description,
     ...taxonomyObj,
     ...styleObj,
     bbox: {
@@ -379,13 +385,21 @@ const closeDetailsStream = (state, details, e) => {
     || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
     const taxonomyObj = tocTmpLayer && tmpLayer && tmpLayer.taxonomy ? {taxonomy: {...tmpLayer.taxonomy}} : {};
+    const hazardsFilterObj = tocTmpLayer && tmpLayer && tmpLayer.hazardsFilter ? {hazardsFilter: {...tmpLayer.hazardsFilter}} : {};
+
+    const hiddenEvents = hazardsFilterObj && hazardsFilterObj.hazardsFilter && Object.keys(hazardsFilterObj.hazardsFilter).filter(key => key.indexOf('_activePanel') === -1 && hazardsFilterObj.hazardsFilter[key]);
+    const cqlFilterObj = hiddenEvents && hiddenEvents.length > 0 ? {CQL_FILTER: '(NOT IN (' + join(hiddenEvents, ',') + '))'} : {};
 
     return Rx.Observable.concat(
         // restore last visibility of toc layer
         tocTmpLayer ? Rx.Observable.of(updateNode(tocTmpLayer.id, 'layers', {
             visibility: tocTmpLayer.lastVisibility,
             lastVisibility: undefined,
-            ...taxonomyObj
+            ...taxonomyObj,
+            ...hazardsFilterObj,
+            params: {
+                ...cqlFilterObj
+            }
         })) : Rx.Observable.empty(),
 
         Rx.Observable.of(
@@ -394,12 +408,13 @@ const closeDetailsStream = (state, details, e) => {
             setControlProperty('compacttoc', 'hide', false),
             removeLayer('heve_tmp_layer'),
             updateDatails(),
-            detailsLoading(false)
+            detailsLoading(false),
+            setHazardsFilter({})
         ),
         Rx.Observable.of(zoomToExtent([...bboxFilterSelector(state)], 'EPSG:4326')).delay(300),
         e ? Rx.Observable.of(error({
             title: "heve.error",
-            message: e.message || "",
+            message: "heve.errorDetails" || e.message || "",
             autoDismiss: 6,
             position: "tc"
         })) : Rx.Observable.empty()
@@ -412,7 +427,8 @@ const updateDetailsObservables = {
         const layers = layersSelector(state);
         const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
         const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
-        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
+        || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id
+        || details && details.name && '__toc__' + details.name === layer.id)));
 
         const coordinates = details && details.geometry && details.geometry.coordinates;
         const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
@@ -420,8 +436,10 @@ const updateDetailsObservables = {
         const filters = filterSelector(state);
         const taxonomy = details && details.properties && details.properties.category && filters.exposures && filters.exposures.taxonomy[details.properties.category];
 
-        const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy ? {taxonomy: {...tocTmpLayer.taxonomy}} : {};
+        const taxonomyObj = tocTmpLayer && tocTmpLayer.taxonomy && {taxonomy: {...tocTmpLayer.taxonomy}} || tmpLayer && tmpLayer.taxonomy && {taxonomy: {...tmpLayer.taxonomy}} || {};
         const styleObj = tmpLayer && tmpLayer.style && {style: tmpLayer.style} || tocTmpLayer && tocTmpLayer.tmpStyle && {style: tocTmpLayer.tmpStyle} || taxonomy && taxonomy[0] && taxonomy[0].styleChecked && {style: taxonomy[0].styleChecked} || {};
+
+        const cqlFilterObj = getCQLObject(taxonomyObj.taxonomy);
 
         return Rx.Observable.concat(
             // hide toc layer
@@ -439,6 +457,9 @@ const updateDetailsObservables = {
                 tmpLayer ?
                     updateNode('heve_tmp_layer', 'layers', {
                         visibility: true,
+                        params: {
+                            ...cqlFilterObj
+                        },
                         ...defaultDetailsLayerParams({
                             details,
                             taxonomyObj,
@@ -452,6 +473,9 @@ const updateDetailsObservables = {
                         group: 'heve_tmp_group',
                         id: 'heve_tmp_layer',
                         visibility: true,
+                        params: {
+                            ...cqlFilterObj
+                        },
                         ...defaultDetailsLayerParams({
                             details,
                             taxonomyObj,
@@ -473,14 +497,20 @@ const updateDetailsObservables = {
             updateTmpDetailsBbox({placeholder: true})
         );
     },
-    hazards: ({state, details, actionBbox}) => {
+    hazards: ({state, details, geometry}) => {
+
         const layers = layersSelector(state);
         const tmpLayer = head(layers.filter(layer => layer.id === 'heve_tmp_layer'));
         const tocTmpLayer = head(layers.filter(layer => (tmpLayer && layer.id === '__toc__' + tmpLayer.name
+        || details && details.name && '__toc__' + details.name === layer.id
         || details && details.properties && details.properties.name && '__toc__' + details.properties.name === layer.id)));
 
-        const coordinates = details && details.geometry && details.geometry.coordinates;
-        const bbox = coordinates && [-180, -80, 180, 80]; // [...coordinates[0][0], ...coordinates[0][2]];
+        const coordinates = geometry && geometry.coordinates;
+        const bbox = coordinates && [...coordinates[0][0], ...coordinates[0][2]];
+        const hazardsFilter = tmpLayer && tmpLayer.hazardsFilter || tocTmpLayer && tocTmpLayer.hazardsFilter || {};
+
+        const hiddenEvents = hazardsFilter && Object.keys(hazardsFilter).filter(key => key.indexOf('_activePanel') === -1 && hazardsFilter[key]);
+        const cqlFilterObj = hiddenEvents && hiddenEvents.length > 0 ? {CQL_FILTER: '(NOT IN (' + join(hiddenEvents, ',') + '))'} : {};
 
         return Rx.Observable.concat(
             // hide toc layer
@@ -491,13 +521,18 @@ const updateDetailsObservables = {
 
             Rx.Observable.of(
                 updateNode('datasets_layer', 'layers', {visibility: false}),
+                setHazardsFilter(hazardsFilter),
                 setControlProperty('dataExplorer', 'enabled', true),
                 setControlProperty('compacttoc', 'hide', true),
-                updateDatails(details),
+                updateDatails({...details, geometry}),
                 detailsLoading(false),
                 tmpLayer ?
                     updateNode('heve_tmp_layer', 'layers', {
                         visibility: true,
+                        hazardsFilter,
+                        params: {
+                            ...cqlFilterObj
+                        },
                         ...defaultDetailsLayerParams({
                             details,
                             bbox
@@ -509,13 +544,17 @@ const updateDetailsObservables = {
                         group: 'heve_tmp_group',
                         id: 'heve_tmp_layer',
                         visibility: true,
+                        hazardsFilter,
+                        params: {
+                            ...cqlFilterObj
+                        },
                         ...defaultDetailsLayerParams({
                             details,
                             bbox
                         })
                     })
             ),
-            actionBbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
+            !bbox ? Rx.Observable.empty() : Rx.Observable.of(zoomToExtent([...bbox], 'EPSG:4326')).delay(300)
         );
     }
 };
@@ -524,10 +563,11 @@ const updateDetailsObservables = {
 const updateDetailsStream = (state, item, actionBbox) => {
     const currentDataset = item.dataset || currentDatasetSelector(state);
     const url = item.url || item.properties && item.properties.url;
+    const geometry = item && item.geometry;
     return Rx.Observable.concat(
         Rx.Observable.of(updateDatails(item), detailsLoading(true)),
         Rx.Observable.fromPromise(axios.get(`${url}${actionBbox ? '&bbox=' + actionBbox : ''}`).then(response => response.data))
-        .switchMap(details => updateDetailsObservables[currentDataset] && updateDetailsObservables[currentDataset]({state, details, actionBbox}) || Rx.Observable.of(detailsLoading(false)))
+        .switchMap(details => updateDetailsObservables[currentDataset] && updateDetailsObservables[currentDataset]({state, details, actionBbox, geometry}) || Rx.Observable.of(detailsLoading(false)))
         .catch((e) => closeDetailsStream(state, null, e))
     );
 };
@@ -608,10 +648,6 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         const tmpDetailsBbox = tmpDetailsBboxSelector(state);
         const currentDataset = currentDetails && currentDetails.dataset || currentDatasetSelector(state);
 
-        if (currentDetails && currentDataset === 'vulnerabilities') {
-            return Rx.Observable.empty();
-        }
-
         if (currentDetails) {
 
             const drawFaetures = drawFeaturesSelector(store.getState());
@@ -630,7 +666,7 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
             const tmpDetailsBboxStr = tmpDetailsBbox && tmpDetailsBbox.extent && tmpDetailsBbox.extent.join(',') || '';
 
             return bbox && tmpDetailsBboxStr !== bbox.join(',') ? Rx.Observable.concat(
-                (!isEmpty(tmpDetailsBbox) || faeturesBbox.type === 'filter') ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
+                ((!isEmpty(tmpDetailsBbox) || faeturesBbox.type === 'filter') && currentDataset === 'exposures') ? updateDetailsStream(state, currentDetails, bbox.join(',')) : Rx.Observable.empty(),
                 Rx.Observable.of(updateTmpDetailsBbox({extent: bbox, ...faeturesBbox}))
             ) : Rx.Observable.of(updateTmpDetailsBbox(tmpDetailsBbox));
 
@@ -660,18 +696,6 @@ const updateBBOXFilterUpdateEpic = (action$, store) =>
         return reprojectBbox(bbox, state, {...faeturesBbox, extent});
     });
 
-/*
-- Submitted
-- Accepted
-- InProduction
-- Suspended
-- Cancelled
-- Completed
-- Failed
-- Terminated
-- Downloaded
-*/
-
 const updateOrdersEpic = (action$, store) =>
     action$.ofType(OPEN_DOWNLOADS)
     .switchMap(() =>
@@ -688,7 +712,7 @@ const updateOrdersEpic = (action$, store) =>
                 .catch(e => {
                     return Rx.Observable.of(error({
                         title: "heve.error",
-                        message: e.message || "",
+                        message: "heve.errorOrders" || e.message || "",
                         autoDismiss: 3,
                         position: "tc"
                     }));
@@ -776,12 +800,35 @@ const downloadDataEpic = (action$, store) =>
                     orderLoading(false),
                     error({
                         title: "heve.error",
-                        message: e.message || "",
+                        message: "heve.errorDownload" || e.message || "",
                         autoDismiss: 6,
                         position: "tc"
                     })
                 );
 
+            })
+        );
+    });
+
+
+const updateHazardFiltersEpic = (action$, store) =>
+    action$.ofType(UPDATE_HAZARD_FILTER)
+    .switchMap(action => {
+
+        const state = store.getState();
+        const hazardsFilter = hazardsFilterSelector(state);
+        const newHazardsFilter = {...(hazardsFilter || {}), [action.key]: action.value};
+
+        const hiddenEvents = newHazardsFilter && Object.keys(newHazardsFilter).filter(key => key.indexOf('_activePanel') === -1 && newHazardsFilter[key]);
+        const cqlFilterObj = hiddenEvents && hiddenEvents.length > 0 ? {CQL_FILTER: '(NOT IN (' + join(hiddenEvents, ',') + '))'} : {};
+
+        return Rx.Observable.of(
+            setHazardsFilter(newHazardsFilter),
+            updateNode('heve_tmp_layer', 'layers', {
+                hazardsFilter: newHazardsFilter,
+                params: {
+                    ...cqlFilterObj
+                }
             })
         );
     });
@@ -800,5 +847,6 @@ module.exports = {
     updateBBOXFilterUpdateEpic,
     downloadDataEpic,
     updateOrdersEpic,
-    reloadOrderEpic
+    reloadOrderEpic,
+    updateHazardFiltersEpic
 };

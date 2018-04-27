@@ -12,9 +12,12 @@ const Message = require('../../../MapStore2/web/client/components/I18N/Message')
 const moment = require('moment');
 const tooltip = require('../../../MapStore2/web/client/components/misc/enhancers/tooltip');
 const FailedIcon = tooltip(props => (<div className="fa fa-ban fa-2x text-danger" {...props}/>));
-const {join} = require('lodash');
+const {head, join} = require('lodash');
 
-const Body = ({items, name, order}) => {
+const Body = ({items, name}) => {
+
+    const inProduction = head(items.filter(item => !(item.status === 'Completed' || item.status === 'Failed')));
+
     return (
         <Col xs={12}>
             <div className="et-list-item" style={{padding: '10px 15px'}}>
@@ -23,7 +26,7 @@ const Body = ({items, name, order}) => {
                 </div>
                 <div>
                     <div>
-                        {(order.status === 'Completed' || order.status === 'Failed') &&
+                        {!inProduction &&
                             <ButtonToolbar>
                                 {items && items[0] && items[0].format === 'geopackage' && items[0].download_url && <Button
                                     bsStyle="success"
@@ -112,8 +115,8 @@ module.exports = ({
                                 </div>
                             </div>
                         </Col>
-                        {exposure && exposure.length > 0 && <Body items={exposure} name="Exposures" order={order}/>}
-                        {vulnerability && vulnerability.length > 0 && <Body items={vulnerability} name="Vulnerabilities" order={order}/>}
+                        {exposure && exposure.length > 0 && <Body items={exposure} name="Exposures"/>}
+                        {vulnerability && vulnerability.length > 0 && <Body items={vulnerability} name="Vulnerabilities"/>}
                         {idx !== orders.length - 1 &&
                         <Col xs={12}>
                             <hr />

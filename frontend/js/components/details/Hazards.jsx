@@ -14,42 +14,58 @@ const {Row, Col, Grid, Glyphicon} = require('react-bootstrap');
 const Accordion = require('../../../MapStore2/web/client/components/misc/panels/Accordion');
 const {getItem} = require('../../utils/ItemsUtils');
 
-const Body = ({items, layout, layoutKey}) => {
-    const values = layoutKey && layout[layoutKey] && layout[layoutKey].filter(value => value.code && items[value.code]);
-    const footprints = layoutKey !== 'footprints' && items.footprints && items.footprints.length > 0 && items.footprints;
+const List = ({layoutKey, layout, item}) => {
+    const values = layoutKey && layout[layoutKey] && layout[layoutKey].filter(value => value.code && item.properties && item.properties[value.code]);
     return values ? (
+        <Row>
+            <Col xs={12}>
+                {values.map((value, idx) => (
+                    <div key={idx} style={{paddingLeft: 10}}>
+                        <h5><strong>{value.name}</strong>:</h5>
+                        <p>
+                            {item.properties && item.properties[value.code]}
+                        </p>
+                        <hr/>
+                    </div>
+                ))}
+            </Col>
+        </Row>
+    ) : null;
+};
+
+const Body = ({item, layout, layoutKey, hazardsFilter, onUpdateFilter}) => {
+    const footprints = item.footprints && item.footprints.length > 0 && item.footprints;
+    return (
         <Grid fluid style={{width: '100%'}}>
-            <Row>
-                <Col xs={12}>
-                    {values.map(value => (
-                        <div style={{paddingLeft: 10}}>
-                            <h5><strong>{value.name}</strong>:</h5>
-                            <p>
-                                {items[value.code]}
-                            </p>
-                            <hr/>
-                        </div>
-                    ))}
-                </Col>
-            </Row>
+            <List layoutKey={layoutKey} layout={layout} item={item}/>
             {footprints && <Row>
                 <Col xs={12}>
+                    <h5 style={{paddingLeft: 10}}><strong>Footprints</strong>:</h5>
+                </Col>
+                <Col xs={12}>
                     <Accordion
-                    activePanel={0}
-                    onSelect={() => {}}
+                    activePanel={hazardsFilter && hazardsFilter['_activePanel:' + item.name]}
+                    onSelect={id => hazardsFilter && hazardsFilter['_activePanel:' + item.name] === id ? onUpdateFilter('_activePanel:' + item.name, null) : onUpdateFilter('_activePanel:' + item.name, id)}
                     panels={footprints.map((footprint, idx) => ({
                         id: idx + 1,
                         head: {
-                            preview: <Glyphicon glyph="eye-open"/>,
+                            selected: hazardsFilter && hazardsFilter['_activePanel:' + item.name] === (item.id || item.name),
+                            className: hazardsFilter[item.name + ':' + footprint.name] ? 'ms-card-hide' : '',
+                            preview: footprint.cql && <Glyphicon
+                            glyph={hazardsFilter && hazardsFilter[item.name + ':' + footprint.name] ? 'eye-close' : 'eye-open'}
+                            onClick={e => {
+                                e.stopPropagation();
+                                onUpdateFilter(item.name + ':' + footprint.name, hazardsFilter[item.name + ':' + footprint.name] ? false : footprint.cql);
+                            }}/> || <Glyphicon glyph="record"/>,
                             size: 'sm',
                             title: footprint.name
                         },
-                        body: <Body items={footprints} layout={layout} layoutKey="footprints"/>
+                        body: <List item={footprint} layout={layout} layoutKey="footprints"/>
                     }))}/>
                 </Col>
             </Row> }
         </Grid>
-    ) : null;
+    );
 };
 
 module.exports = ({
@@ -64,59 +80,7 @@ module.exports = ({
 }) => {
 
     const LayerToolbar = layerToolbar;
-
-   /* const currentDetails = {
-
-        properties: {
-            description: 'Current description',
-            events: [
-                {
-                    name: 'Event:001',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:002',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:003',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:004',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:005',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:006',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                },
-                {
-                    name: 'Event:007',
-                    cql: 'filter',
-                    footprints: [],
-                    min: 0.5
-                }
-            ]
-        }
-    };*/
-
-    const events = currentDetails && currentDetails.properties && currentDetails.properties.events;
+    const {events, geometry, ...properties} = currentDetails;
 
     return (<BorderLayout
         header={
@@ -126,15 +90,15 @@ module.exports = ({
                         <LayerToolbar
                                 item={{
                                     ...getItem.hazards(currentDetails, groupInfo),
-                                    properties: currentDetails.properties && {...currentDetails.properties},
-                                    geometry: currentDetails.geometry && {...currentDetails.geometry}
+                                    geometry,
+                                    properties
                                 }}
                                 dataset={currentDataset}
                                 hideOnAdd
                                 // showDownload
-                                // showZoomTo
-                                // showAddLayer
-                                // showRemoveLayer
+                                showZoomTo
+                                showAddLayer
+                                showRemoveLayer
                                 availableFormats={availableFormats} />
                     </Col>
                 </Row>
@@ -143,7 +107,7 @@ module.exports = ({
         <Grid fluid style={{width: '100%', paddingBottom: 30}}>
             <Row>
                 <Col xs={12}>
-                    <p>{currentDetails && currentDetails.properties && currentDetails.properties.description}</p>
+                    <p>{properties && properties.description || currentDetails && currentDetails.properties && currentDetails.properties.description}</p>
                 </Col>
             </Row>
             {events && <Row>
@@ -152,20 +116,28 @@ module.exports = ({
                         activePanel={hazardsFilter && hazardsFilter._activePanel}
                         onSelect={id => hazardsFilter && hazardsFilter._activePanel === id ? onUpdateFilter('_activePanel', null) : onUpdateFilter('_activePanel', id)}
                         panels={events.map(event => ({
-                            id: event.id || event.name,
+                            id: event.id,
                             head: {
-                                selected: hazardsFilter && hazardsFilter._activePanel === (event.id || event.name),
-                                className: hazardsFilter[event.name] ? 'ms-card-hide' : '',
-                                preview: <Glyphicon
-                                    glyph={hazardsFilter && hazardsFilter[event.name] ? 'eye-close' : 'eye-open'}
+                                selected: hazardsFilter && hazardsFilter._activePanel === event.id,
+                                className: hazardsFilter[event.id] ? 'ms-card-hide' : '',
+                                preview: event.id && <Glyphicon
+                                    glyph={hazardsFilter && hazardsFilter[event.id] ? 'eye-close' : 'eye-open'}
                                     onClick={e => {
                                         e.stopPropagation();
-                                        onUpdateFilter(event.name, !hazardsFilter[event.name]);
-                                    }}/>,
+                                        onUpdateFilter(event.id, hazardsFilter[event.id] ? false : event.id);
+                                    }}/> || <Glyphicon glyph="record"/>,
                                 size: 'sm',
-                                title: event.name
+                                title: 'Event id: ' + event.id,
+                                tools: <LayerToolbar
+                                    item={{...event}}
+                                    showZoomTo/>
                             },
-                            body: <Body items={event} layout={layout} layoutKey="events"/>
+                            body: <Body
+                                item={event}
+                                layout={layout}
+                                onUpdateFilter={onUpdateFilter}
+                                hazardsFilter={hazardsFilter}
+                                layoutKey="events"/>
                         }))}/>
                 </Col>
             </Row>}
