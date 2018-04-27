@@ -10,28 +10,11 @@
 
 """Filters for vulnerabilities views"""
 
-from django.db.models import Q
 from django_filters import rest_framework as django_filters
 from django_filters import STRICTNESS
-from rest_framework_gis.filters import InBBoxFilter
 
 from .. import filters as general_filters
 from ..models import HeveDetails
-
-
-class HeveInBboxFilter(InBBoxFilter):
-    bbox_param = "bbox"
-
-    def filter_queryset(self, request, queryset, view):
-        filter_field = getattr(view, "bbox_filter_field", None)
-        if not filter_field:
-            raise RuntimeError("Define the `bbox_filter_field` parameter")
-        geodjango_filter = "intersects"
-        bbox = self.get_filter_bbox(request)
-        if not bbox:
-            return queryset
-        return queryset.filter(
-            Q(**{'%s__%s' % (filter_field, geodjango_filter): bbox}))
 
 
 class VulnerabilityLayerListFilterSet(django_filters.FilterSet):

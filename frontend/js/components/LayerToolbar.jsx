@@ -104,7 +104,7 @@ module.exports = ({
                         if (coordinates) {
                             const bbox = [...coordinates[0][0], ...coordinates[0][2]];
                             onAddLayer({
-                                ...getTOCLayerObject(item, bbox, prefix, !hideOnAdd)
+                                ...getTOCLayerObject({...item, dataset}, bbox, prefix, !hideOnAdd)
                             });
                         }
                     }

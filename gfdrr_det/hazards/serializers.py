@@ -10,17 +10,47 @@
 
 """Serializers for HEV-E hazards"""
 
+import json
 import logging
+from collections import OrderedDict
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.gis import geos
 from rest_framework import serializers
 from rest_framework_gis import serializers as gis_serializers
+from rest_framework_gis.fields import GeoJsonDict
 
-from gfdrr_det.management.commands._utils import get_mapped_category
-from ..constants import DatasetType
 from ..models import HeveDetails
 
 LOGGER = logging.getLogger(__name__)
+
+
+class HazardEventSerializer(serializers.Serializer):
+
+    def to_representation(self, instance):
+        feature = OrderedDict()
+        feature["id"] = instance.event_id
+        feature["type"] = "Feature"
+        feature["geometry"] = GeoJsonDict(
+            json.loads(
+                geos.GEOSGeometry(instance.geom).envelope.geojson
+            )
+        )
+        further_info = self.context["events_info"][str(instance.event_id)]
+        feature["properties"] = self.get_feature_properties(
+            instance, further_info)
+        return feature
+
+    def get_feature_properties(self, instance, further_info):
+        result = OrderedDict()
+        result["calculation_method"] = instance.calculation_method
+        result["frequency"] = instance.frequency
+        result["occurrence_probability"] = instance.occurrence_probability
+        result["average_event_intensity"] = instance.average_event_intensity
+        result["minimum_event_intensity"] = instance.minimum_event_intensity
+        result["maximum_event_intensity"] = instance.maximum_event_intensity
+        result["number_of_footprints"] = further_info["num_footprints"]
+        return result
 
 
 class HazardLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
@@ -63,18 +93,17 @@ class HazardLayerListSerializer(gis_serializers.GeoFeatureModelSerializer):
         return wms_link
 
 
-class HazardLayerDetailSerializer(gis_serializers.GeoFeatureModelSerializer):
+class HazardLayerDetailSerializer(serializers.Serializer):
     title = serializers.CharField(source="layer.title")
     name = serializers.CharField(source="layer.name")
     description = serializers.SerializerMethodField()
     hazard_type = serializers.SerializerMethodField()
     url = serializers.HyperlinkedIdentityField(view_name="hazards-detail")
     wms_url = serializers.SerializerMethodField()
+    events = serializers.SerializerMethodField()
 
     class Meta:
         model = HeveDetails
-        geo_field = "envelope"
-        id_field = "id"
         fields = (
             "id",
             "url",
@@ -83,6 +112,7 @@ class HazardLayerDetailSerializer(gis_serializers.GeoFeatureModelSerializer):
             "description",
             "hazard_type",
             "wms_url",
+            "events"
         )
 
     def get_description(self, obj):
@@ -93,7 +123,16 @@ class HazardLayerDetailSerializer(gis_serializers.GeoFeatureModelSerializer):
 
     def get_wms_url(self, obj):
         try:
-            wms_link = obj.layer.link_set.get(link_type="OGC:WMS").url
+            wms_link = obj.layer.link_set.get(
+                link_type="OGC:WMS").url
         except ObjectDoesNotExist:
             wms_link = None
         return wms_link
+
+    def get_events(self, obj):
+        serializer = HazardEventSerializer(
+            instance=self.context["events"],
+            many=True,
+            context=self.context
+        )
+        return serializer.data

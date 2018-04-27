@@ -12,6 +12,7 @@
 
 from django.db.models import Q
 from django_filters import rest_framework as django_filters
+from rest_framework_gis.filters import InBBoxFilter
 
 
 def filter_category(queryset, name, value):
@@ -41,3 +42,19 @@ def filter_category(queryset, name, value):
 
 class CategoryInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
     pass
+
+
+class HeveInBboxFilter(InBBoxFilter):
+    bbox_param = "bbox"
+
+    def filter_queryset(self, request, queryset, view):
+        filter_field = getattr(view, "bbox_filter_field", None)
+        if not filter_field:
+            raise RuntimeError("Define the `bbox_filter_field` parameter")
+        geodjango_filter = "intersects"
+        bbox = self.get_filter_bbox(request)
+        if not bbox:
+            return queryset
+        return queryset.filter(
+            Q(**{'%s__%s' % (filter_field, geodjango_filter): bbox}))
+

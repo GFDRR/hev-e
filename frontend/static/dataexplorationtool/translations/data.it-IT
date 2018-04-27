@@ -75,7 +75,11 @@
             "vulnerabilitiesList": "Lista dei downloads",
             "home": "HEV-E",
             "datasetNotFound": "Dataset not found",
-            "error": " "
+            "error": " ",
+            "errorDownload": "Could not request current order. Connection error",
+            "errorCountries": "Could not request countries dataset layer. Connection error",
+            "errorDetails": "Detail not found",
+            "errorOrders": "Connection error"
         },
         "search":{
             "placeholder": "Cerca un indirizzo o inserieci coordinate"

@@ -1160,9 +1160,24 @@ hr {
         margin-top: 30px;
         background-color: @ms2-color-background;
         border: none;
+        padding-right: 0;
+        > .container-fluid {
+            > .row {
+                > .col-xs-12 {
+                    padding-right: 0;
+                }
+            }
+        }
+        
+
     }
     .ms-accordion {
         padding-left: 0;
         padding-right: 0;
+        .mapstore-side-card-tool {
+            .btn-group {
+                margin: auto 8px;
+            }
+        }
     }
 }
