@@ -23,7 +23,7 @@ module.exports = ({
 }) => (
     <SideGrid
         items={downloads.filter((item) => onFilter(item)).map(item => ({
-            preview: item.icon && <i className={'fa fa-4x text-center ' + item.icon}/> || <Glyphicon glyph="download fa-4x text-center"/>,
+            preview: item.icon && <i className={`${item.icon.indexOf('icon-') === -1 ? 'fa' : ''} fa-4x text-center ${item.icon}`}/> || <Glyphicon glyph="download fa-4x text-center"/>,
             title: <span>{item.title}</span>,
             description: <span>{item.description}</span>,
             caption: <span>{item.caption}</span>,

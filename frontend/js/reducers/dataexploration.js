@@ -30,7 +30,7 @@ const {
     REMOVE_ORDER,
     ORDER_LOADING,
     SELECT_DOWNLOAD,
-    UPDATE_HAZARD_FILTER
+    SET_HAZARDS_FILTER
 } = require('../actions/dataexploration');
 
 const{head} = require('lodash');
@@ -106,11 +106,8 @@ function dataexploration(state = {
             return {...state, orderLoading: action.loading};
         case SELECT_DOWNLOAD:
             return {...state, download: action.download};
-        case UPDATE_HAZARD_FILTER:
-            if (action.key === 'clear') {
-                return {...state, hazardsFilter: {}};
-            }
-            return {...state, hazardsFilter: {...(state.hazardsFilter || {}), [action.key]: action.value}};
+        case SET_HAZARDS_FILTER:
+            return {...state, hazardsFilter: {...action.filter}};
         default:
             return state;
     }

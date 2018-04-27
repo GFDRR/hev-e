@@ -161,7 +161,11 @@ class CompactTOC extends React.Component {
     hasFilter(layer) {
         const category = layer.record && layer.record.properties && layer.record.properties.category;
         const filter = category && layer.taxonomy && layer.taxonomy[category];
-        return filter && head(filter.map(group => group.filters && head(group.filters.filter(filt => filt.checked)) || null ).filter(val => val));
+
+        const hiddenEvents = layer.hazardsFilter && head(Object.keys(layer.hazardsFilter).filter(key => key.indexOf('_activePanel') === -1 && layer.hazardsFilter[key]));
+
+        return filter && head(filter.map(group => group.filters && head(group.filters.filter(filt => filt.checked)) || null ).filter(val => val))
+        || hiddenEvents;
     }
 }
 

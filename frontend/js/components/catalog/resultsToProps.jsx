@@ -100,7 +100,6 @@ module.exports = {
         items: (result.records || []).map((record = {}) => {
 
             const item = getItem.hazards(record, groupInfo);
-
             return {
                 title: <span>{item.title}</span>,
                 description: <span>{item.description}</span>,

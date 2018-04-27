@@ -36,6 +36,7 @@ const REMOVE_ORDER = 'HEV-E:REMOVE_ORDER';
 const ORDER_LOADING = 'HEV-E:ORDER_LOADING';
 const SELECT_DOWNLOAD = 'HEV-E:SELECT_DOWNLOAD';
 const UPDATE_HAZARD_FILTER = 'HEV-E:UPDATE_HAZARD_FILTER';
+const SET_HAZARDS_FILTER = 'HEV-E:SET_HAZARDS_FILTER';
 
 function setFilter(filter) {
     return {
@@ -248,6 +249,13 @@ function updateHazardFilter(key, value) {
     };
 }
 
+function setHazardsFilter(filter) {
+    return {
+        type: SET_HAZARDS_FILTER,
+        filter
+    };
+}
+
 module.exports = {
     UPDATE_FILTER,
     SELECT_AREA,
@@ -279,6 +287,7 @@ module.exports = {
     RELOAD_ORDER,
     SELECT_DOWNLOAD,
     UPDATE_HAZARD_FILTER,
+    SET_HAZARDS_FILTER,
     updateFilter,
     selectArea,
     showDatails,
@@ -308,5 +317,6 @@ module.exports = {
     orderLoading,
     reloadOrder,
     selectDownload,
-    updateHazardFilter
+    updateHazardFilter,
+    setHazardsFilter
 };
