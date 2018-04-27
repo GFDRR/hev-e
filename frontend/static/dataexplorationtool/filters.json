@@ -431,8 +431,20 @@
             "layout": {
                 "events": [
                     {
-                        "code": "min",
-                        "name": "Min"
+                        "code": "minimum_event_intensity",
+                        "name": "Minimum event intensity"
+                    },
+                    {
+                        "code": "maximum_event_intensity",
+                        "name": "Maximum event intensity"
+                    },
+                    {
+                        "code": "average_event_intensity",
+                        "name": "Average event intensity"
+                    },
+                    {
+                        "code": "number_of_footprints",
+                        "name": "Number of footprints"
                     }
                 ],
                 "footprints": [
