@@ -80,7 +80,9 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
                 )
                 self.stdout.write("Retrieving materialized view data...")
                 aggregate_info = get_view_aggregate_info(db_cursor, view_name)
-                view_infos[event_set.id] = (view_name, aggregate_info)
+                view_events_data = get_view_event_info(db_cursor, event_set.id)
+                view_infos[event_set.id] = (
+                    view_name, aggregate_info, view_events_data)
         _utils.import_layers_to_geonode(
             workspace_name=getattr(
                 settings, "GEOSERVER_HEV_E_WORKSPACE", "hev-e"),
@@ -97,7 +99,8 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
             get_heve_detail(
                 geonode_layer,
                 event_set=event_set,
-                view_aggregate_info=view_infos[event_set.id][-1]
+                view_aggregate_info=view_infos[event_set.id][1],
+                view_events_data=view_infos[event_set.id][2],
             )
 
 
@@ -155,7 +158,8 @@ def filter_event_sets(event_set_records, ids_to_process, logger=print):
     return result
 
 
-def get_heve_detail(geonode_layer, event_set, view_aggregate_info):
+def get_heve_detail(geonode_layer, event_set, view_aggregate_info,
+                    view_events_data):
     heve_detail = HeveDetails.objects.get_or_create(layer=geonode_layer)[0]
     heve_detail.dataset_type = DatasetType.hazard.name
     heve_detail.envelope = view_aggregate_info.geom
@@ -168,9 +172,38 @@ def get_heve_detail(geonode_layer, event_set, view_aggregate_info):
         "description": event_set.description,
         "bibliography": event_set.bibliography,
         "average_intensity": view_aggregate_info.average_intensity,
+        "events": view_events_data
     }
     heve_detail.save()
     return heve_detail
+
+
+def get_view_event_info(db_cursor, event_set_id):
+    query = """
+    SELECT row_to_json(s) AS events_info FROM (
+        SELECT
+            ev.id AS event, 
+            COUNT(1) AS num_footprints
+        FROM hazards.footprint AS fp
+            JOIN hazards.footprint_set AS fps ON (fps.id = fp.footprint_set_id)
+            JOIN hazards.event AS ev ON (ev.id = fps.event_id)
+        WHERE ev.id IN (
+            SELECT id
+            FROM hazards.event
+            WHERE event_set_id = {id}
+        )
+        GROUP BY ev.id
+    ) AS s
+    """.format(id=event_set_id)
+    db_cursor.execute(query)
+    result_tuple = namedtuple("Result", [c[0] for c in db_cursor.description])
+    results = [result_tuple(*record) for record in db_cursor.fetchall()]
+    info = {}
+    for event_info in (r.events_info for r in results):
+        new_event_info = dict(event_info)
+        event_id = new_event_info.pop("event")
+        info[int(event_id)] = new_event_info
+    return info
 
 
 def view_exists(db_cursor, view_name):
@@ -214,10 +247,17 @@ def build_hazard_materialized_view(db_cursor, event_set_id, view_name,
     _utils.refresh_view(db_cursor, qualified_name, logger=logger)
 
 
-def get_materialized_view(db_cursor, view_name):
-    db_cursor.execute(
-        "SELECT * FROM hazards.{}".format(view_name)
-    )
+def get_materialized_view(db_cursor, view_name, bbox_ewkt=None,
+                          geom_column="geom"):
+    if bbox_ewkt is None:
+        query = "SELECT * FROM hazards.{}".format(view_name)
+    else:
+        query = """
+            SELECT * 
+            FROM hazards.{name}
+            WHERE ST_Intersects({geom_column}, st_geomfromewkt(%(bbox)s))
+        """.format(name=view_name, geom_column=geom_column)
+    db_cursor.execute(query, {"bbox": bbox_ewkt})
     result_tuple = namedtuple("Result", [c[0] for c in db_cursor.description])
     return [result_tuple(*r) for r in db_cursor.fetchall()]
 

@@ -5,7 +5,9 @@ CREATE MATERIALIZED VIEW hazards.{{ name }} AS
     frequency,
     occurrence_probability,
     st_collect(geom) AS geom,
-    avg(average_footprint_intensity) AS average_event_intensity
+    avg(average_footprint_intensity) AS average_event_intensity,
+    min(minimum_footprint_intensity) AS minimum_event_intensity,
+    max(maximum_footprint_intensity) AS maximum_event_intensity
   FROM (
     SELECT
       ev.id AS event_id,
@@ -13,7 +15,9 @@ CREATE MATERIALIZED VIEW hazards.{{ name }} AS
       ev.frequency AS frequency,
       ev.occurrence_probability AS occurrence_probability,
       st_convexhull(st_collect(fpd.the_geom)) AS geom,
-      avg(fpd.intensity) AS average_footprint_intensity
+      avg(fpd.intensity) AS average_footprint_intensity,
+      min(fpd.intensity) AS minimum_footprint_intensity,
+      max(fpd.intensity) AS maximum_footprint_intensity
     FROM hazards.footprint_data AS fpd
       JOIN hazards.footprint AS fp ON (fpd.footprint_id = fp.id)
       JOIN hazards.footprint_set AS fps ON (fp.footprint_set_id = fps.id)

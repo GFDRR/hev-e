@@ -19,12 +19,13 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework_csv.renderers import CSVRenderer
 
-from . import serializers
-from . import filters
-from . import utils
+from .. import filters as general_filters
 from ..constants import DatasetType
 from ..models import HeveDetails
 from ..pagination import HevePagination
+from . import serializers
+from . import filters
+from . import utils
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class VulnerabilityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HeveDetails.objects.filter(
         dataset_type=DatasetType.vulnerability.name)
     filter_backends = (
-        filters.HeveInBboxFilter,
+        general_filters.HeveInBboxFilter,
         django_filters.DjangoFilterBackend,
     )
     filter_class = filters.VulnerabilityLayerListFilterSet
