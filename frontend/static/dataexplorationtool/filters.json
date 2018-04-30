@@ -429,6 +429,28 @@
         },
         "hazards": {
             "layout": {
+                "event_set": [
+                    {
+                        "code": "description",
+                        "name": "Description"
+                    },
+                    {
+                        "code": "time_start",
+                        "name": "Time start"
+                    },
+                    {
+                        "code": "time_end",
+                        "name": "Time end"
+                    },
+                    {
+                        "code": "time_duration",
+                        "name": "Duration"
+                    },
+                    {
+                        "code": "bibliography",
+                        "name": "Bibliography"
+                    }
+                ],
                 "events": [
                     {
                         "code": "minimum_event_intensity",
@@ -445,6 +467,30 @@
                     {
                         "code": "number_of_footprints",
                         "name": "Number of footprints"
+                    },
+                    {
+                        "code": "frequency",
+                        "name": "Frequency"
+                    },
+                    {
+                        "code": "occurrence_probability",
+                        "name": "Occurrence probability"
+                    },
+                    {
+                        "code": "occurrence_time_start",
+                        "name": "Occurrence time start"
+                    },
+                    {
+                        "code": "occurrence_time_end",
+                        "name": "Occurrence time end"
+                    },
+                    {
+                        "code": "trigger_hazard_type",
+                        "name": "Trigger hazard type"
+                    },
+                    {
+                        "code": "trigger_process_type",
+                        "name": "Trigger process type"
                     }
                 ],
                 "footprints": [
