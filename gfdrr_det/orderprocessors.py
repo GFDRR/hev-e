@@ -10,6 +10,7 @@
 
 import hashlib
 import logging
+from email.utils import parseaddr
 import re
 
 from django.conf import settings
@@ -20,6 +21,7 @@ from oseoserver.models import OrderItem
 
 from .constants import DatasetType
 from .exposures import download as exposure_download
+from .hazards import download as hazard_download
 from .vulnerabilities import download as vulnerability_download
 from . import utils
 
@@ -40,6 +42,23 @@ def prepare_collection_type_batch(sequential_items):
     target_path = target_dir / "{}.gpkg".format(name_hash)
     logger.debug("name_hash: {}".format(name_hash))
     return name_hash, target_path
+
+
+def get_mail_recipients(subject, message, current_recipients, order=None):
+    """Override oseoserver's default mail recipient selection
+
+    This function is called by oseoserver just before sending e-mails. It
+    allows one to modify the email recipient list.
+
+    """
+
+    if order is not None:
+        end_user_mail_address = order.remark.replace("notification_email:", "")
+        valid_address = parseaddr(end_user_mail_address)[-1] != ""
+        result = [end_user_mail_address] if valid_address else None
+    else:
+        result = current_recipients
+    return result
 
 
 def select_processing_type(order_item_identifier, **order_item_options):
@@ -155,8 +174,9 @@ class HeveOrderProcessor(object):
         if options.get("format") is not None:
             options["format_"] = options["format"]
             del options["format"]
-        handler = {  # add additional handlers for hazards and vulnerabilities
+        handler = {
             DatasetType.exposure.name: exposure_download.prepare_exposure_item,
+            DatasetType.hazard.name: hazard_download.prepare_item,
             DatasetType.vulnerability.name: (
                 vulnerability_download.prepare_item),
         }[collection]

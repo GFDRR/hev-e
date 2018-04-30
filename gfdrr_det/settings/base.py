@@ -640,6 +640,9 @@ CELERY_BEAT_SCHEDULE = {
 MAILQUEUE_CELERY = True
 SENDFILE_BACKEND = "sendfile.backends.simple"
 
+OSEOSERVER_MAIL_RECIPIENT_HANDLER = (
+    "gfdrr_det.orderprocessors.get_mail_recipients")
+
 OSEOSERVER_PRODUCT_ORDER = {
     "enabled": True,
     "automatic_approval": True,
@@ -680,6 +683,11 @@ OSEOSERVER_PROCESSING_OPTIONS = [
         "description": "Taxonomic categories for subsetting exposure layers",
         "multiple_entries": True,
     },
+    {
+        "name": "hazardEventId",
+        "description": "Identifier of the hazard event(s) to filter on",
+        "multiple_entries": True,
+    },
 ]
 
 OSEOSERVER_ONLINE_DATA_ACCESS_OPTIONS = [
@@ -692,7 +700,7 @@ OSEOSERVER_ONLINE_DATA_ACCESS_OPTIONS = [
 OSEOSERVER_COLLECTIONS = [
     {
         "name": "exposure",
-        "catalogue_endpoint": None,  # FIXME - add a sensible value
+        "catalogue_endpoint": None,
         "collection_identifier": "exposure",
         "generation_frequency": "on-demand",
         "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
@@ -710,7 +718,7 @@ OSEOSERVER_COLLECTIONS = [
     },
     {
         "name": "vulnerability",
-        "catalogue_endpoint": None,  # FIXME - add a sensible value
+        "catalogue_endpoint": None,
         "collection_identifier": "vulnerability",
         "generation_frequency": "on-demand",
         "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
@@ -718,6 +726,24 @@ OSEOSERVER_COLLECTIONS = [
             "enabled": True,
             "options": [
                 "vulnerabilityFormat",
+            ],
+            "online_data_access_options": [
+                "http",
+            ],
+        }
+    },
+    {
+        "name": "hazard",
+        "catalogue_endpoint": None,
+        "collection_identifier": "hazard",
+        "generation_frequency": "on-demand",
+        "item_processing": "gfdrr_det.orderprocessors.select_processing_type",
+        "product_order": {
+            "enabled": True,
+            "options": [
+                "bbox",
+                "format",
+                "hazardEventId",
             ],
             "online_data_access_options": [
                 "http",

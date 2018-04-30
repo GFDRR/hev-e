@@ -176,6 +176,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
             DatasetType.exposure.name: serializers.ExposureOrderItemSerializer,
             DatasetType.vulnerability.name: (
                 serializers.VulnerabilityOrderItemSerializer),
+            DatasetType.hazard.name: serializers.HazardOrderItemSerializer,
         }.get(order_item.item_specification.collection, self.serializer_class)
         serializer = serializer_class(
             order_item, context={"request": request})
@@ -197,7 +198,7 @@ class OrderViewSet(viewsets.ViewSet):
             order, context={"request": request})
         return Response(serializer.data)
 
-    # TODO: Handle errors that arise from incorrect request data
+    # TODO: Handle errors that may arise from incorrect request data
     def create(self, request, *args, **kwargs):
         user = get_user_model().objects.filter(is_superuser=True).first()
         serializer = self.serializer_class(data=request.data)

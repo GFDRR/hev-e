@@ -18,8 +18,10 @@ import django.utils
 from django.conf import settings
 from django.db import connections
 from pathlib2 import Path
+import requests
+import shutil
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def get_downloadable_file_path(url):
@@ -117,15 +119,15 @@ def parse_bbox_option(value):
         crs = "EPSG:4326"
     lower_lon, lower_lat = _order_coordinates(lower_corner, crs)
     upper_lon, upper_lat = _order_coordinates(upper_corner, crs)
-    logger.debug("lower_lon: {}".format(lower_lon))
-    logger.debug("upper_lon: {}".format(upper_lon))
+    LOGGER.debug("lower_lon: {}".format(lower_lon))
+    LOGGER.debug("upper_lon: {}".format(upper_lon))
     left_lon, right_lon = (
         (lower_lon, upper_lon) if lower_lon < upper_lon else
         (upper_lon, lower_lon)
     )
     result = "ullon: {} ullat: {} lrlon: {} lrlat: {}".format(
         left_lon, upper_lat, right_lon, lower_lat)
-    logger.debug("result: {}".format(result))
+    LOGGER.debug("result: {}".format(result))
     return result
 
 
@@ -151,12 +153,11 @@ def get_dict_str(mapping):
     return ",".join(sorted(result))
 
 
-def get_layer_hash(name, bbox_ewkt=None, taxonomic_categories=None):
-    hash_contents = [
-        name,
-        bbox_ewkt if bbox_ewkt else "",
-    ] + (
-        list(taxonomic_categories) if taxonomic_categories is not None else [])
+def get_layer_hash(name, **kwargs):
+    extra_contents = []
+    for extra_list in [str(v) for v in kwargs.values() if v is not None]:
+        extra_contents += extra_list
+    hash_contents = [name] + extra_contents
     return hashlib.md5("".join(sorted(hash_contents))).hexdigest()
 
 
@@ -210,3 +211,35 @@ def get_view_name(model_id, model_name, category, prefix="", suffix="",
         id=model_id,
         suffix=final_suffix
     ).replace("-", separator)
+
+
+def generate_shapefile(layer_name, target_path, bbox_wkt=None,
+                       additional_cql_conditions=None):
+    params = {
+        "service": "WFS",
+        "version": "1.0.0",
+        "request": "GetFeature",
+        "typename": "hev-e:{}".format(layer_name),
+        "outputFormat": "shape-zip",
+        "format_options": "charset:UTF-8",
+    }
+    cql_conditions = []
+    if bbox_wkt is not None:
+        cql_conditions.append("INTERSECTS(geom, {})".format(bbox_wkt))
+    if additional_cql_conditions:
+        cql_conditions += list(additional_cql_conditions)
+    if cql_conditions:
+        params["cql_filter"] = " AND ".join(cql_conditions)
+    LOGGER.debug("generate_shapefile request params: %s", params)
+    response = requests.get(
+        "{}wfs".format(settings.OGC_SERVER["default"]["PUBLIC_LOCATION"]),
+        params=params,
+        stream=True
+    )
+    response.raise_for_status()
+    if "xml" in response.headers.get("Content-Type"):  # there was an error
+        raise RuntimeError("Could not get shapefile from "
+                           "geoserver: {}".format(response.content))
+    with open(target_path, "wb") as file_handler:
+        response.raw.decode_content = True
+        shutil.copyfileobj(response.raw, file_handler)
