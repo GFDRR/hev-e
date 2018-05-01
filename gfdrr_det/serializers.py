@@ -185,6 +185,24 @@ class VulnerabilityOrderItemSerializer(OrderItemSerializer):
         return options.get("vulnerabilityFormat")
 
 
+class HazardOrderItemSerializer(OrderItemSerializer):
+    format = serializers.SerializerMethodField()
+    bbox = serializers.SerializerMethodField()
+    event_ids = serializers.SerializerMethodField()
+
+    def get_bbox(self, obj):
+        options = obj.export_options()
+        return options.get("bbox")
+
+    def get_event_ids(self, obj):
+        options = obj.export_options()
+        return options.get("hazardEventId")
+
+    def get_format(self, obj):
+        options = obj.export_options()
+        return options.get("format")
+
+
 class OrderSerializer(serializers.BaseSerializer):
 
     def to_representation(self, instance):
@@ -195,6 +213,7 @@ class OrderSerializer(serializers.BaseSerializer):
             item_dataset_type = item.identifier.partition(":")[0]
             serializer_class = {
                 DatasetType.exposure.name: ExposureOrderItemSerializer,
+                DatasetType.hazard.name: HazardOrderItemSerializer,
                 DatasetType.vulnerability.name: (
                     VulnerabilityOrderItemSerializer),
             }.get(item_dataset_type, OrderItemSerializer)
@@ -221,7 +240,7 @@ class OrderSerializer(serializers.BaseSerializer):
         for index, requested_item in enumerate(requested_items):
             collection, layer_name = requested_item["layer"].partition(
                 ":")[::2]
-            categories = requested_item["taxonomic_categories"] or []
+            categories = requested_item.get("taxonomic_categories", [])
             template_item = {
                 "id": "item{}".format(index),
                 "product_id": "{}".format(requested_item["layer"]),
@@ -229,7 +248,8 @@ class OrderSerializer(serializers.BaseSerializer):
                 "options": {
                     "format": requested_item["format"],
                     "bbox": requested_item.get("bbox"),
-                    "taxonomic_categories": [c.lower() for c in categories]
+                    "taxonomic_categories": [c.lower() for c in categories],
+                    "event_ids": requested_item.get("event_ids", [])
                 }
             }
             template_order_items.append(template_item)
@@ -263,14 +283,21 @@ class OrderSerializer(serializers.BaseSerializer):
                     {"format": "this field is required"})
             _validate_format(format_, collection)
             bbox_str = item.get("bbox")
-            cats = item.get("taxonomic_categories")
+
             order_item = {
                 "layer": layer,
                 "format": format_,
                 "bbox": _parse_bbox(bbox_str) if bbox_str else bbox_str,
-                "taxonomic_categories": _parse_categories(
-                    cats, collection) if cats else cats
             }
+            if collection == DatasetType.exposure.name:
+                cats = item.get("taxonomic_categories")
+                if cats is not None:
+                    order_item["taxonomic_categories"] = _parse_categories(
+                        cats)
+            elif collection == DatasetType.hazard.name:
+                ids = item.get("event_ids")
+                if ids is not None:
+                    order_item["event_ids"] = _parse_event_ids(ids)
             order_items.append(order_item)
         notification_email = data.get("notification_email")
         result = {
@@ -300,12 +327,9 @@ def _validate_format(format_str, collection):
         raise serializers.ValidationError({"format": "invalid value"})
 
 
-def _parse_categories(taxonomic_categories_str, collection_name):
-    main_cat = {
-        DatasetType.exposure.name: "EXPOSURES",
-    }[collection_name]
+def _parse_categories(taxonomic_categories_str):
     categories = []
-    config = settings.HEV_E[main_cat]["taxonomy_mappings"]["mapping"]
+    config = settings.HEV_E["EXPOSURES"]["taxonomy_mappings"]["mapping"]
     allowed_categories = config.keys()
     for cat_info in taxonomic_categories_str.split(","):
         info = cat_info.lower()
@@ -338,6 +362,14 @@ def _parse_categories(taxonomic_categories_str, collection_name):
             )
         categories.append(info)
     return categories
+
+
+def _parse_event_ids(raw_event_ids):
+    try:
+        ids = [int(i) for i in raw_event_ids]
+    except ValueError:
+        raise serializers.ValidationError({"event_ids": "Invalid values"})
+    return ids
 
 
 def _parse_bbox(bbox_str):

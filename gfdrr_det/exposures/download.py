@@ -11,12 +11,9 @@
 """Utilities for the preparation of downloadable files from exposures"""
 
 import logging
-import shutil
 from urlparse import urlparse
 
-from django.conf import settings
 from pathlib2 import Path
-import requests
 
 from ..models import HeveDetails
 from .. import utils as general_utils
@@ -69,17 +66,7 @@ def get_exposure_shapefile_item(layer_name, batch_data=None,
 
 def generate_shapefile(layer_name, target_path, bbox_wkt=None,
                        taxonomic_categories=None):
-    params = {
-        "service": "WFS",
-        "version": "1.0.0",
-        "request": "GetFeature",
-        "typename": "hev-e:{}".format(layer_name),
-        "outputFormat": "shape-zip",
-        "format_options": "charset:UTF-8",
-    }
     cql_conditions = []
-    if bbox_wkt is not None:
-        cql_conditions.append("INTERSECTS(geom, {})".format(bbox_wkt))
     if taxonomic_categories is not None:
         taxonomy_conditions = []
         for cat in taxonomic_categories:
@@ -87,21 +74,12 @@ def generate_shapefile(layer_name, target_path, bbox_wkt=None,
                 "parsed_taxonomy ILIKE '%{}%'".format(cat))
         taxonomy_condition = "({})".format(" OR ".join(taxonomy_conditions))
         cql_conditions.append(taxonomy_condition)
-    if cql_conditions:
-        params["cql_filter"] = " AND ".join(cql_conditions)
-    logger.debug("request params: %s", params)
-    response = requests.get(
-        "{}wfs".format(settings.OGC_SERVER["default"]["PUBLIC_LOCATION"]),
-        params=params,
-        stream=True
+    return general_utils.generate_shapefile(
+        layer_name,
+        target_path,
+        bbox_wkt=bbox_wkt,
+        additional_cql_conditions=cql_conditions
     )
-    response.raise_for_status()
-    if "xml" in response.headers.get("Content-Type"):  # there was an error
-        raise RuntimeError("Could not get shapefile from "
-                           "geoserver: {}".format(response.content))
-    with open(target_path, "wb") as file_handler:
-        response.raw.decode_content = True
-        shutil.copyfileobj(response.raw, file_handler)
 
 
 def get_exposure_geopackage_item(layer_name, batch_data=None, bbox_ewkt=None,
