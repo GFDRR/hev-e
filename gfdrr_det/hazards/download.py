@@ -83,19 +83,21 @@ def get_geopackage_item(layer_name, batch_data=None, bbox_ewkt=None,
                         event_ids=None):
     LOGGER.debug("get_geopackage_item called: %s", locals())
     heve_details = HeveDetails.objects.get(layer__name=layer_name)  # pylint: disable=no-member
+    target_path = batch_data[
+        heve_details.dataset_type]["geopackage_target_path"]
     if batch_data[heve_details.dataset_type].get("geopackage_exists"):
-        pass
+        LOGGER.debug(
+            "Re-using already available geopackage file at {} ...".format(
+                target_path)
+        )
     else:
         generate_geopackage(
             heve_details.details["event_set_id"],
-            batch_data[heve_details.dataset_type]["geopackage_target_path"],
+            target_path,
             bbox_ewkt=bbox_ewkt,
             event_ids=event_ids
         )
-    return urlparse(
-        batch_data[heve_details.dataset_type]["geopackage_target_path"],
-        scheme="file"
-    ).geturl()
+    return urlparse(target_path, scheme="file").geturl()
 
 
 def generate_geopackage(event_set_id, target_path, bbox_ewkt=None,

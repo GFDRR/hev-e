@@ -758,6 +758,7 @@ OSEOSERVER_COLLECTIONS = [
 HEV_E = {
     "general": {
         "downloads_dir": "/tmp/hev_e",
+        "pre_generated_files_dir": "/tmp/hev_e/pre_generated",
         "downloads_name_pattern": "hev_e_{hash}.{format}"
     },
     "EXPOSURES": {
