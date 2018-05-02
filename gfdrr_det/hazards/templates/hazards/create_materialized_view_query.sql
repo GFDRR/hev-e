@@ -4,6 +4,11 @@ CREATE MATERIALIZED VIEW hazards.{{ name }} AS
     calculation_method,
     frequency,
     occurrence_probability,
+    occurrence_time_start,
+    occurrence_time_end,
+    occurrence_time_span,
+    trigger_hazard_type,
+    trigger_process_type,
     st_collect(geom) AS geom,
     avg(average_footprint_intensity) AS average_event_intensity,
     min(minimum_footprint_intensity) AS minimum_event_intensity,
@@ -14,6 +19,11 @@ CREATE MATERIALIZED VIEW hazards.{{ name }} AS
       ev.calculation_method AS calculation_method,
       ev.frequency AS frequency,
       ev.occurrence_probability AS occurrence_probability,
+      ev.occurrence_time_start,
+      ev.occurrence_time_end,
+      ev.occurrence_time_span,
+      ev.trigger_hazard_type,
+      ev.trigger_process_type,
       st_convexhull(st_collect(fpd.the_geom)) AS geom,
       avg(fpd.intensity) AS average_footprint_intensity,
       min(fpd.intensity) AS minimum_footprint_intensity,
@@ -41,11 +51,21 @@ CREATE MATERIALIZED VIEW hazards.{{ name }} AS
       ev.id,
       ev.calculation_method,
       ev.frequency,
-      ev.occurrence_probability
+      ev.occurrence_probability,
+      ev.occurrence_time_start,
+      ev.occurrence_time_end,
+      ev.occurrence_time_span,
+      ev.trigger_hazard_type,
+      ev.trigger_process_type
   ) AS s
   GROUP BY
     event_id,
     calculation_method,
     frequency,
-    occurrence_probability
+    occurrence_probability,
+    occurrence_time_start,
+    occurrence_time_end,
+    occurrence_time_span,
+    trigger_hazard_type,
+    trigger_process_type
 WITH NO DATA

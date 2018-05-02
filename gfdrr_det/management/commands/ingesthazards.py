@@ -172,7 +172,10 @@ def get_heve_detail(geonode_layer, event_set, view_aggregate_info,
         "description": event_set.description,
         "bibliography": event_set.bibliography,
         "average_intensity": view_aggregate_info.average_intensity,
-        "events": view_events_data
+        "events": view_events_data,
+        "time_start": event_set.time_start,
+        "time_end": event_set.time_end,
+        "time_duration": event_set.time_duration,
     }
     heve_detail.save()
     return heve_detail
