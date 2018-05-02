@@ -17,17 +17,10 @@ import logging
 import django.utils
 from django.conf import settings
 from django.db import connections
-from pathlib2 import Path
 import requests
 import shutil
 
 LOGGER = logging.getLogger(__name__)
-
-
-def get_downloadable_file_path(url):
-    file_hash = [i for i in url.split("/") if i != ""][-1]
-    downloads_dir = Path(settings.HEV_E["general"]["downloads_dir"])
-    return list(downloads_dir.glob("*{}*".format(file_hash)))[0]
 
 
 def get_bbox_for_filename(bbox, coord_separator="_"):

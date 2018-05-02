@@ -28,6 +28,16 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 
+def get_downloadable_file_path(url):
+    file_hash = [i for i in url.split("/") if i != ""][-1]
+    downloads_dir = Path(settings.HEV_E["general"]["downloads_dir"])
+    try:
+        result = list(downloads_dir.glob("*{}*".format(file_hash)))[0]
+    except IndexError:
+        result = None
+    return result
+
+
 def prepare_collection_type_batch(sequential_items):
     hash_contents = []
     for item_info in sequential_items:
@@ -36,12 +46,7 @@ def prepare_collection_type_batch(sequential_items):
             utils.get_dict_str(item_info["options"])
         ]
     name_hash = hashlib.md5("".join(sorted(hash_contents))).hexdigest()
-    target_dir = Path(settings.HEV_E["general"]["downloads_dir"])
-    if not target_dir.is_dir():
-        target_dir.mkdir(parents=True)
-    target_path = target_dir / "{}.gpkg".format(name_hash)
-    logger.debug("name_hash: {}".format(name_hash))
-    return name_hash, target_path
+    return name_hash
 
 
 def get_mail_recipients(subject, message, current_recipients, order=None):
@@ -92,11 +97,12 @@ class HeveOrderProcessor(object):
         else:
             logger.debug("URL {} is not being used in any available order "
                          "item, it is safe to delete the file".format(url))
-            path = utils.get_downloadable_file_path(url)
-            try:
-                path.unlink()
-            except OSError:
-                logger.exception(msg="Could not remove {}".format(path))
+            path = get_downloadable_file_path(url)
+            if path is not None:
+                try:
+                    path.unlink()
+                except OSError:
+                    logger.exception(msg="Could not remove {}".format(path))
 
     def deliver_item(self, item_url, *args, **kwargs):
         """Deliver a single order item.
@@ -138,14 +144,20 @@ class HeveOrderProcessor(object):
         result = {
             "target_dir": str(target_dir),
         }
+        pre_gen_dir = Path(
+            settings.HEV_E["general"]["pre_generated_files_dir"])
         for type_name in DatasetType.__members__.keys():
             items = [i for i in sequential_items if
                      i["identifier"].partition(":")[0] == type_name]
-            name_hash, target_path = prepare_collection_type_batch(items)
+            name_hash = prepare_collection_type_batch(items)
+            file_name = "{}.gpkg".format(name_hash)
+            pre_gen_path = pre_gen_dir / file_name
+            cached_path = target_dir / file_name
+            target = pre_gen_path if pre_gen_path.exists() else cached_path
             result[type_name] = {
                 "name_hash": name_hash,
-                "geopackage_target_path": str(target_path),
-                "geopackage_exists": target_path.is_file()
+                "geopackage_target_path": str(target),
+                "geopackage_exists": target.is_file()
             }
         return result
 
@@ -181,3 +193,5 @@ class HeveOrderProcessor(object):
                 vulnerability_download.prepare_item),
         }[collection]
         return handler(layer_name, batch_data=batch_data, **options)
+
+
