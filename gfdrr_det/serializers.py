@@ -10,6 +10,7 @@
 
 """Django REST framework serializers for GFDRR-DET"""
 
+from itertools import count
 import logging
 
 from django.conf import settings
@@ -283,11 +284,21 @@ class OrderSerializer(serializers.BaseSerializer):
                     {"format": "this field is required"})
             _validate_format(format_, collection)
             bbox_str = item.get("bbox")
+            if bbox_str:
+                parsed_bbox = _parse_bbox(bbox_str)
+                grid_resolution = settings.HEV_E["general"].get(
+                    "bbox_snap_resolution")
+                if grid_resolution is not None:
+                    bbox = snap_bbox_to_grid(grid_resolution, **parsed_bbox)
+                else:
+                    bbox = parsed_bbox
+            else:
+                bbox = None
 
             order_item = {
                 "layer": layer,
                 "format": format_,
-                "bbox": _parse_bbox(bbox_str) if bbox_str else bbox_str,
+                "bbox": bbox,
             }
             if collection == DatasetType.exposure.name:
                 cats = item.get("taxonomic_categories")
@@ -383,11 +394,77 @@ def _parse_bbox(bbox_str):
     if not (valid_x and valid_y):
         raise serializers.ValidationError(
             {"bbox": "Invalid values. Expecting x0,y0,x1,y1"})
-    else:
-        return {
-            "x0": x0,
-            "y0": y0,
-            "x1": x1,
-            "y1": y1,
-        }
+    result = {
+        "x0": x0,
+        "y0": y0,
+        "x1": x1,
+        "y1": y1,
+    }
+    return result
 
+
+def snap_bbox_to_grid(resolution, x0=0, y0=0, x1=0, y1=0):
+    """
+    Adjust user supplied bbox to a pre-determined grid
+
+    This function alters the user supplied bbox in order to make sure it
+    matches a predefined grid. This is done in order to increase the
+    re-usability of the downloadable files.
+
+    Each of the bbox's coordinates is enlarged in order to snap to a grid with
+    a resolution of 0.01 degrees
+
+    """
+
+    x_grid = generate_1d_grid(-180, 180, resolution)
+    y_grid = generate_1d_grid(-90, 90, resolution)
+    return {
+        "x0": enlarge_coordinate(x0, x_grid, floor=True),
+        "y0": enlarge_coordinate(y0, y_grid, floor=True),
+        "x1": enlarge_coordinate(x1, x_grid, floor=False),
+        "y1": enlarge_coordinate(y1, y_grid, floor=False)
+    }
+
+
+def enlarge_coordinate(value, grid, floor=True):
+    snapped = snap_value(value, grid)
+    if floor:
+        try:
+            next_ = grid[grid.index(snapped) - 1]
+        except IndexError:
+            next_ = snapped
+        result = snapped if snapped <= value else next_
+    else:
+        try:
+            next_ = grid[grid.index(snapped) + 1]
+        except IndexError:
+            next_ = snapped
+        result = snapped if snapped >= value else next_
+    return result
+
+
+def snap_value(value, grid):
+    """Return item from ``grid`` which is closer ``value``"""
+    best_delta = max(grid) + 1  # initialization
+    result = None
+    for item in grid:
+        delta = abs(value - item)
+        if delta < best_delta:
+            result = item
+            best_delta = delta
+        if delta == 0:
+            break
+    if result not in grid:
+        raise RuntimeError("Could not snap value {}".format(value))
+    return result
+
+
+def generate_1d_grid(start, end, resolution=1):
+    if resolution == 0:
+        raise RuntimeError("grid resolution cannot be zero")
+    grid = []
+    for i in count(start=start, step=resolution):
+        if i > end:
+            break
+        grid.append(float(i))
+    return grid
