@@ -759,7 +759,8 @@ HEV_E = {
     "general": {
         "downloads_dir": "/tmp/hev_e",
         "pre_generated_files_dir": "/tmp/hev_e/pre_generated",
-        "downloads_name_pattern": "hev_e_{hash}.{format}"
+        "downloads_name_pattern": "hev_e_{hash}.{format}",
+        "bbox_snap_resolution": 1,  # in degrees
     },
     "EXPOSURES": {
         "category_mappings": {
