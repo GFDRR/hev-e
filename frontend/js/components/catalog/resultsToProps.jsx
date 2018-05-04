@@ -128,7 +128,7 @@ module.exports = {
                         dataset: currentDataset
                     }}
                     showZoomTo
-                    // showDownload
+                    showDownload
                     showAddLayer
                     showRemoveLayer
                     dataset={currentDataset}

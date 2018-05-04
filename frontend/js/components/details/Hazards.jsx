@@ -81,7 +81,8 @@ module.exports = ({
 
     const LayerToolbar = layerToolbar;
     const {events, geometry, ...properties} = currentDetails;
-
+    const eventLayout = layout.event_set;
+    const values = eventLayout && eventLayout.filter(value => properties[value.code]) || [];
     return (<BorderLayout
         header={
             <Grid fluid style={{ width: '100%' }}>
@@ -95,7 +96,7 @@ module.exports = ({
                                 }}
                                 dataset={currentDataset}
                                 hideOnAdd
-                                // showDownload
+                                showDownload
                                 showZoomTo
                                 showAddLayer
                                 showRemoveLayer
@@ -107,7 +108,15 @@ module.exports = ({
         <Grid fluid style={{width: '100%', paddingBottom: 30}}>
             <Row>
                 <Col xs={12}>
-                    <p>{properties && properties.description || currentDetails && currentDetails.properties && currentDetails.properties.description}</p>
+                    {values && values.length > 0 && values.map((value, idx) => (
+                        <div key={idx} style={{paddingLeft: 10}}>
+                            <h5><strong>{value.name}</strong>:</h5>
+                            <p>
+                                {properties && properties[value.code]}
+                            </p>
+                            <hr/>
+                        </div>
+                    ))}
                 </Col>
             </Row>
             {events && <Row>

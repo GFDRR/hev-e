@@ -36,9 +36,15 @@
                                     </gml:boundingBox>
                                 </bbox>
                             {% endif %}
-                            {% for category in item.options.taxonomic_categories %}
-                                <exposureTaxonomicCategory>{{ category }}</exposureTaxonomicCategory>
-                            {% endfor %}
+                            {% if item.collection == 'exposure' %}
+                                {% for category in item.options.taxonomic_categories %}
+                                    <exposureTaxonomicCategory>{{ category }}</exposureTaxonomicCategory>
+                                {% endfor %}
+                            {% elif item.collection == 'hazard' %}
+                                {% for event_id in item.options.event_ids %}
+                                    <hazardEventId>{{ event_id }}</hazardEventId>
+                                {% endfor %}
+                            {% endif %}
                         </values>
                     </ParameterData>
                 </option>

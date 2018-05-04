@@ -176,6 +176,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
             DatasetType.exposure.name: serializers.ExposureOrderItemSerializer,
             DatasetType.vulnerability.name: (
                 serializers.VulnerabilityOrderItemSerializer),
+            DatasetType.hazard.name: serializers.HazardOrderItemSerializer,
         }.get(order_item.item_specification.collection, self.serializer_class)
         serializer = serializer_class(
             order_item, context={"request": request})
@@ -197,7 +198,7 @@ class OrderViewSet(viewsets.ViewSet):
             order, context={"request": request})
         return Response(serializer.data)
 
-    # TODO: Handle errors that arise from incorrect request data
+    # TODO: Handle errors that may arise from incorrect request data
     def create(self, request, *args, **kwargs):
         user = get_user_model().objects.filter(is_superuser=True).first()
         serializer = self.serializer_class(data=request.data)
@@ -222,20 +223,26 @@ class OrderViewSet(viewsets.ViewSet):
 @api_view()
 def retrieve_download(request, file_hash=None, **kwargs):
     downloads_dir = Path(settings.HEV_E["general"]["downloads_dir"])
-    try:
-        path = list(downloads_dir.glob("*{}*".format(file_hash)))[0]
-        mimetype = {
-            "application/vnd.opengeospatial.geopackage+sqlite3": ".gpkg",
-            "application/zip": ".zip",
-        }.get(Path(path).suffix)
-        result = sendfile(
-            request=request,
-            filename=str(path),
-            attachment=True,
-            attachment_filename=path.name,
-            mimetype=mimetype,
-            encoding=None
-        )
-        return result
-    except IndexError:  # could not find the file
-        raise
+    pre_generated_dir = Path(
+        settings.HEV_E["general"]["pre_generated_files_dir"])
+    for directory in (downloads_dir, pre_generated_dir):
+        try:
+            path = list(directory.glob("*{}*".format(file_hash)))[0]
+            break
+        except IndexError:
+            pass
+    else:
+        raise RuntimeError(
+            "Could not find the file with hash {}".format(file_hash))
+    mimetype = {
+        "application/vnd.opengeospatial.geopackage+sqlite3": ".gpkg",
+        "application/zip": ".zip",
+    }.get(Path(path).suffix)
+    return sendfile(
+        request=request,
+        filename=str(path),
+        attachment=True,
+        attachment_filename=path.name,
+        mimetype=mimetype,
+        encoding=None
+    )

@@ -10,6 +10,7 @@
 
 """Django REST framework serializers for GFDRR-DET"""
 
+from itertools import count
 import logging
 
 from django.conf import settings
@@ -185,6 +186,24 @@ class VulnerabilityOrderItemSerializer(OrderItemSerializer):
         return options.get("vulnerabilityFormat")
 
 
+class HazardOrderItemSerializer(OrderItemSerializer):
+    format = serializers.SerializerMethodField()
+    bbox = serializers.SerializerMethodField()
+    event_ids = serializers.SerializerMethodField()
+
+    def get_bbox(self, obj):
+        options = obj.export_options()
+        return options.get("bbox")
+
+    def get_event_ids(self, obj):
+        options = obj.export_options()
+        return options.get("hazardEventId")
+
+    def get_format(self, obj):
+        options = obj.export_options()
+        return options.get("format")
+
+
 class OrderSerializer(serializers.BaseSerializer):
 
     def to_representation(self, instance):
@@ -195,6 +214,7 @@ class OrderSerializer(serializers.BaseSerializer):
             item_dataset_type = item.identifier.partition(":")[0]
             serializer_class = {
                 DatasetType.exposure.name: ExposureOrderItemSerializer,
+                DatasetType.hazard.name: HazardOrderItemSerializer,
                 DatasetType.vulnerability.name: (
                     VulnerabilityOrderItemSerializer),
             }.get(item_dataset_type, OrderItemSerializer)
@@ -221,7 +241,7 @@ class OrderSerializer(serializers.BaseSerializer):
         for index, requested_item in enumerate(requested_items):
             collection, layer_name = requested_item["layer"].partition(
                 ":")[::2]
-            categories = requested_item["taxonomic_categories"] or []
+            categories = requested_item.get("taxonomic_categories", [])
             template_item = {
                 "id": "item{}".format(index),
                 "product_id": "{}".format(requested_item["layer"]),
@@ -229,7 +249,8 @@ class OrderSerializer(serializers.BaseSerializer):
                 "options": {
                     "format": requested_item["format"],
                     "bbox": requested_item.get("bbox"),
-                    "taxonomic_categories": [c.lower() for c in categories]
+                    "taxonomic_categories": [c.lower() for c in categories],
+                    "event_ids": requested_item.get("event_ids", [])
                 }
             }
             template_order_items.append(template_item)
@@ -263,14 +284,31 @@ class OrderSerializer(serializers.BaseSerializer):
                     {"format": "this field is required"})
             _validate_format(format_, collection)
             bbox_str = item.get("bbox")
-            cats = item.get("taxonomic_categories")
+            if bbox_str:
+                parsed_bbox = _parse_bbox(bbox_str)
+                grid_resolution = settings.HEV_E["general"].get(
+                    "bbox_snap_resolution")
+                if grid_resolution is not None:
+                    bbox = snap_bbox_to_grid(grid_resolution, **parsed_bbox)
+                else:
+                    bbox = parsed_bbox
+            else:
+                bbox = None
+
             order_item = {
                 "layer": layer,
                 "format": format_,
-                "bbox": _parse_bbox(bbox_str) if bbox_str else bbox_str,
-                "taxonomic_categories": _parse_categories(
-                    cats, collection) if cats else cats
+                "bbox": bbox,
             }
+            if collection == DatasetType.exposure.name:
+                cats = item.get("taxonomic_categories")
+                if cats is not None:
+                    order_item["taxonomic_categories"] = _parse_categories(
+                        cats)
+            elif collection == DatasetType.hazard.name:
+                ids = item.get("event_ids")
+                if ids is not None:
+                    order_item["event_ids"] = _parse_event_ids(ids)
             order_items.append(order_item)
         notification_email = data.get("notification_email")
         result = {
@@ -300,12 +338,9 @@ def _validate_format(format_str, collection):
         raise serializers.ValidationError({"format": "invalid value"})
 
 
-def _parse_categories(taxonomic_categories_str, collection_name):
-    main_cat = {
-        DatasetType.exposure.name: "EXPOSURES",
-    }[collection_name]
+def _parse_categories(taxonomic_categories_str):
     categories = []
-    config = settings.HEV_E[main_cat]["taxonomy_mappings"]["mapping"]
+    config = settings.HEV_E["EXPOSURES"]["taxonomy_mappings"]["mapping"]
     allowed_categories = config.keys()
     for cat_info in taxonomic_categories_str.split(","):
         info = cat_info.lower()
@@ -340,6 +375,14 @@ def _parse_categories(taxonomic_categories_str, collection_name):
     return categories
 
 
+def _parse_event_ids(raw_event_ids):
+    try:
+        ids = [int(i) for i in raw_event_ids]
+    except ValueError:
+        raise serializers.ValidationError({"event_ids": "Invalid values"})
+    return ids
+
+
 def _parse_bbox(bbox_str):
     try:
         x0, y0, x1, y1 = (float(i) for i in bbox_str.split(","))
@@ -351,11 +394,77 @@ def _parse_bbox(bbox_str):
     if not (valid_x and valid_y):
         raise serializers.ValidationError(
             {"bbox": "Invalid values. Expecting x0,y0,x1,y1"})
-    else:
-        return {
-            "x0": x0,
-            "y0": y0,
-            "x1": x1,
-            "y1": y1,
-        }
+    result = {
+        "x0": x0,
+        "y0": y0,
+        "x1": x1,
+        "y1": y1,
+    }
+    return result
 
+
+def snap_bbox_to_grid(resolution, x0=0, y0=0, x1=0, y1=0):
+    """
+    Adjust user supplied bbox to a pre-determined grid
+
+    This function alters the user supplied bbox in order to make sure it
+    matches a predefined grid. This is done in order to increase the
+    re-usability of the downloadable files.
+
+    Each of the bbox's coordinates is enlarged in order to snap to a grid with
+    a resolution of 0.01 degrees
+
+    """
+
+    x_grid = generate_1d_grid(-180, 180, resolution)
+    y_grid = generate_1d_grid(-90, 90, resolution)
+    return {
+        "x0": enlarge_coordinate(x0, x_grid, floor=True),
+        "y0": enlarge_coordinate(y0, y_grid, floor=True),
+        "x1": enlarge_coordinate(x1, x_grid, floor=False),
+        "y1": enlarge_coordinate(y1, y_grid, floor=False)
+    }
+
+
+def enlarge_coordinate(value, grid, floor=True):
+    snapped = snap_value(value, grid)
+    if floor:
+        try:
+            next_ = grid[grid.index(snapped) - 1]
+        except IndexError:
+            next_ = snapped
+        result = snapped if snapped <= value else next_
+    else:
+        try:
+            next_ = grid[grid.index(snapped) + 1]
+        except IndexError:
+            next_ = snapped
+        result = snapped if snapped >= value else next_
+    return result
+
+
+def snap_value(value, grid):
+    """Return item from ``grid`` which is closer ``value``"""
+    best_delta = max(grid) + 1  # initialization
+    result = None
+    for item in grid:
+        delta = abs(value - item)
+        if delta < best_delta:
+            result = item
+            best_delta = delta
+        if delta == 0:
+            break
+    if result not in grid:
+        raise RuntimeError("Could not snap value {}".format(value))
+    return result
+
+
+def generate_1d_grid(start, end, resolution=1):
+    if resolution == 0:
+        raise RuntimeError("grid resolution cannot be zero")
+    grid = []
+    for i in count(start=start, step=resolution):
+        if i > end:
+            break
+        grid.append(float(i))
+    return grid

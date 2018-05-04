@@ -46,6 +46,11 @@ class HazardEventSerializer(serializers.Serializer):
         result["calculation_method"] = instance.calculation_method
         result["frequency"] = instance.frequency
         result["occurrence_probability"] = instance.occurrence_probability
+        result["occurrence_time_start"] = instance.occurrence_time_start
+        result["occurrence_time_end"] = instance.occurrence_time_end
+        result["occurrence_time_span"] = instance.occurrence_time_span
+        result["trigger_hazard_type"] = instance.trigger_hazard_type
+        result["trigger_process_type"] = instance.trigger_process_type
         result["average_event_intensity"] = instance.average_event_intensity
         result["minimum_event_intensity"] = instance.minimum_event_intensity
         result["maximum_event_intensity"] = instance.maximum_event_intensity
@@ -101,6 +106,10 @@ class HazardLayerDetailSerializer(serializers.Serializer):
     url = serializers.HyperlinkedIdentityField(view_name="hazards-detail")
     wms_url = serializers.SerializerMethodField()
     events = serializers.SerializerMethodField()
+    time_start = serializers.SerializerMethodField()
+    time_end = serializers.SerializerMethodField()
+    time_duration = serializers.SerializerMethodField()
+    bibliography = serializers.SerializerMethodField()
 
     class Meta:
         model = HeveDetails
@@ -120,6 +129,18 @@ class HazardLayerDetailSerializer(serializers.Serializer):
 
     def get_hazard_type(self, obj):
         return obj.details["hazard_type"]
+
+    def get_time_start(self, obj):
+        return obj.details["time_start"]
+
+    def get_time_end(self, obj):
+        return obj.details["time_end"]
+
+    def get_time_duration(self, obj):
+        return obj.details["time_duration"]
+
+    def get_bibliography(self, obj):
+        return obj.details["bibliography"]
 
     def get_wms_url(self, obj):
         try:

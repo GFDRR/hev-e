@@ -13,6 +13,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from collections import namedtuple
+import hashlib
 
 from django.db import connections
 from django.db import OperationalError
@@ -23,9 +24,12 @@ from django.core.management.base import BaseCommand
 from geonode.layers.models import Layer
 from geonode.base.models import SpatialRepresentationType
 from geonode.base.models import TopicCategory
+from pathlib2 import Path
 
 from gfdrr_det.constants import DatasetType
 from gfdrr_det.models import HeveDetails
+from gfdrr_det.hazards.download import generate_geopackage
+from gfdrr_det.utils import get_dict_str
 from . import _utils
 
 
@@ -43,6 +47,11 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
             "--event_set_id",
             action="append",
             type=int,
+        )
+        parser.add_argument(
+            "-p",
+            "--pre_generate_geopackage_files",
+            action="store_true",
         )
 
     def handle(self, *args, **options):
@@ -91,17 +100,43 @@ class Command(BaseCommand):  # pylint: disable=missing-docstring
             stdout=self.stdout,
             stderr=self.stderr
         )
+        heve_details = []
         for event_set in to_process:
             geonode_layer = complete_geonode_layer(
                 event_set,
                 view_name=view_infos[event_set.id][0]
             )
-            get_heve_detail(
+            heve_detail = get_heve_detail(
                 geonode_layer,
                 event_set=event_set,
                 view_aggregate_info=view_infos[event_set.id][1],
                 view_events_data=view_infos[event_set.id][2],
             )
+            heve_details.append(heve_detail)
+        if options["pre_generate_geopackage_files"]:
+            self.stdout.write("Pre-generating geopackage files...")
+            pre_generate_geopackages(heve_details, logger=self.stdout.write)
+
+
+def pre_generate_geopackages(heve_details, logger=print):
+    for heve_detail in heve_details:
+        logger("- Generating geopackage for {}...".format(
+            heve_detail.layer.name))
+        identifier = "{}:{}".format(
+            DatasetType.hazard.name, heve_detail.layer.name)
+        emulated_options = {"format": "geopackage"}
+        hash_contents = sorted([
+            identifier,
+            get_dict_str(emulated_options),
+        ])
+        name_hash = hashlib.md5("".join(hash_contents)).hexdigest()
+        file_name = "{}.gpkg".format(name_hash)
+        target_path = Path(
+            settings.HEV_E["general"]["pre_generated_files_dir"]) / file_name
+        if not target_path.parent.exists():
+            target_path.parent.mkdir(parents=True)
+        logger("target_path: {}".format(target_path))
+        generate_geopackage(heve_detail.details["event_set_id"], target_path)
 
 
 def process_event_set(db_cursor, event_set, view_name,
@@ -172,7 +207,10 @@ def get_heve_detail(geonode_layer, event_set, view_aggregate_info,
         "description": event_set.description,
         "bibliography": event_set.bibliography,
         "average_intensity": view_aggregate_info.average_intensity,
-        "events": view_events_data
+        "events": view_events_data,
+        "time_start": event_set.time_start,
+        "time_end": event_set.time_end,
+        "time_duration": event_set.time_duration,
     }
     heve_detail.save()
     return heve_detail
