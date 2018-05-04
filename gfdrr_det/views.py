@@ -223,20 +223,26 @@ class OrderViewSet(viewsets.ViewSet):
 @api_view()
 def retrieve_download(request, file_hash=None, **kwargs):
     downloads_dir = Path(settings.HEV_E["general"]["downloads_dir"])
-    try:
-        path = list(downloads_dir.glob("*{}*".format(file_hash)))[0]
-        mimetype = {
-            "application/vnd.opengeospatial.geopackage+sqlite3": ".gpkg",
-            "application/zip": ".zip",
-        }.get(Path(path).suffix)
-        result = sendfile(
-            request=request,
-            filename=str(path),
-            attachment=True,
-            attachment_filename=path.name,
-            mimetype=mimetype,
-            encoding=None
-        )
-        return result
-    except IndexError:  # could not find the file
-        raise
+    pre_generated_dir = Path(
+        settings.HEV_E["general"]["pre_generated_files_dir"])
+    for directory in (downloads_dir, pre_generated_dir):
+        try:
+            path = list(directory.glob("*{}*".format(file_hash)))[0]
+            break
+        except IndexError:
+            pass
+    else:
+        raise RuntimeError(
+            "Could not find the file with hash {}".format(file_hash))
+    mimetype = {
+        "application/vnd.opengeospatial.geopackage+sqlite3": ".gpkg",
+        "application/zip": ".zip",
+    }.get(Path(path).suffix)
+    return sendfile(
+        request=request,
+        filename=str(path),
+        attachment=True,
+        attachment_filename=path.name,
+        mimetype=mimetype,
+        encoding=None
+    )

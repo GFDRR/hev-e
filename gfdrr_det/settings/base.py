@@ -757,8 +757,8 @@ OSEOSERVER_COLLECTIONS = [
 # TODO: Confirm mapping of exposure categories to ISO19115 topic categories
 HEV_E = {
     "general": {
-        "downloads_dir": "/tmp/hev_e",
-        "pre_generated_files_dir": "/tmp/hev_e/pre_generated",
+        "downloads_dir": "/var/heve",
+        "pre_generated_files_dir": "/var/heve/pre_generated",
         "downloads_name_pattern": "hev_e_{hash}.{format}",
         "bbox_snap_resolution": 1,  # in degrees
     },
