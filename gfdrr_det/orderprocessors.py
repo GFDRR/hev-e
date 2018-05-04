@@ -60,7 +60,7 @@ def get_mail_recipients(subject, message, current_recipients, order=None):
     if order is not None:
         end_user_mail_address = order.remark.replace("notification_email:", "")
         valid_address = parseaddr(end_user_mail_address)[-1] != ""
-        result = [end_user_mail_address] if valid_address else None
+        result = [end_user_mail_address] if valid_address else []
     else:
         result = current_recipients
     return result
