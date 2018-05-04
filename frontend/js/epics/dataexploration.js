@@ -743,7 +743,8 @@ const getTaxonomicCategoriesFromDownload = download => {
 
 /* convert dataset name for request */
 const datasetName = {
-    exposures: 'exposure'
+    exposures: 'exposure',
+    hazards: 'hazard'
 };
 
 const downloadDataEpic = (action$, store) =>

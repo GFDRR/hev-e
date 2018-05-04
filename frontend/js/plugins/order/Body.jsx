@@ -78,9 +78,14 @@ module.exports = ({
         <Grid fluid>
             {orders.map((order, idx) => {
 
+                const hazard = order && order.order_items && order.order_items.filter(item => {
+                    const splitLayerName = item.layer && item.layer.split(':') || [];
+                    return splitLayerName[0] === 'hazard';
+                });
+
                 const exposure = order && order.order_items && order.order_items.filter(item => {
                     const splitLayerName = item.layer && item.layer.split(':') || [];
-                    return splitLayerName[0] !== 'vulnerability';
+                    return splitLayerName[0] === 'exposure';
                 });
 
                 const vulnerability = order && order.order_items && order.order_items.filter(item => {
@@ -115,6 +120,7 @@ module.exports = ({
                                 </div>
                             </div>
                         </Col>
+                        {hazard && hazard.length > 0 && <Body items={hazard} name="Hazards"/>}
                         {exposure && exposure.length > 0 && <Body items={exposure} name="Exposures"/>}
                         {vulnerability && vulnerability.length > 0 && <Body items={vulnerability} name="Vulnerabilities"/>}
                         {idx !== orders.length - 1 &&

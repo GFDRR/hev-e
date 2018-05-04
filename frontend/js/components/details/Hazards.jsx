@@ -96,7 +96,7 @@ module.exports = ({
                                 }}
                                 dataset={currentDataset}
                                 hideOnAdd
-                                // showDownload
+                                showDownload
                                 showZoomTo
                                 showAddLayer
                                 showRemoveLayer
