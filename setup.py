@@ -44,7 +44,7 @@ setup(
         'django-filter==1.1.0',
         'django-model-utils==3.0.0',
         'django-simple-history==1.9.0',
-        'djangorestframework<3.7',
+        'djangorestframework<3.10',
         'djangorestframework-csv==2.1.0',
         'djangorestframework-gis<0.12',
         'drf-nested-routers==0.90.0',
