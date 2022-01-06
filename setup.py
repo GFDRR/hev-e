@@ -34,7 +34,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'celery==4.1.0',
+        'celery==5.2.2',
         'Django==1.9.13',
         'django-apptemplates==1.4',
         'django-celery-beat==1.0.1',
