@@ -38,7 +38,7 @@ setup(
         'Django==1.9.13',
         'django-apptemplates==1.4',
         'django-celery-beat==1.0.1',
-        'django-celery-results==1.0.1',
+        'django-celery-results==2.4.0',
         'django-cuser==2017.3.16',
         'django-crispy-forms==1.7.0',
         'django-filter==1.1.0',
